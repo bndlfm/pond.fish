@@ -41,8 +41,6 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
         end
 
         echo "⏳ Agent is thinking..."
-        # We don't capture stdout here anymore, we let it print to terminal
-        # and we read the result from a file if needed, OR we use a temporary file for the result type.
         set -l type_file (mktemp -t fish-ai-type.XXXXXX)
         "$_fish_ai_install_dir/bin/agent" $agent_args > "$type_file"
         set -l response_type (cat "$type_file" | string trim)
@@ -55,6 +53,8 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
             if test -n "$action_content"
                 echo "Error context: $action_content"
             end
+            echo "Press any key to exit..."
+            read -n 1
             break
         end
 
@@ -62,7 +62,6 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
             case EXECUTE
                 echo "👉 Agent wants to execute: $action_content"
                 if test "$confirm_mode" = "ask"
-                    # Using a more standard read prompt
                     echo -n "Allow? [y]es / [a]lways / [n]o: "
                     read -l user_choice
                     switch $user_choice
@@ -103,10 +102,14 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
 
             case DONE
                 echo "✅ Agent finished: $action_content"
+                echo "Press any key to exit..."
+                read -n 1
                 break
             
             case ERROR
                 echo "❌ Agent error: $action_content"
+                echo "Wait 5 seconds for debugging..."
+                sleep 5
                 break
             
             case '*'
@@ -114,6 +117,8 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 if test -n "$action_content"
                     echo "Content: $action_content"
                 end
+                echo "Wait 5 seconds for debugging..."
+                sleep 5
                 break
         end
     end

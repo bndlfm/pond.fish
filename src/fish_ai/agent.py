@@ -4,10 +4,10 @@ import json
 import sys
 import argparse
 import os
-from fish_ai.engine import get_chat_response, get_logger, get_os
 
 def debug_log(msg):
     sys.stderr.write(f"DEBUG: {msg}\n")
+    sys.stderr.flush()
 
 def list_directory(path):
     try:
@@ -31,99 +31,13 @@ def write_file(path, content):
     except Exception as e:
         return str(e)
 
-TOOLS = [
-    {
-        "type": "function",
-        "function": {
-            "name": "shell_execute",
-            "description": "Execute a command in the fish shell. Use this to run any shell commands, including those that modify the shell state (e.g., cd, export). The command will be executed in the user's active shell session.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "command": {
-                        "type": "string",
-                        "description": "The shell command to execute."
-                    }
-                },
-                "required": ["command"]
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "read_file",
-            "description": "Read the content of a file.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "path": {
-                        "type": "string",
-                        "description": "The path to the file."
-                    }
-                },
-                "required": ["path"]
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "list_directory",
-            "description": "List the files in a directory.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "path": {
-                        "type": "string",
-                        "description": "The path to the directory."
-                    }
-                },
-                "required": ["path"]
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "write_file",
-            "description": "Write content to a file.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "path": {
-                        "type": "string",
-                        "description": "The path to the file."
-                    },
-                    "content": {
-                        "type": "string",
-                        "description": "The content to write."
-                    }
-                },
-                "required": ["path", "content"]
-            }
-        }
-    }
-]
-
-SYSTEM_PROMPT = """
-You are an autonomous shell assistant working inside a fish shell.
-Your goal is to help the user achieve their request by executing commands and using tools.
-
-Rules:
-1. Use `shell_execute` to run any shell commands.
-2. Use `read_file`, `list_directory`, and `write_file` for file operations.
-3. If a command modifies the shell state (e.g., `cd`, `set -x`), it will be preserved for subsequent commands in this session.
-4. After executing a command or tool, you will receive the output. Use this output to decide your next step.
-5. When the goal is achieved, provide a concise summary of what was done and end with "DONE".
-6. If you are stuck or need clarification, ask the user.
-
-Operating System: {os}
-""".format(os=get_os())
-
 def main():
     try:
         debug_log("Agent script starting...")
+        
+        # Delayed import of engine to avoid slow startup or import errors at top level
+        from fish_ai.engine import get_chat_response, get_os, get_logger
+        
         parser = argparse.ArgumentParser()
         parser.add_argument('--state', required=True, help='Path to the state JSON file')
         parser.add_argument('--action-file', required=True, help='Path to the action output file')
@@ -133,6 +47,96 @@ def main():
         parser.add_argument('--rejected', action='store_true', help='Set if the last proposed command was rejected by the user')
 
         args = parser.parse_args()
+        
+        TOOLS = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "shell_execute",
+                    "description": "Execute a command in the fish shell. Use this to run any shell commands, including those that modify the shell state (e.g., cd, export). The command will be executed in the user's active shell session.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "command": {
+                                "type": "string",
+                                "description": "The shell command to execute."
+                            }
+                        },
+                        "required": ["command"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "read_file",
+                    "description": "Read the content of a file.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "path": {
+                                "type": "string",
+                                "description": "The path to the file."
+                            }
+                        },
+                        "required": ["path"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "list_directory",
+                    "description": "List the files in a directory.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "path": {
+                                "type": "string",
+                                "description": "The path to the directory."
+                            }
+                        },
+                        "required": ["path"]
+                    }
+                }
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "write_file",
+                    "description": "Write content to a file.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "path": {
+                                "type": "string",
+                                "description": "The path to the file."
+                            },
+                            "content": {
+                                "type": "string",
+                                "description": "The content to write."
+                            }
+                        },
+                        "required": ["path", "content"]
+                    }
+                }
+            }
+        ]
+
+        SYSTEM_PROMPT = """
+        You are an autonomous shell assistant working inside a fish shell.
+        Your goal is to help the user achieve their request by executing commands and using tools.
+
+        Rules:
+        1. Use `shell_execute` to run any shell commands.
+        2. Use `read_file`, `list_directory`, and `write_file` for file operations.
+        3. If a command modifies the shell state (e.g., `cd`, `set -x`), it will be preserved for subsequent commands in this session.
+        4. After executing a command or tool, you will receive the output. Use this output to decide your next step.
+        5. When the goal is achieved, provide a concise summary of what was done and end with "DONE".
+        6. If you are stuck or need clarification, ask the user.
+
+        Operating System: {os}
+        """.format(os=get_os())
 
         messages = []
         if os.path.exists(args.state) and os.path.getsize(args.state) > 0:
@@ -178,7 +182,7 @@ def main():
         # Call the engine
         debug_log(f"Calling engine with {len(messages)} messages...")
         response = get_chat_response(messages, tools=TOOLS)
-        debug_log(f"Engine response: {response}")
+        debug_log(f"Engine response received.")
 
         if not response or (not response.get('content') and not response.get('tool_calls')):
             raise Exception("The AI returned an empty response. Check your configuration/API key.")
@@ -201,7 +205,6 @@ def main():
                 with open(args.action_file, 'w') as f:
                     f.write(func_args['command'])
                 sys.stdout.write("EXECUTE\n")
-                sys.stdout.flush()
             else:
                 # Execute internal tools immediately
                 debug_log(f"Executing internal tool: {func_name}")
@@ -229,19 +232,20 @@ def main():
                 
                 debug_log("Action: CONTINUE")
                 sys.stdout.write("CONTINUE\n")
-                sys.stdout.flush()
         else:
             content = response.get('content', '')
-            debug_log(f"Action: CHAT/DONE. Content: {content[:50]}...")
+            debug_log(f"Action: CHAT/DONE")
             with open(args.action_file, 'w') as f:
                 f.write(content)
             if "DONE" in content.upper():
                 sys.stdout.write("DONE\n")
             else:
                 sys.stdout.write("CHAT\n")
-            sys.stdout.flush()
+        sys.stdout.flush()
     except Exception as e:
         debug_log(f"CRITICAL ERROR: {e}")
+        import traceback
+        debug_log(traceback.format_exc())
         with open(args.action_file, 'w') as f:
             f.write(str(e))
         sys.stdout.write("ERROR\n")
