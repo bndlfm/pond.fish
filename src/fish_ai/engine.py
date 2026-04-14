@@ -301,10 +301,9 @@ def get_messages_for_gemini(messages):
                         'args': json.loads(tc['function']['arguments'])
                     }
                     # Gemini 3 MANDATES a thought_signature. 
-                    # If we don't have one, we use a bypass signature.
                     f_call['thought_signature'] = tc['function'].get('thought_signature') or "skip_thought_signature_validator"
                     
-                    parts.append({'function_call': f_call})
+                    parts.append({'functionCall': f_call})
             outputs.append({'role': 'model', 'parts': parts})
         elif role == 'tool':
             # Gemini requires the tool response to match the name of the function called
@@ -318,17 +317,16 @@ def get_messages_for_gemini(messages):
                 for msg in reversed(outputs):
                     if msg['role'] == 'model':
                         for part in msg['parts']:
-                            if 'function_call' in part:
-                                func_name = part['function_call']['name']
+                            if 'functionCall' in part:
+                                func_name = part['functionCall']['name']
                                 break
                         if func_name != 'unknown':
                             break
             
-            # Ensure the response is wrapped in a way Gemini likes
             outputs.append({
                 'role': 'user',
                 'parts': [{
-                    'function_response': {
+                    'functionResponse': {
                         'name': func_name,
                         'response': {'result': content}
                     }
@@ -441,15 +439,16 @@ def get_chat_response(messages, tools=None):
         model = get_config('model') or 'gemini-3.1-pro-preview'
 
         # We must use the internal _api_client to bypass strict Pydantic
-        # validation that forbids 'thought_signature' in FunctionCall.
-        config_dict = {}
+        # validation that forbids 'thought_signature' in functionCall.
+        generation_config = {}
         model_info = client.models.get(model=model)
         if getattr(model_info, 'thinking', False):
             if 'gemini-2.5' in model:
-                config_dict['thinking_config'] = {'thinking_budget': 1024}
+                generation_config['thinkingConfig'] = {'thinking_budget': 1024}
             elif 'gemini-3' in model:
-                config_dict['thinking_config'] = {'thinking_level': 'low'}
+                generation_config['thinkingConfig'] = {'include_thoughts': True}
         
+        tools_payload = []
         if tools:
             declarations = []
             for t in tools:
@@ -458,13 +457,16 @@ def get_chat_response(messages, tools=None):
                     'description': t['function']['description'],
                     'parameters': t['function']['parameters']
                 })
-            config_dict['tools'] = [{'function_declarations': declarations}]
+            tools_payload = [{'function_declarations': declarations}]
 
         # Prepare raw request body
         request_body = {
             'contents': get_messages_for_gemini(messages),
-            'config': config_dict
         }
+        if generation_config:
+            request_body['generationConfig'] = generation_config
+        if tools_payload:
+            request_body['tools'] = tools_payload
 
         # Use the SDK's request method directly to benefit from auth/transport
         # but avoid the strict top-level model validation.
@@ -481,10 +483,10 @@ def get_chat_response(messages, tools=None):
                     if 'thought' not in response_message:
                         response_message['thought'] = True
                     response_message['content'] = f"<think>{part['thought']}</think>{response_message['content']}"
-                if 'function_call' in part:
+                if 'functionCall' in part:
                     if 'tool_calls' not in response_message:
                         response_message['tool_calls'] = []
-                    fc = part['function_call']
+                    fc = part['functionCall']
                     response_message['tool_calls'].append({
                         'id': 'google-' + fc['name'],
                         'type': 'function',
