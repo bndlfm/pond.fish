@@ -480,6 +480,10 @@ def get_chat_response(messages, tools=None):
         http_response = client._api_client.request('post', path, request_body, None)
         result = http_response.to_json_dict()
         
+        # If the response is wrapped (contains headers/body), extract the body
+        if 'body' in result and isinstance(result['body'], str):
+            result = json.loads(result['body'])
+        
         if 'error' in result:
             raise Exception(f"Gemini API error: {result['error'].get('message', 'Unknown error')}")
 
@@ -490,12 +494,15 @@ def get_chat_response(messages, tools=None):
         candidate = result['candidates'][0]
         if 'content' in candidate and 'parts' in candidate['content']:
             for part in candidate['content']['parts']:
-                if 'text' in part:
-                    response_message['content'] += part['text']
-                if 'thought' in part:
+                part_text = part.get('text', '')
+                if part.get('thought') is True:
+                    # This is a thought part with text content
                     if 'thought' not in response_message:
                         response_message['thought'] = True
-                    response_message['content'] = f"<think>{part['thought']}</think>{response_message['content']}"
+                    response_message['content'] = f"<think>{part_text}</think>{response_message['content']}"
+                elif 'text' in part:
+                    response_message['content'] += part_text
+                
                 if 'functionCall' in part:
                     if 'tool_calls' not in response_message:
                         response_message['tool_calls'] = []
