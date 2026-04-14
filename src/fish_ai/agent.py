@@ -130,10 +130,14 @@ def main():
     args = parser.parse_args()
 
     messages = []
-    if os.path.exists(args.state):
+    if os.path.exists(args.state) and os.path.getsize(args.state) > 0:
         with open(args.state, 'r') as f:
-            messages = json.load(f)
-    else:
+            try:
+                messages = json.load(f)
+            except json.JSONDecodeError:
+                messages = []
+    
+    if not messages:
         messages = [{'role': 'system', 'content': SYSTEM_PROMPT}]
         if args.goal:
             messages.append({'role': 'user', 'content': args.goal})
