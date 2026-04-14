@@ -15,6 +15,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
 
     set -l state_file (mktemp -t fish-ai-state.XXXXXX)
     set -l action_file (mktemp -t fish-ai-action.XXXXXX)
+    set -l signal_file (mktemp -t fish-ai-signal.XXXXXX)
     
     if test $status -ne 0
         echo "❌ Failed to create temporary files."
@@ -42,8 +43,11 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
 
         echo "⏳ Agent is thinking..."
         
-        # Run agent and process its stdout line by line for thoughts/tool calls
-        set -l response_type ""
+        # Clear previous signal
+        echo -n "" > "$signal_file"
+
+        # Run agent and process its stdout line by line
+        # Use a temporary file for the final signal because loop variables are lost in pipes
         "$_fish_ai_install_dir/bin/agent" $agent_args | while read -l line
             switch "$line"
                 case THOUGHT
@@ -60,12 +64,13 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                     set -l call (string replace "TOOL_CALL: " "" "$line")
                     echo "🛠️  Tool: $call"
                 case EXECUTE CONTINUE CHAT DONE ERROR
-                    set response_type "$line"
+                    echo "$line" > "$signal_file"
                 case '*'
-                    # Ignore other output (like debug logs if they leak to stdout)
+                    # Ignore other output
             end
         end
 
+        set -l response_type (cat "$signal_file" | string trim)
         set -l action_content (cat "$action_file")
 
         if test -z "$response_type"
@@ -145,6 +150,6 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
         end
     end
 
-    rm "$state_file" "$action_file"
+    rm "$state_file" "$action_file" "$signal_file"
     commandline -f repaint
 end
