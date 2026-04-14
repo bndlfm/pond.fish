@@ -255,5 +255,18 @@ def main():
         sys.stdout.flush()
         sys.exit(1)
 
+def render_markdown():
+    try:
+        from rich.console import Console
+        from rich.markdown import Markdown
+        console = Console()
+        content = sys.stdin.read()
+        if not content.strip():
+            return
+        console.print(Markdown(content))
+    except Exception as e:
+        # Fallback to plain text if rich is not available or fails
+        sys.stdout.write(sys.stdin.read())
+
 if __name__ == "__main__":
     main()

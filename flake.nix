@@ -18,6 +18,7 @@
             pkgs.fish
             pkgs.uv
             pkgs.fzf
+            pkgs.python311Packages.rich
           ];
 
           shellHook = ''

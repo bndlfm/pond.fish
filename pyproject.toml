@@ -25,7 +25,8 @@ dependencies = [
   "groq==1.1.2",
   "google-genai==1.70.0",
   "httpx[socks]==0.28.1",
-  "aws-bedrock-token-generator==1.1.0"
+  "aws-bedrock-token-generator==1.1.0",
+  "rich==13.9.4"
 ]
 
 [project.urls]
@@ -43,6 +44,7 @@ lookup_setting = "fish_ai.config:lookup_setting"
 put_setting = "fish_ai.config:put_setting"
 refine = "fish_ai.autocomplete:refine_completions"
 agent = "fish_ai.agent:main"
+render = "fish_ai.agent:render_markdown"
 
 [tool.pytest.ini_options]
 minversion = "6.0"

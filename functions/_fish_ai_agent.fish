@@ -89,7 +89,8 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 continue
 
             case CHAT
-                echo "💬 Agent: $action_content"
+                echo "💬 Agent:"
+                cat "$action_file" | "$_fish_ai_install_dir/bin/render"
                 # If it's a chat, the user might want to respond
                 echo -n "Your response (leave empty to continue): "
                 read -l user_response
@@ -101,7 +102,8 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 set last_status 0
 
             case DONE
-                echo "✅ Agent finished: $action_content"
+                echo "✅ Agent finished:"
+                cat "$action_file" | "$_fish_ai_install_dir/bin/render"
                 echo "Press any key to exit..."
                 read -n 1
                 break
