@@ -199,6 +199,8 @@ def main():
 
     # Process response
     if response.get('tool_calls'):
+        # For now, we process one tool call at a time to keep the shell interaction simple.
+        # But we must ensure shell_execute is prioritized or handled distinctly.
         tool_call = response['tool_calls'][0]
         func_name = tool_call['function']['name']
         func_args = json.loads(tool_call['function']['arguments'])
@@ -209,25 +211,26 @@ def main():
                 f.write(func_args['command'])
             print("EXECUTE")
         else:
-            # Execute internal tools immediately and recurse or return for the shell to handle
-            # To keep the shell wrapper simple, we can execute internal tools here and then
-            # call the engine again, OR let the shell wrapper call us again.
-            # Let's execute internal tools here and then return "CONTINUE" to the shell
-            # so it calls us again with the output.
+            # Execute internal tools immediately
             result = ""
-            if func_name == 'read_file':
-                result = read_file(func_args['path'])
-            elif func_name == 'list_directory':
-                result = list_directory(func_args['path'])
-            elif func_name == 'write_file':
-                result = write_file(func_args['path'], func_args['content'])
+            try:
+                if func_name == 'read_file':
+                    result = read_file(func_args['path'])
+                elif func_name == 'list_directory':
+                    result = list_directory(func_args['path'])
+                elif func_name == 'write_file':
+                    result = write_file(func_args['path'], func_args['content'])
+                else:
+                    result = f"Unknown tool: {func_name}"
+            except Exception as e:
+                result = str(e)
             
             messages.append({
                 'role': 'tool',
                 'tool_call_id': tool_call['id'],
                 'content': result
             })
-            # Update state again with tool result
+            # Update state with tool result
             with open(args.state, 'w') as f:
                 json.dump(messages, f)
             

@@ -13,6 +13,7 @@ from subprocess import run, PIPE, DEVNULL, Popen
 from itertools import islice
 from sys import argv
 
+import json
 from fish_ai.redact import redact
 from fish_ai.config import get_config
 

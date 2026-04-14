@@ -34,8 +34,17 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
             set rejected 0
         end
 
+        echo "⏳ Agent is thinking..."
         set -l response_type ("$_fish_ai_install_dir/bin/agent" $agent_args)
         set -l action_content (cat "$action_file")
+
+        if test -z "$response_type"
+            echo "❌ Agent failed to respond. (Empty response type)"
+            if test -n "$action_content"
+                echo "Error context: $action_content"
+            end
+            break
+        end
 
         switch $response_type
             case EXECUTE
