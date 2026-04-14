@@ -41,10 +41,30 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
         end
 
         echo "⏳ Agent is thinking..."
-        set -l type_file (mktemp -t fish-ai-type.XXXXXX)
-        "$_fish_ai_install_dir/bin/agent" $agent_args > "$type_file"
-        set -l response_type (cat "$type_file" | string trim)
-        rm "$type_file"
+        
+        # Run agent and process its stdout line by line for thoughts/tool calls
+        set -l response_type ""
+        "$_fish_ai_install_dir/bin/agent" $agent_args | while read -l line
+            switch $line
+                case THOUGHT
+                    echo "💭 Thought:"
+                    set -l thought_content ""
+                    while read -l thought_line
+                        if test "$thought_line" = "END_THOUGHT"
+                            break
+                        end
+                        set thought_content "$thought_content$thought_line\n"
+                    end
+                    echo -e "$thought_content" | "$_fish_ai_install_dir/bin/render"
+                case 'TOOL_CALL:*'
+                    set -l call (string replace "TOOL_CALL: " "" $line)
+                    echo "🛠️  Tool: $call"
+                case EXECUTE CONTINUE CHAT DONE ERROR
+                    set response_type $line
+                case '*'
+                    # Ignore other output (like debug logs if they leak to stdout)
+            end
+        end
 
         set -l action_content (cat "$action_file")
 

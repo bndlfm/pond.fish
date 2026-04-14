@@ -195,13 +195,31 @@ def main():
             json.dump(messages, f)
 
         # Process response
+        if response.get('content'):
+            content = response['content']
+            # Extract and report thoughts
+            if '<think>' in content:
+                import re
+                m = re.search(r'<think>(.*?)</think>(.*)', content, re.DOTALL)
+                if m:
+                    thought = m.group(1).strip()
+                    if thought:
+                        sys.stdout.write(f"THOUGHT\n{thought}\nEND_THOUGHT\n")
+                    content = m.group(2).strip()
+            
+            # If there's remaining content that isn't just a tool call, report it as CHAT
+            if content and not response.get('tool_calls'):
+                with open(args.action_file, 'w') as f:
+                    f.write(content)
+                if "DONE" in content.upper():
+                    sys.stdout.write("DONE\n")
+                else:
+                    sys.stdout.write("CHAT\n")
+
         if response.get('tool_calls'):
             tool_call = response['tool_calls'][0]
             func_name = tool_call['function']['name']
-
-            # Support prefixed names (e.g. default_api:list_directory)
             base_func_name = func_name.split(':')[-1]
-
             func_args = json.loads(tool_call['function']['arguments'])
 
             if base_func_name == 'shell_execute':
@@ -211,7 +229,12 @@ def main():
                 sys.stdout.write("EXECUTE\n")
             else:
                 # Execute internal tools immediately
-                debug_log(f"Executing internal tool: {base_func_name} (full name: {func_name})")
+                debug_log(f"Executing internal tool: {base_func_name}")
+                
+                # Report the tool call to the user
+                args_str = ", ".join([f"{k}={v}" for k, v in func_args.items()])
+                sys.stdout.write(f"TOOL_CALL: {base_func_name}({args_str})\n")
+                
                 result = ""
                 try:
                     if base_func_name == 'read_file':
@@ -223,7 +246,8 @@ def main():
                     else:
                         result = f"Unknown tool: {base_func_name}"
                 except Exception as e:
-                    result = str(e)                
+                    result = str(e)
+                
                 messages.append({
                     'role': 'tool',
                     'tool_call_id': tool_call['id'],
@@ -235,15 +259,7 @@ def main():
                 
                 debug_log("Action: CONTINUE")
                 sys.stdout.write("CONTINUE\n")
-        else:
-            content = response.get('content', '')
-            debug_log(f"Action: CHAT/DONE")
-            with open(args.action_file, 'w') as f:
-                f.write(content)
-            if "DONE" in content.upper():
-                sys.stdout.write("DONE\n")
-            else:
-                sys.stdout.write("CHAT\n")
+        
         sys.stdout.flush()
     except Exception as e:
         debug_log(f"CRITICAL ERROR: {e}")
