@@ -6,6 +6,9 @@ import argparse
 import os
 from fish_ai.engine import get_chat_response, get_logger, get_os
 
+def debug_log(msg):
+    sys.stderr.write(f"DEBUG: {msg}\n")
+
 def list_directory(path):
     try:
         items = os.listdir(path)
@@ -119,131 +122,127 @@ Operating System: {os}
 """.format(os=get_os())
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--state', required=True, help='Path to the state JSON file')
-    parser.add_argument('--action-file', required=True, help='Path to the action output file')
-    parser.add_argument('--goal', help='The initial goal (only provided on the first call)')
-    parser.add_argument('--last-output', help='Output from the last executed command/tool')
-    parser.add_argument('--last-status', type=int, help='Exit status from the last command')
-    parser.add_argument('--rejected', action='store_true', help='Set if the last proposed command was rejected by the user')
-
-    args = parser.parse_args()
-
-    messages = []
-    if os.path.exists(args.state) and os.path.getsize(args.state) > 0:
-        with open(args.state, 'r') as f:
-            try:
-                messages = json.load(f)
-            except json.JSONDecodeError:
-                messages = []
-    
-    if not messages:
-        messages = [{'role': 'system', 'content': SYSTEM_PROMPT}]
-        if args.goal:
-            messages.append({'role': 'user', 'content': args.goal})
-
-    if args.rejected:
-        messages.append({'role': 'user', 'content': 'I have rejected the proposed command. Please try a different approach or ask for clarification.'})
-    elif args.last_output is not None:
-        content = args.last_output
-        if args.last_status is not None:
-            content = f"Command exited with status {args.last_status}\n\nOutput:\n{content}"
-        
-        # In a real tool-calling loop, the previous message from assistant had tool_calls.
-        # We need to append the tool result message.
-        # However, for simplicity in the first version, we'll handle tool results as user messages
-        # if the engine doesn't fully support structured tool history yet.
-        # But let's try to do it properly.
-        
-        # Find the last tool call ID if it exists
-        last_tool_call_id = None
-        for msg in reversed(messages):
-            if msg.get('role') == 'assistant' and msg.get('tool_calls'):
-                last_tool_call_id = msg['tool_calls'][0]['id']
-                break
-        
-        if last_tool_call_id:
-            messages.append({
-                'role': 'tool',
-                'tool_call_id': last_tool_call_id,
-                'content': content
-            })
-        else:
-            messages.append({'role': 'user', 'content': content})
-
-    # Call the engine
     try:
-        get_logger().debug('Agent calling engine with {} messages'.format(len(messages)))
+        debug_log("Agent script starting...")
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--state', required=True, help='Path to the state JSON file')
+        parser.add_argument('--action-file', required=True, help='Path to the action output file')
+        parser.add_argument('--goal', help='The initial goal (only provided on the first call)')
+        parser.add_argument('--last-output', help='Output from the last executed command/tool')
+        parser.add_argument('--last-status', type=int, help='Exit status from the last command')
+        parser.add_argument('--rejected', action='store_true', help='Set if the last proposed command was rejected by the user')
+
+        args = parser.parse_args()
+
+        messages = []
+        if os.path.exists(args.state) and os.path.getsize(args.state) > 0:
+            debug_log(f"Loading state from {args.state}")
+            with open(args.state, 'r') as f:
+                try:
+                    messages = json.load(f)
+                except json.JSONDecodeError as e:
+                    debug_log(f"JSON decode error: {e}")
+                    messages = []
+        
+        if not messages:
+            debug_log("Initializing new conversation")
+            messages = [{'role': 'system', 'content': SYSTEM_PROMPT}]
+            if args.goal:
+                messages.append({'role': 'user', 'content': args.goal})
+            else:
+                messages.append({'role': 'user', 'content': 'Hello, how can I help you today?'})
+
+        if args.rejected:
+            messages.append({'role': 'user', 'content': 'I have rejected the proposed command. Please try a different approach or ask for clarification.'})
+        elif args.last_output is not None:
+            content = args.last_output
+            if args.last_status is not None:
+                content = f"Command exited with status {args.last_status}\n\nOutput:\n{content}"
+            
+            # Find the last tool call ID if it exists
+            last_tool_call_id = None
+            for msg in reversed(messages):
+                if msg.get('role') == 'assistant' and msg.get('tool_calls'):
+                    last_tool_call_id = msg['tool_calls'][0]['id']
+                    break
+            
+            if last_tool_call_id:
+                messages.append({
+                    'role': 'tool',
+                    'tool_call_id': last_tool_call_id,
+                    'content': content
+                })
+            else:
+                messages.append({'role': 'user', 'content': content})
+
+        # Call the engine
+        debug_log(f"Calling engine with {len(messages)} messages...")
         response = get_chat_response(messages, tools=TOOLS)
-        get_logger().debug('Agent received response: {}'.format(response))
+        debug_log(f"Engine response: {response}")
+
+        if not response or (not response.get('content') and not response.get('tool_calls')):
+            raise Exception("The AI returned an empty response. Check your configuration/API key.")
+
+        messages.append(response)
+
+        # Save state
+        debug_log(f"Saving state to {args.state}")
+        with open(args.state, 'w') as f:
+            json.dump(messages, f)
+
+        # Process response
+        if response.get('tool_calls'):
+            tool_call = response['tool_calls'][0]
+            func_name = tool_call['function']['name']
+            func_args = json.loads(tool_call['function']['arguments'])
+
+            if func_name == 'shell_execute':
+                debug_log(f"Action: EXECUTE {func_args['command']}")
+                with open(args.action_file, 'w') as f:
+                    f.write(func_args['command'])
+                sys.stdout.write("EXECUTE\n")
+            else:
+                # Execute internal tools immediately
+                debug_log(f"Executing internal tool: {func_name}")
+                result = ""
+                try:
+                    if func_name == 'read_file':
+                        result = read_file(func_args['path'])
+                    elif func_name == 'list_directory':
+                        result = list_directory(func_args['path'])
+                    elif func_name == 'write_file':
+                        result = write_file(func_args['path'], func_args['content'])
+                    else:
+                        result = f"Unknown tool: {func_name}"
+                except Exception as e:
+                    result = str(e)
+                
+                messages.append({
+                    'role': 'tool',
+                    'tool_call_id': tool_call['id'],
+                    'content': result
+                })
+                # Update state with tool result
+                with open(args.state, 'w') as f:
+                    json.dump(messages, f)
+                
+                debug_log("Action: CONTINUE")
+                sys.stdout.write("CONTINUE\n")
+        else:
+            content = response.get('content', '')
+            debug_log(f"Action: CHAT/DONE. Content: {content[:50]}...")
+            with open(args.action_file, 'w') as f:
+                f.write(content)
+            if "DONE" in content.upper():
+                sys.stdout.write("DONE\n")
+            else:
+                sys.stdout.write("CHAT\n")
     except Exception as e:
-        get_logger().error('Agent engine error: {}'.format(str(e)))
+        debug_log(f"CRITICAL ERROR: {e}")
         with open(args.action_file, 'w') as f:
             f.write(str(e))
-        print("ERROR")
+        sys.stdout.write("ERROR\n")
         sys.exit(1)
-
-    if not response or (not response.get('content') and not response.get('tool_calls')):
-        error_msg = "The AI returned an empty response. Check your configuration/API key."
-        get_logger().error(error_msg)
-        with open(args.action_file, 'w') as f:
-            f.write(error_msg)
-        print("ERROR")
-        sys.exit(1)
-
-    messages.append(response)
-
-    # Save state
-    with open(args.state, 'w') as f:
-        json.dump(messages, f)
-
-    # Process response
-    if response.get('tool_calls'):
-        # For now, we process one tool call at a time to keep the shell interaction simple.
-        # But we must ensure shell_execute is prioritized or handled distinctly.
-        tool_call = response['tool_calls'][0]
-        func_name = tool_call['function']['name']
-        func_args = json.loads(tool_call['function']['arguments'])
-
-        if func_name == 'shell_execute':
-            # Signal the shell wrapper to ask for confirmation
-            with open(args.action_file, 'w') as f:
-                f.write(func_args['command'])
-            print("EXECUTE")
-        else:
-            # Execute internal tools immediately
-            result = ""
-            try:
-                if func_name == 'read_file':
-                    result = read_file(func_args['path'])
-                elif func_name == 'list_directory':
-                    result = list_directory(func_args['path'])
-                elif func_name == 'write_file':
-                    result = write_file(func_args['path'], func_args['content'])
-                else:
-                    result = f"Unknown tool: {func_name}"
-            except Exception as e:
-                result = str(e)
-            
-            messages.append({
-                'role': 'tool',
-                'tool_call_id': tool_call['id'],
-                'content': result
-            })
-            # Update state with tool result
-            with open(args.state, 'w') as f:
-                json.dump(messages, f)
-            
-            # Print CONTINUE so the shell wrapper calls us again immediately
-            print("CONTINUE")
-    else:
-        content = response.get('content', '')
-        with open(args.action_file, 'w') as f:
-            f.write(content)
-        if "DONE" in content.upper():
-            print("DONE")
-        else:
-            print("CHAT")
 
 if __name__ == "__main__":
     main()
