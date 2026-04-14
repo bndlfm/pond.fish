@@ -272,15 +272,13 @@ def get_messages_for_anthropic(messages):
 
 def get_messages_for_gemini(messages):
     outputs = []
-    system_messages = []
     for message in messages:
         role = message.get('role')
         content = message.get('content')
         if role == 'system':
-            system_messages.append({'text': content})
+            continue
         elif role == 'user':
-            parts = system_messages + [{'text': content}] if not outputs else [{'text': content}]
-            outputs.append({'role': 'user', 'parts': parts})
+            outputs.append({'role': 'user', 'parts': [{'text': content}]})
         elif role == 'assistant':
             parts = []
             content_to_parse = content
@@ -300,10 +298,10 @@ def get_messages_for_gemini(messages):
                         'name': tc['function']['name'],
                         'args': json.loads(tc['function']['arguments'])
                     }
-                    # Gemini 3 MANDATES a thought_signature. 
-                    f_call['thought_signature'] = tc['function'].get('thought_signature') or "skip_thought_signature_validator"
-                    
-                    parts.append({'functionCall': f_call})
+                    part = {'functionCall': f_call}
+                    # Gemini 3 MANDATES a thoughtSignature. 
+                    part['thoughtSignature'] = tc['function'].get('thought_signature') or "skip_thought_signature_validator"
+                    parts.append(part)
             outputs.append({'role': 'model', 'parts': parts})
         elif role == 'tool':
             # Gemini requires the tool response to match the name of the function called
@@ -444,9 +442,9 @@ def get_chat_response(messages, tools=None):
         model_info = client.models.get(model=model)
         if getattr(model_info, 'thinking', False):
             if 'gemini-2.5' in model:
-                generation_config['thinkingConfig'] = {'thinking_budget': 1024}
+                generation_config['thinkingConfig'] = {'thinkingBudget': 1024}
             elif 'gemini-3' in model:
-                generation_config['thinkingConfig'] = {'include_thoughts': True}
+                generation_config['thinkingConfig'] = {'includeThoughts': True}
         
         tools_payload = []
         if tools:
@@ -459,10 +457,18 @@ def get_chat_response(messages, tools=None):
                 })
             tools_payload = [{'function_declarations': declarations}]
 
+        system_instruction = None
+        for msg in messages:
+            if msg.get('role') == 'system':
+                system_instruction = {'parts': [{'text': msg.get('content')}]}
+                break
+
         # Prepare raw request body
         request_body = {
             'contents': get_messages_for_gemini(messages),
         }
+        if system_instruction:
+            request_body['systemInstruction'] = system_instruction
         if generation_config:
             request_body['generationConfig'] = generation_config
         if tools_payload:
@@ -474,7 +480,13 @@ def get_chat_response(messages, tools=None):
         http_response = client._api_client.request('post', path, request_body, None)
         result = http_response.to_json_dict()
         
+        if 'error' in result:
+            raise Exception(f"Gemini API error: {result['error'].get('message', 'Unknown error')}")
+
         # Result is a dictionary mirroring the REST API response
+        if 'candidates' not in result:
+            raise Exception(f"Gemini API returned no candidates. Response: {result}")
+
         candidate = result['candidates'][0]
         if 'content' in candidate and 'parts' in candidate['content']:
             for part in candidate['content']['parts']:
@@ -494,7 +506,7 @@ def get_chat_response(messages, tools=None):
                         'function': {
                             'name': fc['name'],
                             'arguments': json.dumps(fc.get('args', {})),
-                            'thought_signature': fc.get('thought_signature')
+                            'thought_signature': part.get('thoughtSignature')
                         }
                     })
     else:
