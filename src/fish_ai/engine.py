@@ -440,58 +440,60 @@ def get_chat_response(messages, tools=None):
         client = genai.Client(**google_kwargs)
         model = get_config('model') or 'gemini-3.1-pro-preview'
 
+        # We must use the internal _api_client to bypass strict Pydantic
+        # validation that forbids 'thought_signature' in FunctionCall.
+        config_dict = {}
         model_info = client.models.get(model=model)
-        config_params = {}
-        if not getattr(model_info, 'thinking', False):
-            pass
-        elif 'gemini-2.5' in model:
-            config_params['thinking_config'] = types.ThinkingConfig(thinking_budget=1024)
-        elif 'gemini-3' in model:
-            config_params['thinking_config'] = types.ThinkingConfig(thinking_level='low')
+        if getattr(model_info, 'thinking', False):
+            if 'gemini-2.5' in model:
+                config_dict['thinking_config'] = {'thinking_budget': 1024}
+            elif 'gemini-3' in model:
+                config_dict['thinking_config'] = {'thinking_level': 'low'}
         
         if tools:
             declarations = []
             for t in tools:
-                declarations.append(types.FunctionDeclaration(
-                    name=t['function']['name'],
-                    description=t['function']['description'],
-                    parameters=t['function']['parameters']
-                ))
-            config_params['tools'] = [types.Tool(function_declarations=declarations)]
-
-        result = client.models.generate_content(
-            model=model,
-            contents=get_messages_for_gemini(messages),
-            config=types.GenerateContentConfig(**config_params)
-        )
-        
-        for part in result.candidates[0].content.parts:
-            if part.text:
-                response_message['content'] += part.text
-            if part.thought:
-                if 'thought' not in response_message:
-                    response_message['thought'] = True
-                # We store the thought text in the content with markers
-                response_message['content'] = f"<think>{part.text}</think>{response_message['content']}"
-            if part.function_call:
-                if 'tool_calls' not in response_message:
-                    response_message['tool_calls'] = []
-                
-                # Capture all fields from the function call
-                # Some fields like thought_signature might be attributes but not in model_dump()
-                fc_name = getattr(part.function_call, 'name', 'unknown')
-                fc_args = getattr(part.function_call, 'args', {})
-                fc_sig = getattr(part.function_call, 'thought_signature', None)
-                
-                response_message['tool_calls'].append({
-                    'id': 'google-' + fc_name,
-                    'type': 'function',
-                    'function': {
-                        'name': fc_name,
-                        'arguments': json.dumps(fc_args),
-                        'thought_signature': fc_sig
-                    }
+                declarations.append({
+                    'name': t['function']['name'],
+                    'description': t['function']['description'],
+                    'parameters': t['function']['parameters']
                 })
+            config_dict['tools'] = [{'function_declarations': declarations}]
+
+        # Prepare raw request body
+        request_body = {
+            'contents': get_messages_for_gemini(messages),
+            'config': config_dict
+        }
+
+        # Use the SDK's request method directly to benefit from auth/transport
+        # but avoid the strict top-level model validation.
+        path = f'models/{model}:generateContent'
+        result = client._api_client.request('post', path, request_body, None)
+        
+        # Result is a dictionary mirroring the REST API response
+        candidate = result['candidates'][0]
+        if 'content' in candidate and 'parts' in candidate['content']:
+            for part in candidate['content']['parts']:
+                if 'text' in part:
+                    response_message['content'] += part['text']
+                if 'thought' in part:
+                    if 'thought' not in response_message:
+                        response_message['thought'] = True
+                    response_message['content'] = f"<think>{part['thought']}</think>{response_message['content']}"
+                if 'function_call' in part:
+                    if 'tool_calls' not in response_message:
+                        response_message['tool_calls'] = []
+                    fc = part['function_call']
+                    response_message['tool_calls'].append({
+                        'id': 'google-' + fc['name'],
+                        'type': 'function',
+                        'function': {
+                            'name': fc['name'],
+                            'arguments': json.dumps(fc.get('args', {})),
+                            'thought_signature': fc.get('thought_signature')
+                        }
+                    })
     else:
         params = {
             'model': get_config('model') or 'gpt-4o',
