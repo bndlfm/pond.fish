@@ -305,13 +305,22 @@ def get_messages_for_gemini(messages):
             outputs.append({'role': 'model', 'parts': parts})
         elif role == 'tool':
             # Gemini requires the tool response to match the name of the function called
-            # We'll look back in history to find the name if possible
             func_name = 'unknown'
             if message.get('tool_call_id'):
-                # Some IDs for Gemini might contain the name if we prefixed them
                 if message['tool_call_id'].startswith('google-'):
                     func_name = message['tool_call_id'].replace('google-', '', 1)
             
+            # If we still don't know the name, look back in history for the last tool call
+            if func_name == 'unknown':
+                for msg in reversed(outputs):
+                    if msg['role'] == 'model':
+                        for part in msg['parts']:
+                            if 'function_call' in part:
+                                func_name = part['function_call']['name']
+                                break
+                        if func_name != 'unknown':
+                            break
+
             outputs.append({
                 'role': 'user',
                 'parts': [{
@@ -437,16 +446,14 @@ def get_chat_response(messages, tools=None):
             config_params['thinking_config'] = types.ThinkingConfig(thinking_level='low')
         
         if tools:
-            google_tools = []
+            declarations = []
             for t in tools:
-                google_tools.append(types.Tool(
-                    function_declarations=[types.FunctionDeclaration(
-                        name=t['function']['name'],
-                        description=t['function']['description'],
-                        parameters=t['function']['parameters']
-                    )]
+                declarations.append(types.FunctionDeclaration(
+                    name=t['function']['name'],
+                    description=t['function']['description'],
+                    parameters=t['function']['parameters']
                 ))
-            config_params['tools'] = google_tools
+            config_params['tools'] = [types.Tool(function_declarations=declarations)]
 
         result = client.models.generate_content(
             model=model,
@@ -460,6 +467,7 @@ def get_chat_response(messages, tools=None):
             if part.thought:
                 if 'thought' not in response_message:
                     response_message['thought'] = True
+                # We store the thought text in the content with markers
                 response_message['content'] = f"<think>{part.text}</think>{response_message['content']}"
             if part.function_call:
                 if 'tool_calls' not in response_message:
