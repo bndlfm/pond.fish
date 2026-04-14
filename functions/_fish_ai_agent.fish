@@ -45,7 +45,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
         # Run agent and process its stdout line by line for thoughts/tool calls
         set -l response_type ""
         "$_fish_ai_install_dir/bin/agent" $agent_args | while read -l line
-            switch $line
+            switch "$line"
                 case THOUGHT
                     echo "💭 Thought:"
                     set -l thought_content ""
@@ -57,10 +57,10 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                     end
                     echo -e "$thought_content" | "$_fish_ai_install_dir/bin/render"
                 case 'TOOL_CALL:*'
-                    set -l call (string replace "TOOL_CALL: " "" $line)
+                    set -l call (string replace "TOOL_CALL: " "" "$line")
                     echo "🛠️  Tool: $call"
                 case EXECUTE CONTINUE CHAT DONE ERROR
-                    set response_type $line
+                    set response_type "$line"
                 case '*'
                     # Ignore other output (like debug logs if they leak to stdout)
             end
@@ -78,13 +78,13 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
             break
         end
 
-        switch $response_type
+        switch "$response_type"
             case EXECUTE
                 echo "👉 Agent wants to execute: $action_content"
                 if test "$confirm_mode" = "ask"
                     echo -n "Allow? [y]es / [a]lways / [n]o: "
                     read -l user_choice
-                    switch $user_choice
+                    switch "$user_choice"
                         case a Always always
                             set confirm_mode "always"
                         case n No no
