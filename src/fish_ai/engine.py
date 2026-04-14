@@ -461,7 +461,6 @@ def get_chat_response(messages, tools=None):
         if tools:
             params['tools'] = tools
         if get_config('extra_body'):
-            import json
             params['extra_body'] = json.loads(get_config('extra_body'))
         completions = get_openai_client().chat.completions.create(**params)
         msg = completions.choices[0].message
