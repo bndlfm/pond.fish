@@ -17,7 +17,7 @@ for commit in $commits
     set -l commit_description (string split ': ' "$message_header" | sed -n 2p)
     set -l short_hash (git log --format=%h -n 1 $commit)
     set -l long_hash (git log --format=%H -n 1 $commit)
-    set -l commit_link "https://github.com/realiserad/fish-ai/commit/$long_hash"
+    set -l commit_link "https://github.com/bndlfm/pond/commit/$long_hash"
     set -l message "$commit_description (in commit [`#$short_hash`]($commit_link))"
     if string match --regex --quiet 'fix(\([a-z]+\))?!?' "$commit_type"
         set -a fixes (echo -n $message)
@@ -90,7 +90,7 @@ if test -n "$breaking_changes"
             awk '/^BREAKING CHANGE:/{print substr($0, 18)}')
         echo ""
         set -l short_commit_hash (git rev-parse --short "$commit_hash")
-        set -l commit_link "https://github.com/realiserad/fish-ai/commit/$commit_hash"
+        set -l commit_link "https://github.com/bndlfm/pond/commit/$commit_hash"
         echo "$breaking_change See commit [`#$short_commit_hash`]($commit_link) for more details."
     end
 end

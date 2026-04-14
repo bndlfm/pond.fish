@@ -48,12 +48,12 @@ you explain what you want to add and why, and we can talk about it first.
 ### Install `fish-ai`
 
 Make sure `git` and either [`uv`](https://github.com/astral-sh/uv), or
-[a supported version of Python](https://github.com/Realiserad/fish-ai/blob/main/.github/workflows/python-tests.yaml)
+[a supported version of Python](https://github.com/bndlfm/pond/blob/main/.github/workflows/python-tests.yaml)
 along with `pip` and `venv` is installed. Then grab the plugin using
 [`fisher`](https://github.com/jorgebucaran/fisher):
 
 ```shell
-fisher install realiserad/fish-ai
+fisher install bndlfm/pond
 ```
 
 ### Create a configuration

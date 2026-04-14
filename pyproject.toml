@@ -29,8 +29,8 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/realiserad/fish-ai"
-"Bug Tracker" = "https://github.com/realiserad/fish-ai/issues"
+"Homepage" = "https://github.com/bndlfm/pond"
+"Bug Tracker" = "https://github.com/bndlfm/pond/issues"
 
 [project.scripts]
 fix = "fish_ai.fix:fix"

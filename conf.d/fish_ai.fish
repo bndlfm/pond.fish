@@ -175,14 +175,18 @@ function _fish_ai_set_python_version
 end
 
 function _fish_ai_get_installation_url
-    set -f plugin (fisher list "fish-ai")
+    # Try to find the plugin in fisher's list (matches 'fish-ai' or 'pond')
+    set -f plugin (fisher list | grep -E 'fish-ai|pond' | head -1)
     if test "$plugin" = ""
-        # fish-ai may be installed from an unknown source, assume
-        # that the Python packages can be installed from the
-        # current working directory.
-        echo -n (pwd)
+        # If we can't find it in the list, check if we're currently in the source directory
+        if test -f pyproject.toml; and grep -q 'name = "fish_ai"' pyproject.toml
+            echo -n (pwd)
+        else
+            # Fallback to the original repository as a last resort
+            echo -n "fish-ai@git+https://github.com/bndlfm/pond"
+        end
     else if test (string sub --start 1 --length 1 "$plugin") = /
-        # Install from a local folder (most likely a git clone)
+        # Install from a local folder
         echo -n "$plugin"
     else
         # Install from GitHub
@@ -198,9 +202,9 @@ function _fish_ai_python_version_check
         echo "Consider setting the environment variable 'FISH_AI_PYTHON_VERSION' to a supported version and reinstalling the plugin. For example:"
         set_color --italics blue
         echo ""
-        echo "  fisher remove realiserad/fish-ai"
+        echo "  fisher remove bndlfm/pond"
         echo "  set -U FISH_AI_PYTHON_VERSION $_fish_ai_supported_versions[-1]"
-        echo "  fisher install realiserad/fish-ai"
+        echo "  fisher install bndlfm/pond"
         echo ""
         set_color normal
     end
