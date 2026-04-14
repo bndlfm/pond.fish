@@ -201,6 +201,7 @@ def main():
                 with open(args.action_file, 'w') as f:
                     f.write(func_args['command'])
                 sys.stdout.write("EXECUTE\n")
+                sys.stdout.flush()
             else:
                 # Execute internal tools immediately
                 debug_log(f"Executing internal tool: {func_name}")
@@ -228,6 +229,7 @@ def main():
                 
                 debug_log("Action: CONTINUE")
                 sys.stdout.write("CONTINUE\n")
+                sys.stdout.flush()
         else:
             content = response.get('content', '')
             debug_log(f"Action: CHAT/DONE. Content: {content[:50]}...")
@@ -237,11 +239,13 @@ def main():
                 sys.stdout.write("DONE\n")
             else:
                 sys.stdout.write("CHAT\n")
+            sys.stdout.flush()
     except Exception as e:
         debug_log(f"CRITICAL ERROR: {e}")
         with open(args.action_file, 'w') as f:
             f.write(str(e))
         sys.stdout.write("ERROR\n")
+        sys.stdout.flush()
         sys.exit(1)
 
 if __name__ == "__main__":
