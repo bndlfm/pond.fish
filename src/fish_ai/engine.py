@@ -300,8 +300,9 @@ def get_messages_for_gemini(messages):
                         'name': tc['function']['name'],
                         'args': json.loads(tc['function']['arguments'])
                     }
-                    if 'thought_signature' in tc['function'] and tc['function']['thought_signature']:
-                        f_call['thought_signature'] = tc['function']['thought_signature']
+                    # Gemini 3 MANDATES a thought_signature. 
+                    # If we don't have one, we use a bypass signature.
+                    f_call['thought_signature'] = tc['function'].get('thought_signature') or "skip_thought_signature_validator"
                     
                     parts.append({'function_call': f_call})
             outputs.append({'role': 'model', 'parts': parts})
@@ -322,7 +323,8 @@ def get_messages_for_gemini(messages):
                                 break
                         if func_name != 'unknown':
                             break
-
+            
+            # Ensure the response is wrapped in a way Gemini likes
             outputs.append({
                 'role': 'user',
                 'parts': [{
@@ -475,15 +477,19 @@ def get_chat_response(messages, tools=None):
                 if 'tool_calls' not in response_message:
                     response_message['tool_calls'] = []
                 
-                # Capture all fields from the function call, including thought_signature
-                fc_dict = part.function_call.model_dump()
+                # Capture all fields from the function call
+                # Some fields like thought_signature might be attributes but not in model_dump()
+                fc_name = getattr(part.function_call, 'name', 'unknown')
+                fc_args = getattr(part.function_call, 'args', {})
+                fc_sig = getattr(part.function_call, 'thought_signature', None)
+                
                 response_message['tool_calls'].append({
-                    'id': 'google-' + fc_dict['name'],
+                    'id': 'google-' + fc_name,
                     'type': 'function',
                     'function': {
-                        'name': fc_dict['name'],
-                        'arguments': json.dumps(fc_dict.get('args', {})),
-                        'thought_signature': fc_dict.get('thought_signature')
+                        'name': fc_name,
+                        'arguments': json.dumps(fc_args),
+                        'thought_signature': fc_sig
                     }
                 })
     else:
