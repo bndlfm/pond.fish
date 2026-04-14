@@ -285,6 +285,22 @@ inside `fzf`.
 If a command fails, you can immediately press **Ctrl + Space** at the command prompt
 to let `fish-ai` suggest a fix!
 
+### Agentic loop
+
+For complex tasks that require multiple steps, you can use the agentic loop mode.
+Type your goal (e.g. `# find all large log files and compress them`) and press
+**Ctrl + A**.
+
+The agent will propose a sequence of commands to achieve your goal. For each
+command, you can:
+- Press **y** to allow the command to run.
+- Press **a** to always allow commands for the rest of this session.
+- Press **n** to deny the command and let the agent try something else.
+
+The agent has access to tools for reading and writing files, listing directories,
+and executing shell commands. Any state changes (like `cd`) will persist in your
+active shell session.
+
 ## 🤸 Additional options
 
 You can tweak the behaviour of `fish-ai` by putting additional options in your
@@ -296,9 +312,9 @@ By default, `fish-ai` binds to **Ctrl + P** and **Ctrl + Space**. You
 may want to change this if there is interference with any existing key
 bindings on your system.
 
-To change the key bindings, set `keymap_1` (defaults to **Ctrl + P**)
-and `keymap_2` (defaults to **Ctrl + Space**) to the key binding escape
-sequence of the key binding you want to use.
+To change the key bindings, set `keymap_1` (defaults to **Ctrl + P**),
+`keymap_2` (defaults to **Ctrl + Space**) and `keymap_3` (defaults to **Ctrl + A**)
+to the key binding escape sequence of the key binding you want to use.
 
 To get the correct key binding escape sequence, use
 [`fish_key_reader`](https://fishshell.com/docs/current/cmds/fish_key_reader.html).
@@ -312,6 +328,9 @@ bind ctrl-p 'do something'
 $ fish_key_reader
 Press a key:
 bind ctrl-space 'do something'
+$ fish_key_reader
+Press a key:
+bind ctrl-a 'do something'
 ```
 
 Then put the following in your configuration file:
@@ -320,6 +339,7 @@ Then put the following in your configuration file:
 [fish-ai]
 keymap_1 = 'ctrl-p'
 keymap_2 = 'ctrl-space'
+keymap_3 = 'ctrl-a'
 ```
 
 Restart the shell for the changes to take effect.

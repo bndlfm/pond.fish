@@ -42,6 +42,7 @@ put_api_key = "fish_ai.put_api_key:put_api_key"
 lookup_setting = "fish_ai.config:lookup_setting"
 put_setting = "fish_ai.config:put_setting"
 refine = "fish_ai.autocomplete:refine_completions"
+agent = "fish_ai.agent:main"
 
 [tool.pytest.ini_options]
 minversion = "6.0"

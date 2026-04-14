@@ -13,6 +13,19 @@ To install `fish-ai` from a local copy, use `fisher`:
 fisher install .
 ```
 
+## Development with Nix
+
+If you have [Nix](https://nixos.org) installed with flakes enabled, you can
+quickly set up a development environment:
+
+```shell
+nix develop
+```
+
+This will provide a shell with Python, Fish, and all required tools. It
+automatically creates a `.venv` using `uv` and installs the project in
+editable mode.
+
 ## Enable debug logging
 
 Enable debug logging by putting `debug = True` in your `fish-ai.ini`.

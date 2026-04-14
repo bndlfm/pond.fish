@@ -32,6 +32,12 @@ function _fish_ai_bind --description "Create keybindings for fish-ai."
             set -g _fish_ai_keymap_2 ctrl-space
         end
     end
+    if test -n ("$_fish_ai_install_dir/bin/lookup_setting" keymap_3)
+        "$_fish_ai_install_dir/bin/lookup_setting" keymap_3 | string unescape | read -g -a _fish_ai_keymap_3
+    else
+        # Default to Ctrl+A
+        set -g _fish_ai_keymap_3 \ca
+    end
     if test "$fish_key_bindings" = fish_vi_key_bindings
         set -g _fish_ai_bind_command bind -M insert
     else
@@ -41,6 +47,8 @@ function _fish_ai_bind --description "Create keybindings for fish-ai."
     bind $_fish_ai_keymap_1 _fish_ai_codify_or_explain
     bind -M insert $_fish_ai_keymap_2 _fish_ai_autocomplete_or_fix
     bind $_fish_ai_keymap_2 _fish_ai_autocomplete_or_fix
+    bind -M insert $_fish_ai_keymap_3 _fish_ai_agent
+    bind $_fish_ai_keymap_3 _fish_ai_agent
 end
 
 if status is-interactive && test -d "$_fish_ai_install_dir"

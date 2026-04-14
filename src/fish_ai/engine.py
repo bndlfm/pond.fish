@@ -284,12 +284,17 @@ def create_system_prompt(messages):
 
 
 def get_response(messages):
+    return get_chat_response(messages).get('content')
+
+
+def get_chat_response(messages, tools=None):
     if get_config('redact') != 'False':
         messages = redact(messages)
 
     start_time = time_ns()
 
     custom_headers = get_custom_headers()
+    response_message = {'role': 'assistant', 'content': ''}
 
     if get_config('provider') == 'mistral':
         from mistralai import Mistral
@@ -306,8 +311,22 @@ def get_response(messages):
             'model': get_config('model') or 'mistral-large-latest',
             'messages': messages,
         }
+        if tools:
+            params['tools'] = tools
         completions = client.chat.complete(**params)
-        response = completions.choices[0].message.content
+        msg = completions.choices[0].message
+        response_message['content'] = msg.content
+        if hasattr(msg, 'tool_calls') and msg.tool_calls:
+            response_message['tool_calls'] = []
+            for tc in msg.tool_calls:
+                response_message['tool_calls'].append({
+                    'id': tc.id,
+                    'type': 'function',
+                    'function': {
+                        'name': tc.function.name,
+                        'arguments': tc.function.arguments
+                    }
+                })
     elif get_config('provider') == 'anthropic':
         from anthropic import Anthropic
 
@@ -322,25 +341,31 @@ def get_response(messages):
             'messages': user_messages,
             'max_tokens': 4096
         }
+        if tools:
+            anthropic_tools = []
+            for t in tools:
+                anthropic_tools.append({
+                    'name': t['function']['name'],
+                    'description': t['function']['description'],
+                    'input_schema': t['function']['parameters']
+                })
+            params['tools'] = anthropic_tools
         completions = client.messages.create(**params)
-        response = completions.content[0].text
-    elif get_config('provider') == 'groq':
-        default_groq_model = 'qwen/qwen3-32b'
-        groq_qwen_reasoning_models = ['qwen/qwen3-32b', 'qwen-qwq-32b']
-        model = get_config('model') or default_groq_model
-        params = {
-            'model': model,
-            'messages': messages,
-            'stream': False,
-            'max_completion_tokens': 4096,
-            'top_p': 0.95,
-            'n': 1,
-        }
-        # This removes the thinking tokens for the qwen-qwq-32b model:
-        if model in groq_qwen_reasoning_models:
-            params['reasoning_format'] = 'parsed'
-        completions = get_openai_client().chat.completions.create(**params)
-        response = completions.choices[0].message.content
+        
+        for item in completions.content:
+            if item.type == 'text':
+                response_message['content'] += item.text
+            elif item.type == 'tool_use':
+                if 'tool_calls' not in response_message:
+                    response_message['tool_calls'] = []
+                response_message['tool_calls'].append({
+                    'id': item.id,
+                    'type': 'function',
+                    'function': {
+                        'name': item.name,
+                        'arguments': json.dumps(item.input)
+                    }
+                })
     elif get_config('provider') == 'google':
         from google import genai
         from google.genai import types
@@ -352,27 +377,46 @@ def get_response(messages):
         model = get_config('model') or 'gemini-3.1-pro-preview'
 
         model_info = client.models.get(model=model)
+        config_params = {}
         if not getattr(model_info, 'thinking', False):
-            thinking_config = types.GenerateContentConfig()
+            pass
         elif 'gemini-2.5' in model:
-            # Gemini 2.5 uses thinking_budget (512 to 32768 tokens)
-            # Note: gemini-2.5-flash-lite supports 512 to 24576 tokens
-            thinking_config = types.ThinkingConfig(thinking_budget=1024)
+            config_params['thinking_config'] = types.ThinkingConfig(thinking_budget=1024)
         elif 'gemini-3' in model:
-            # Gemini 3 uses thinking_level (one of
-            # ['minimal', 'low', 'medium', 'high'])
-            thinking_config = types.ThinkingConfig(thinking_level='low')
-        else:
-            get_logger().debug(
-                (f"Unknown model '{model}'. Making API call without a "
-                 'thinking config. If this is unexpected, file a feature '
-                 'request at https://github.com/Realiserad/fish-ai/issues'))
-            thinking_config = None
-        response = client.models.generate_content(
+            config_params['thinking_config'] = types.ThinkingConfig(thinking_level='low')
+        
+        if tools:
+            google_tools = []
+            for t in tools:
+                google_tools.append(types.Tool(
+                    function_declarations=[types.FunctionDeclaration(
+                        name=t['function']['name'],
+                        description=t['function']['description'],
+                        parameters=t['function']['parameters']
+                    )]
+                ))
+            config_params['tools'] = google_tools
+
+        result = client.models.generate_content(
             model=model,
             contents=get_messages_for_gemini(messages),
-            config=types.GenerateContentConfig(thinking_config=thinking_config)
-        ).text
+            config=types.GenerateContentConfig(**config_params)
+        )
+        
+        for part in result.candidates[0].content.parts:
+            if part.text:
+                response_message['content'] += part.text
+            if part.function_call:
+                if 'tool_calls' not in response_message:
+                    response_message['tool_calls'] = []
+                response_message['tool_calls'].append({
+                    'id': 'google-' + part.function_call.name,
+                    'type': 'function',
+                    'function': {
+                        'name': part.function_call.name,
+                        'arguments': json.dumps(part.function_call.args)
+                    }
+                })
     else:
         params = {
             'model': get_config('model') or 'gpt-4o',
@@ -380,17 +424,34 @@ def get_response(messages):
             'stream': False,
             'n': 1,
         }
+        if tools:
+            params['tools'] = tools
         if get_config('extra_body'):
             import json
             params['extra_body'] = json.loads(get_config('extra_body'))
         completions = get_openai_client().chat.completions.create(**params)
-        response = completions.choices[0].message.content
+        msg = completions.choices[0].message
+        response_message['content'] = msg.content or ''
+        if hasattr(msg, 'tool_calls') and msg.tool_calls:
+            response_message['tool_calls'] = []
+            for tc in msg.tool_calls:
+                response_message['tool_calls'].append({
+                    'id': tc.id,
+                    'type': 'function',
+                    'function': {
+                        'name': tc.function.name,
+                        'arguments': tc.function.arguments
+                    }
+                })
 
     end_time = time_ns()
-    get_logger().debug('Response received from backend: ' + repr(response))
+    get_logger().debug('Response received from backend: ' + repr(response_message))
     get_logger().debug('Processing time: ' +
                        str(round((end_time - start_time) / 1000000)) + ' ms.')
-    return remove_thinking_tokens(response)
+    
+    response_message['content'] = remove_thinking_tokens(response_message['content'])
+    return response_message
+
 
 
 def remove_thinking_tokens(response):
