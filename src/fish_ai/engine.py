@@ -471,7 +471,8 @@ def get_chat_response(messages, tools=None):
         # Use the SDK's request method directly to benefit from auth/transport
         # but avoid the strict top-level model validation.
         path = f'models/{model}:generateContent'
-        result = client._api_client.request('post', path, request_body, None)
+        http_response = client._api_client.request('post', path, request_body, None)
+        result = http_response.json_dict
         
         # Result is a dictionary mirroring the REST API response
         candidate = result['candidates'][0]
