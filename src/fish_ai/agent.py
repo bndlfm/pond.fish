@@ -173,9 +173,22 @@ def main():
 
     # Call the engine
     try:
+        get_logger().debug('Agent calling engine with {} messages'.format(len(messages)))
         response = get_chat_response(messages, tools=TOOLS)
+        get_logger().debug('Agent received response: {}'.format(response))
     except Exception as e:
-        print(f"ERROR: {str(e)}")
+        get_logger().error('Agent engine error: {}'.format(str(e)))
+        with open(args.action_file, 'w') as f:
+            f.write(str(e))
+        print("ERROR")
+        sys.exit(1)
+
+    if not response or (not response.get('content') and not response.get('tool_calls')):
+        error_msg = "The AI returned an empty response. Check your configuration/API key."
+        get_logger().error(error_msg)
+        with open(args.action_file, 'w') as f:
+            f.write(error_msg)
+        print("ERROR")
         sys.exit(1)
 
     messages.append(response)

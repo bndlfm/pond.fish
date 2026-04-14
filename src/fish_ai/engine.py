@@ -234,41 +234,74 @@ def get_messages_for_anthropic(messages):
     user_messages = []
     system_messages = []
     for message in messages:
-        if message.get('role') == 'system':
-            system_messages.append(message.get('content'))
+        role = message.get('role')
+        content = message.get('content')
+        if role == 'system':
+            system_messages.append(content)
+        elif role == 'tool':
+            user_messages.append({
+                'role': 'user',
+                'content': [
+                    {
+                        'type': 'tool_result',
+                        'tool_use_id': message.get('tool_call_id'),
+                        'content': content
+                    }
+                ]
+            })
+        elif role == 'assistant' and message.get('tool_calls'):
+            anthropic_content = []
+            if content:
+                anthropic_content.append({'type': 'text', 'text': content})
+            for tc in message.get('tool_calls'):
+                anthropic_content.append({
+                    'type': 'tool_use',
+                    'id': tc['id'],
+                    'name': tc['function']['name'],
+                    'input': json.loads(tc['function']['arguments'])
+                })
+            user_messages.append({
+                'role': 'assistant',
+                'content': anthropic_content
+            })
         else:
             user_messages.append(message)
     return system_messages, user_messages
 
 
 def get_messages_for_gemini(messages):
-    """
-    Create message history which can be used with Gemini.
-    Google uses a different chat history format than OpenAI.
-    The message content should be put in a parts array and
-    system messages are not supported.
-    """
     outputs = []
     system_messages = []
-    other_messages = []
     for message in messages:
-        if message.get('role') == 'system':
-            system_messages.append({'text': message.get('content')})
-        else:
-            other_messages.append(message)
-
-    for i in range(len(other_messages)):
-        message = other_messages[i]
-        if message.get('role') == 'user':
+        role = message.get('role')
+        content = message.get('content')
+        if role == 'system':
+            system_messages.append({'text': content})
+        elif role == 'user':
+            parts = system_messages + [{'text': content}] if not outputs else [{'text': content}]
+            outputs.append({'role': 'user', 'parts': parts})
+        elif role == 'assistant':
+            parts = []
+            if content:
+                parts.append({'text': content})
+            if message.get('tool_calls'):
+                for tc in message.get('tool_calls'):
+                    parts.append({
+                        'function_call': {
+                            'name': tc['function']['name'],
+                            'args': json.loads(tc['function']['arguments'])
+                        }
+                    })
+            outputs.append({'role': 'model', 'parts': parts})
+        elif role == 'tool':
             outputs.append({
                 'role': 'user',
-                'parts': system_messages + [{'text': message.get('content')}]
-                if i == 0 else [{'text': message.get('content')}]
-            })
-        elif message.get('role') == 'assistant':
-            outputs.append({
-                'role': 'model',
-                'parts': [{'text': message.get('content')}]
+                'parts': [{
+                    'function_response': {
+                        'name': 'unknown',  # Gemini needs the name here
+                        'response': {'result': content}
+                    }
+                }]
             })
     return outputs
 
