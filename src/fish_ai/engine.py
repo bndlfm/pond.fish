@@ -296,12 +296,14 @@ def get_messages_for_gemini(messages):
             
             if message.get('tool_calls'):
                 for tc in message.get('tool_calls'):
-                    parts.append({
-                        'function_call': {
-                            'name': tc['function']['name'],
-                            'args': json.loads(tc['function']['arguments'])
-                        }
-                    })
+                    f_call = {
+                        'name': tc['function']['name'],
+                        'args': json.loads(tc['function']['arguments'])
+                    }
+                    if 'thought_signature' in tc['function'] and tc['function']['thought_signature']:
+                        f_call['thought_signature'] = tc['function']['thought_signature']
+                    
+                    parts.append({'function_call': f_call})
             outputs.append({'role': 'model', 'parts': parts})
         elif role == 'tool':
             # Gemini requires the tool response to match the name of the function called
@@ -472,12 +474,16 @@ def get_chat_response(messages, tools=None):
             if part.function_call:
                 if 'tool_calls' not in response_message:
                     response_message['tool_calls'] = []
+                
+                # Capture all fields from the function call, including thought_signature
+                fc_dict = part.function_call.model_dump()
                 response_message['tool_calls'].append({
-                    'id': 'google-' + part.function_call.name,
+                    'id': 'google-' + fc_dict['name'],
                     'type': 'function',
                     'function': {
-                        'name': part.function_call.name,
-                        'arguments': json.dumps(part.function_call.args)
+                        'name': fc_dict['name'],
+                        'arguments': json.dumps(fc_dict.get('args', {})),
+                        'thought_signature': fc_dict.get('thought_signature')
                     }
                 })
     else:

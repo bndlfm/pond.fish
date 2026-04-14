@@ -198,29 +198,32 @@ def main():
         if response.get('tool_calls'):
             tool_call = response['tool_calls'][0]
             func_name = tool_call['function']['name']
+
+            # Support prefixed names (e.g. default_api:list_directory)
+            base_func_name = func_name.split(':')[-1]
+
             func_args = json.loads(tool_call['function']['arguments'])
 
-            if func_name == 'shell_execute':
+            if base_func_name == 'shell_execute':
                 debug_log(f"Action: EXECUTE {func_args['command']}")
                 with open(args.action_file, 'w') as f:
                     f.write(func_args['command'])
                 sys.stdout.write("EXECUTE\n")
             else:
                 # Execute internal tools immediately
-                debug_log(f"Executing internal tool: {func_name}")
+                debug_log(f"Executing internal tool: {base_func_name} (full name: {func_name})")
                 result = ""
                 try:
-                    if func_name == 'read_file':
+                    if base_func_name == 'read_file':
                         result = read_file(func_args['path'])
-                    elif func_name == 'list_directory':
+                    elif base_func_name == 'list_directory':
                         result = list_directory(func_args['path'])
-                    elif func_name == 'write_file':
+                    elif base_func_name == 'write_file':
                         result = write_file(func_args['path'], func_args['content'])
                     else:
-                        result = f"Unknown tool: {func_name}"
+                        result = f"Unknown tool: {base_func_name}"
                 except Exception as e:
-                    result = str(e)
-                
+                    result = str(e)                
                 messages.append({
                     'role': 'tool',
                     'tool_call_id': tool_call['id'],
