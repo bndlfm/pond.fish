@@ -283,8 +283,17 @@ def get_messages_for_gemini(messages):
             outputs.append({'role': 'user', 'parts': parts})
         elif role == 'assistant':
             parts = []
-            if content:
-                parts.append({'text': content})
+            content_to_parse = content
+            if content_to_parse.startswith('<think>'):
+                import re
+                m = re.search(r'<think>(.*?)</think>(.*)', content_to_parse, re.DOTALL)
+                if m:
+                    parts.append({'thought': m.group(1).strip()})
+                    content_to_parse = m.group(2).strip()
+            
+            if content_to_parse:
+                parts.append({'text': content_to_parse})
+            
             if message.get('tool_calls'):
                 for tc in message.get('tool_calls'):
                     parts.append({
@@ -295,11 +304,19 @@ def get_messages_for_gemini(messages):
                     })
             outputs.append({'role': 'model', 'parts': parts})
         elif role == 'tool':
+            # Gemini requires the tool response to match the name of the function called
+            # We'll look back in history to find the name if possible
+            func_name = 'unknown'
+            if message.get('tool_call_id'):
+                # Some IDs for Gemini might contain the name if we prefixed them
+                if message['tool_call_id'].startswith('google-'):
+                    func_name = message['tool_call_id'].replace('google-', '', 1)
+            
             outputs.append({
                 'role': 'user',
                 'parts': [{
                     'function_response': {
-                        'name': 'unknown',  # Gemini needs the name here
+                        'name': func_name,
                         'response': {'result': content}
                     }
                 }]
@@ -440,6 +457,10 @@ def get_chat_response(messages, tools=None):
         for part in result.candidates[0].content.parts:
             if part.text:
                 response_message['content'] += part.text
+            if part.thought:
+                if 'thought' not in response_message:
+                    response_message['thought'] = True
+                response_message['content'] = f"<think>{part.text}</think>{response_message['content']}"
             if part.function_call:
                 if 'tool_calls' not in response_message:
                     response_message['tool_calls'] = []
