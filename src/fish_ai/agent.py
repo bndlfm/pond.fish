@@ -41,6 +41,77 @@ def write_file(path, content):
     except Exception as e:
         return str(e)
 
+TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "shell_execute",
+            "description": "Execute a command in the fish shell. The command will be executed in the user's active shell session.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "command": {"type": "string", "description": "The shell command to execute."}
+                },
+                "required": ["command"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "read_file",
+            "description": "Read the content of a file.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "The path to the file."}
+                },
+                "required": ["path"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_directory",
+            "description": "List the files in a directory.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "The path to the directory."}
+                },
+                "required": ["path"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "write_file",
+            "description": "Write content to a file.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "The path to the file."},
+                    "content": {"type": "string", "description": "The content to write."}
+                },
+                "required": ["path", "content"]
+            }
+        }
+    }
+]
+
+SYSTEM_PROMPT = """
+You are an autonomous shell assistant working inside a fish shell.
+Your goal is to achieve the user's request by using the provided tools.
+
+MANDATORY AUDIT RULES:
+1. ALWAYS provide a concise 'Thought' explaining YOUR CURRENT PLAN before calling any tool.
+2. Use `shell_execute` for all shell commands. They will run in the user's ACTIVE session.
+3. Use `read_file`, `list_directory`, and `write_file` for direct file system access.
+4. When the goal is met, summarize your work and end with "DONE".
+"""
+
 def main():
     try:
         from fish_ai.engine import get_chat_response, get_os, get_logger
@@ -57,7 +128,7 @@ def main():
 
         args = parser.parse_args()
         
-        # ... (TOOLS definition remains same) ...
+        full_system_prompt = SYSTEM_PROMPT + "\nOperating System: {os}\n".format(os=get_os())
 
         messages = []
         if os.path.exists(args.state) and os.path.getsize(args.state) > 0:
@@ -66,7 +137,7 @@ def main():
                 except: messages = []
         
         if not messages:
-            messages = [{'role': 'system', 'content': SYSTEM_PROMPT}]
+            messages = [{'role': 'system', 'content': full_system_prompt}]
             context_msg = "Context:\n"
             if args.cwd:
                 context_msg += f"- Current directory: {args.cwd}\n"
@@ -118,7 +189,12 @@ def main():
             if m:
                 thought = m.group(1).strip()
                 remaining_content = m.group(2).strip()
-        
+        else:
+            # If no explicit think tag, the entire content might be a thought if there's a tool call
+            if response.get('tool_calls'):
+                thought = full_content.strip()
+                remaining_content = ""
+
         # If there's a thought, report it
         if thought:
             sys.stdout.write(f"THOUGHT\n{thought}\nEND_THOUGHT\n")
