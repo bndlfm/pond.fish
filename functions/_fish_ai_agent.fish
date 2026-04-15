@@ -98,8 +98,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
             case EXECUTE
                 echo "👉 Agent wants to execute: $action_content"
                 if test "$confirm_mode" = "ask"
-                    echo -n "Allow? [y]es / [a]lways / [n]o: "
-                    read -l user_choice
+                    read -l -P "Allow? [y]es / [a]lways / [n]o [y/a/n]: " user_choice
                     switch "$user_choice"
                         case a Always always
                             set confirm_mode "always"
@@ -128,8 +127,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 echo "💬 Agent Message:"
                 cat "$action_file" | "$_fish_ai_install_dir/bin/render"
                 # If it's a chat, the user might want to respond
-                echo -n "Your response (leave empty to continue): "
-                read -l user_response
+                read -l -P "Your response (leave empty to continue): " user_response
                 if test -n "$user_response"
                     set last_output "$user_response"
                 else
