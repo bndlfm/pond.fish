@@ -72,7 +72,18 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
         set -l response_type ""
         echo -n "" > "$signal_file"
 
-        "$_fish_ai_install_dir/bin/agent" $agent_args | while read -l line
+        # Use a temporary file for the agent output to handle pipes better
+        set -l agent_out (mktemp -t fish-ai-agent-out.XXXXXX)
+        "$_fish_ai_install_dir/bin/agent" $agent_args > "$agent_out"
+        
+        # If the agent was interrupted, exit the loop
+        if test $status -ne 0
+            rm "$agent_out"
+            echo "👋 "$red"Agent session interrupted."$normal
+            break
+        end
+
+        cat "$agent_out" | while read -l line
             switch "$line"
                 case THOUGHT
                     echo "$blue---$normal"
@@ -108,6 +119,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                     echo "$line" > "$signal_file"
             end
         end
+        rm "$agent_out"
 
         set -l response_type (cat "$signal_file" | string trim)
         set -l action_content (cat "$action_file")
@@ -164,7 +176,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 set last_status 0
 
             case DONE
-                echo "✅ "$green$bold"Goal Achieved:"$normal
+                echo "✅ "$green$bold"Goal Achieved:"$normal" "
                 cat "$action_file" | "$_fish_ai_install_dir/bin/render"
                 break
             
