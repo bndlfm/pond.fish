@@ -76,8 +76,6 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
             if test -n "$action_content"
                 echo "Error context: $action_content"
             end
-            echo "Press any key to exit..."
-            read -n 1
             break
         end
 
@@ -127,8 +125,6 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
             case DONE
                 echo "✅ Goal Achieved:"
                 cat "$action_file" | "$_fish_ai_install_dir/bin/render"
-                echo "Press any key to exit..."
-                read -n 1
                 break
             
             case ERROR
