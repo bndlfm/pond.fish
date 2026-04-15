@@ -43,7 +43,6 @@ def write_file(path, content):
 
 def main():
     try:
-        debug_log("Agent script starting...")
         from fish_ai.engine import get_chat_response, get_os, get_logger
         
         parser = argparse.ArgumentParser()
@@ -132,10 +131,8 @@ def main():
         messages = []
         if os.path.exists(args.state) and os.path.getsize(args.state) > 0:
             with open(args.state, 'r') as f:
-                try:
-                    messages = json.load(f)
-                except:
-                    messages = []
+                try: messages = json.load(f)
+                except: messages = []
         
         if not messages:
             messages = [{'role': 'system', 'content': SYSTEM_PROMPT}]
@@ -164,34 +161,29 @@ def main():
                 messages.append({'role': 'user', 'content': content})
 
         response = get_chat_response(messages, tools=TOOLS)
-        if not response or (not response.get('content') and not response.get('tool_calls')):
-            raise Exception("AI returned empty response.")
+        if not response: raise Exception("AI returned empty response.")
 
         messages.append(response)
         with open(args.state, 'w') as f:
             json.dump(messages, f)
 
-        # Report Thought
-        content = response.get('content', '')
+        full_content = response.get('content', '')
+        remaining_content = full_content
         thought = ""
-        if '<think>' in content:
+        
+        # Extract thought if present
+        if '<think>' in full_content:
             import re
-            m = re.search(r'<think>(.*?)</think>(.*)', content, re.DOTALL)
+            m = re.search(r'<think>(.*?)</think>(.*)', full_content, re.DOTALL)
             if m:
                 thought = m.group(1).strip()
-                content = m.group(2).strip()
-        else:
-            thought = content.strip()
-            content = ""
-
-        if thought:
+                remaining_content = m.group(2).strip()
+        
+        # If there's a thought and we're about to do a tool call, report the thought
+        if thought and response.get('tool_calls'):
             sys.stdout.write(f"THOUGHT\n{thought}\nEND_THOUGHT\n")
-
-        if content and not response.get('tool_calls'):
-            with open(args.action_file, 'w') as f:
-                f.write(content)
-            sys.stdout.write("DONE\n" if "DONE" in content.upper() else "CHAT\n")
-
+        
+        # Process Actions
         if response.get('tool_calls'):
             tool_call = response['tool_calls'][0]
             func_name = tool_call['function']['name'].split(':')[-1]
@@ -217,11 +209,23 @@ def main():
                 with open(args.state, 'w') as f:
                     json.dump(messages, f)
                 sys.stdout.write("CONTINUE\n")
+        else:
+            # Final message (CHAT or DONE)
+            # If everything was a thought, move it back to remaining_content so it's visible as a message
+            if not remaining_content and thought:
+                remaining_content = thought
+            
+            with open(args.action_file, 'w') as f:
+                f.write(remaining_content)
+            
+            if "DONE" in full_content.upper():
+                sys.stdout.write("DONE\n")
+            else:
+                sys.stdout.write("CHAT\n")
         
         sys.stdout.flush()
     except Exception as e:
-        import traceback
-        debug_log(traceback.format_exc())
+        debug_log(str(e))
         with open(args.action_file, 'w') as f: f.write(str(e))
         sys.stdout.write("ERROR\n")
         sys.stdout.flush()
