@@ -114,7 +114,10 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
             case EXECUTE
                 echo "👉 "$yellow$bold"Agent wants to execute:"$normal" "$bold"$action_content"$normal
                 if test "$confirm_mode" = "ask"
-                    read -l -P (set_color green)"Allow? [y]es / [a]lways / [n]o [y/a/n]: "(set_color normal) user_choice
+                    echo "   ["$green$bold"y"$normal"] Allow once"
+                    echo "   ["$cyan$bold"a"$normal"] Always allow for this session"
+                    echo "   ["$red$bold"n"$normal"] Deny this command"
+                    read -l -P (set_color green)"Allow? [y/a/n]: "(set_color normal) user_choice
                     switch "$user_choice"
                         case a Always always
                             set confirm_mode "always"
