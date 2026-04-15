@@ -123,10 +123,10 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                         if test "$result_line" = "END_RESULT"
                             break
                         end
-                        set result_content "$result_content$result_line\n"
+                        set result_content "$result_content$result_line"\n
                     end
-                    if test (string length "$result_content") -gt 1000
-                        echo -e (string sub --length 1000 "$result_content")
+                    if test (string length "$result_content") -gt 250
+                        echo -e (string sub --length 250 "$result_content")
                         echo "$cyan... [Output Truncated]$normal"
                     else
                         echo -e "$result_content"
@@ -179,8 +179,8 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 # Show truncated output for audit
                 if test -n "$last_output"
                     echo "✅ "$green$bold"Output:"$normal
-                    if test (string length "$last_output") -gt 500
-                        echo (string sub --length 500 "$last_output")
+                    if test (string length "$last_output") -gt 250
+                        echo (string sub --length 250 "$last_output")
                         echo "$green... [Output Truncated]$normal"
                     else
                         echo "$last_output"
