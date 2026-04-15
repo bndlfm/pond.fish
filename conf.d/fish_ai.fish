@@ -17,9 +17,9 @@ function _fish_ai_bind --description "Create keybindings for fish-ai."
     else
         # prefer fish key names above fish 4.x
         if string match -r '^[0-3]\.' "$FISH_VERSION" &>/dev/null
-            set -g _fish_ai_keymap_1 \cp
+            set -g _fish_ai_keymap_1 \ca
         else
-            set -g _fish_ai_keymap_1 ctrl-p
+            set -g _fish_ai_keymap_1 ctrl-a
         end
     end
     if test -n ("$_fish_ai_install_dir/bin/lookup_setting" keymap_2)
@@ -35,8 +35,12 @@ function _fish_ai_bind --description "Create keybindings for fish-ai."
     if test -n ("$_fish_ai_install_dir/bin/lookup_setting" keymap_3)
         "$_fish_ai_install_dir/bin/lookup_setting" keymap_3 | string unescape | read -g -a _fish_ai_keymap_3
     else
-        # Default to Ctrl+A
-        set -g _fish_ai_keymap_3 \ca
+        # prefer fish key names above fish 4.x
+        if string match -r '^[0-3]\.' "$FISH_VERSION" &>/dev/null
+            set -g _fish_ai_keymap_3 \cx
+        else
+            set -g _fish_ai_keymap_3 ctrl-x
+        end
     end
     if test "$fish_key_bindings" = fish_vi_key_bindings
         set -g _fish_ai_bind_command bind -M insert

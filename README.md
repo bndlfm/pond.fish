@@ -263,12 +263,12 @@ an existing API key to your keyring, run `fish_ai_put_api_key`.
 
 ### Transform comments into commands and vice versa
 
-Type a comment (anything starting with `#`), and press **Ctrl + P** to turn it
+Type a comment (anything starting with `#`), and press **Ctrl + A** to turn it
 into shell command! Note that if your comment is very brief or vague, the LLM
 may decide to improve the comment instead of providing a shell command. You
-then need to press **Ctrl + P** again.
+then need to press **Ctrl + A** again.
 
-You can also run it in reverse. Type a command and press **Ctrl + P** to turn it
+You can also run it in reverse. Type a command and press **Ctrl + A** to turn it
 into a comment explaining what the command does.
 
 ### Autocomplete commands
@@ -277,7 +277,7 @@ Begin typing your command or comment and press **Ctrl + Space** to display a lis
 of completions in [`fzf`](https://github.com/junegunn/fzf) (it is bundled
 with the plugin, no need to install it separately).
 
-To refine the results, type some instructions and press **Ctrl + P**
+To refine the results, type some instructions and press **Ctrl + A**
 inside `fzf`.
 
 ### Suggest fixes
@@ -289,7 +289,7 @@ to let `fish-ai` suggest a fix!
 
 For complex tasks that require multiple steps, you can use the agentic loop mode.
 Type your goal (e.g. `# find all large log files and compress them`) and press
-**Ctrl + A**.
+**Ctrl + X**.
 
 The agent will propose a sequence of commands to achieve your goal. For each
 command, you can:
@@ -303,7 +303,7 @@ active shell session.
 
 The agent also maintains its conversation history between invocations. This allows
 you to continue a session by typing a follow-up goal or simply pressing
-**Ctrl + A** again to resume.
+**Ctrl + X** again to resume.
 
 To clear the agent's memory and start a fresh session, run:
 ```shell
@@ -317,12 +317,12 @@ You can tweak the behaviour of `fish-ai` by putting additional options in your
 
 ### Change the default key bindings
 
-By default, `fish-ai` binds to **Ctrl + P** and **Ctrl + Space**. You
+By default, `fish-ai` binds to **Ctrl + A** and **Ctrl + Space**. You
 may want to change this if there is interference with any existing key
 bindings on your system.
 
-To change the key bindings, set `keymap_1` (defaults to **Ctrl + P**),
-`keymap_2` (defaults to **Ctrl + Space**) and `keymap_3` (defaults to **Ctrl + A**)
+To change the key bindings, set `keymap_1` (defaults to **Ctrl + A**),
+`keymap_2` (defaults to **Ctrl + Space**) and `keymap_3` (defaults to **Ctrl + X**)
 to the key binding escape sequence of the key binding you want to use.
 
 To get the correct key binding escape sequence, use
@@ -333,22 +333,22 @@ For example, if you have the following output from `fish_key_reader`:
 ```shell
 $ fish_key_reader
 Press a key:
-bind ctrl-p 'do something'
+bind ctrl-a 'do something'
 $ fish_key_reader
 Press a key:
 bind ctrl-space 'do something'
 $ fish_key_reader
 Press a key:
-bind ctrl-a 'do something'
+bind ctrl-x 'do something'
 ```
 
 Then put the following in your configuration file:
 
 ```ini
 [fish-ai]
-keymap_1 = 'ctrl-p'
+keymap_1 = 'ctrl-a'
 keymap_2 = 'ctrl-space'
-keymap_3 = 'ctrl-a'
+keymap_3 = 'ctrl-x'
 ```
 
 Restart the shell for the changes to take effect.
