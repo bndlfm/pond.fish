@@ -26,12 +26,20 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
     commandline --replace ""
     commandline -f repaint
 
+    set -l cyan (set_color cyan)
+    set -l yellow (set_color yellow)
+    set -l green (set_color green)
+    set -l red (set_color red)
+    set -l blue (set_color blue)
+    set -l normal (set_color normal)
+    set -l bold (set_color --bold)
+
     if test -n "$goal"
         echo ""
-        echo "🤖 Agent received goal: $goal"
+        echo "🤖 "$bold"Agent received goal:"$normal" $goal"
     else
         echo ""
-        echo "🤖 Resuming agent session..."
+        echo "🤖 "$bold"Resuming agent session..."$normal
     end
 
     set -l last_output ""
@@ -60,8 +68,8 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
         "$_fish_ai_install_dir/bin/agent" $agent_args | while read -l line
             switch "$line"
                 case THOUGHT
-                    echo "---"
-                    echo "💭 Thought:"
+                    echo "$blue---$normal"
+                    echo "💭 "$blue$bold"Thought:"$normal
                     set -l thought_content ""
                     while read -l thought_line
                         if test "$thought_line" = "END_THOUGHT"
@@ -72,9 +80,9 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                     echo -e "$thought_content" | "$_fish_ai_install_dir/bin/render"
                 case 'TOOL_CALL:*'
                     set -l call (string replace "TOOL_CALL: " "" "$line")
-                    echo "🛠️  Action: $call"
+                    echo "🛠️  "$yellow$bold"Action:"$normal" "$yellow"$call"$normal
                 case TOOL_RESULT
-                    echo "✅ Result:"
+                    echo "📋 "$cyan$bold"Result:"$normal
                     set -l result_content ""
                     while read -l result_line
                         if test "$result_line" = "END_RESULT"
@@ -85,7 +93,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                     # Truncate large tool results for the UI
                     if test (string length "$result_content") -gt 500
                         echo (string sub --length 500 "$result_content")
-                        echo "... [Output Truncated]"
+                        echo "$cyan... [Output Truncated]$normal"
                     else
                         echo "$result_content"
                     end
@@ -98,15 +106,15 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
         set -l action_content (cat "$action_file")
 
         if test -z "$response_type"
-            echo "❌ Agent failed to respond."
+            echo "❌ "$red"Agent failed to respond."$normal
             break
         end
 
         switch "$response_type"
             case EXECUTE
-                echo "👉 Agent wants to execute: $action_content"
+                echo "👉 "$yellow$bold"Agent wants to execute:"$normal" "$bold"$action_content"$normal
                 if test "$confirm_mode" = "ask"
-                    read -l -P "Allow? [y]es / [a]lways / [n]o [y/a/n]: " user_choice
+                    read -l -P (set_color green)"Allow? [y]es / [a]lways / [n]o [y/a/n]: "(set_color normal) user_choice
                     switch "$user_choice"
                         case a Always always
                             set confirm_mode "always"
@@ -126,10 +134,10 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 set last_status $status
                 
                 # Show execution output for audit
-                echo "✅ Output:"
+                echo "✅ "$green$bold"Output:"$normal
                 if test (string length "$last_output") -gt 500
                     echo (string sub --length 500 "$last_output")
-                    echo "... [Output Truncated]"
+                    echo "$green... [Output Truncated]$normal"
                 else
                     echo "$last_output"
                 end
@@ -138,9 +146,9 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 continue
 
             case CHAT
-                echo "💬 Agent Message:"
+                echo "💬 "$blue$bold"Agent Message:"$normal
                 cat "$action_file" | "$_fish_ai_install_dir/bin/render"
-                read -l -P "Your response (leave empty to continue): " user_response
+                read -l -P (set_color blue)"Your response (leave empty to continue): "(set_color normal) user_response
                 if test -n "$user_response"
                     set last_output "$user_response"
                 else
@@ -149,17 +157,17 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 set last_status 0
 
             case DONE
-                echo "✅ Goal Achieved:"
+                echo "✅ "$green$bold"Goal Achieved:"$normal
                 cat "$action_file" | "$_fish_ai_install_dir/bin/render"
                 break
             
             case ERROR
-                echo "❌ Agent error: $action_content"
+                echo "❌ "$red$bold"Agent error:"$normal" $action_content"
                 sleep 5
                 break
             
             case '*'
-                echo "❓ Unknown response: $response_type"
+                echo "❓ "$red"Unknown response:"$normal" $response_type"
                 sleep 5
                 break
         end
