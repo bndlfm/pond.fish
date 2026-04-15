@@ -301,6 +301,15 @@ The agent has access to tools for reading and writing files, listing directories
 and executing shell commands. Any state changes (like `cd`) will persist in your
 active shell session.
 
+The agent also maintains its conversation history between invocations. This allows
+you to continue a session by typing a follow-up goal or simply pressing
+**Ctrl + A** again to resume.
+
+To clear the agent's memory and start a fresh session, run:
+```shell
+fish_ai_agent_forget
+```
+
 ## 🤸 Additional options
 
 You can tweak the behaviour of `fish-ai` by putting additional options in your

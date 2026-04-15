@@ -162,10 +162,12 @@ def main():
         if not messages:
             debug_log("Initializing new conversation")
             messages = [{'role': 'system', 'content': SYSTEM_PROMPT}]
-            if args.goal:
-                messages.append({'role': 'user', 'content': args.goal})
-            else:
-                messages.append({'role': 'user', 'content': 'Hello, how can I help you today?'})
+        
+        if args.goal:
+            debug_log(f"Adding goal to conversation: {args.goal}")
+            messages.append({'role': 'user', 'content': args.goal})
+        elif not messages or len(messages) <= 1:
+            messages.append({'role': 'user', 'content': 'Hello, how can I help you today?'})
 
         if args.rejected:
             messages.append({'role': 'user', 'content': 'I have rejected the proposed command. Please try a different approach or ask for clarification.'})

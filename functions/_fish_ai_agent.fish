@@ -1,9 +1,27 @@
 #!/usr/bin/env fish
 
+function fish_ai_agent_forget --description "Clear the current agentic loop session state."
+    set -l state_file "$_fish_ai_install_dir/agent_session.json"
+    if test -f "$state_file"
+        rm "$state_file"
+        echo "🧹 Agent session cleared."
+    else
+        echo "ℹ️  No active agent session found."
+    end
+end
+
 function _fish_ai_agent --description "Run an autonomous agent to achieve a goal."
     set -l goal (commandline --current-buffer | string collect)
-    if test -z "$goal"
-        echo "No goal provided. Please type a goal and press the agent shortcut."
+    
+    set -l state_file "$_fish_ai_install_dir/agent_session.json"
+    set -l action_file (mktemp -t fish-ai-action.XXXXXX)
+    set -l signal_file (mktemp -t fish-ai-signal.XXXXXX)
+    
+    # Check if we should resume or start fresh
+    if test -z "$goal"; and not test -f "$state_file"
+        echo "No goal provided and no active session to resume."
+        echo "Please type a goal and press the agent shortcut."
+        rm "$action_file" "$signal_file"
         return
     end
 
@@ -11,16 +29,12 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
     commandline --replace ""
     commandline -f repaint
 
-    echo ""
-    echo "🤖 Agent started with goal: $goal"
-
-    set -l state_file (mktemp -t fish-ai-state.XXXXXX)
-    set -l action_file (mktemp -t fish-ai-action.XXXXXX)
-    set -l signal_file (mktemp -t fish-ai-signal.XXXXXX)
-    
-    if test $status -ne 0
-        echo "❌ Failed to create temporary files."
-        return 1
+    if test -n "$goal"
+        echo ""
+        echo "🤖 Agent received goal: $goal"
+    else
+        echo ""
+        echo "🤖 Resuming agent session..."
     end
 
     set -l last_output ""
@@ -145,6 +159,6 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
         end
     end
 
-    rm "$state_file" "$action_file" "$signal_file"
+    rm "$action_file" "$signal_file"
     commandline -f repaint
 end
