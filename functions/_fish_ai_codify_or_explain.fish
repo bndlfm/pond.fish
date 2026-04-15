@@ -9,10 +9,18 @@ function _fish_ai_codify_or_explain --description "Transform a command into a co
 
     _fish_ai_show_progress_indicator
 
-    if string match -q "# *" (string trim "$input")
+    set -l trimmed_input (string trim "$input")
+    set -l first_word (string split -m 1 " " -- "$trimmed_input")[1]
+
+    # If it starts with a hash, it's definitely natural language
+    if string match -q "# *" "$trimmed_input"
         set -f output (_fish_ai_codify "$input" | string collect)
-    else
+    # If the first word is a known command, assume it's a command to be explained
+    else if type -q "$first_word"
         set -f output (_fish_ai_explain "$input" | string collect)
+    # Otherwise, treat it as natural language to be codified
+    else
+        set -f output (_fish_ai_codify "$input" | string collect)
     end
 
     commandline --replace "$output"

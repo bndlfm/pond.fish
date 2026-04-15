@@ -44,14 +44,16 @@ To compress long sessions, run `fish_ai_agent_compress`.
 
 ### 📝 Codify / Explain
 
-Type a goal and press **Ctrl + A** to get a shell command:
+Type a goal and press **Ctrl + A** to get a shell command. You can type the goal
+in plain text or as a comment starting with `#`:
 
 ```shell
-# list all files larger than 1MB
+list all files larger than 1MB
 # (then press Ctrl+A)
 ```
 
-Or type a command and press **Ctrl + A** to get an explanation.
+Or type a command and press **Ctrl + A** to get an explanation. `pond`
+automatically detects if your input is a command or natural language.
 
 ### 🪄 Autocomplete / Fix
 
