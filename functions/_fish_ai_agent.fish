@@ -18,12 +18,11 @@ function fish_ai_agent_compress --description "Compress the current agentic loop
     end
     
     set -l action_file (mktemp -t fish-ai-action.XXXXXX)
-    set -l signal_file (mktemp -t fish-ai-signal.XXXXXX)
     
     echo "🗜️  Compressing session history..."
     "$_fish_ai_install_dir/bin/agent" --state "$state_file" --action-file "$action_file" --compress > /dev/null
     
-    rm "$action_file" "$signal_file"
+    rm "$action_file"
     echo "✅ Compression complete."
 end
 
@@ -69,8 +68,6 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
         if test -n "$goal"
             set agent_args $agent_args --goal "$goal"
             set goal ""
-            
-            # On first call, also pass the external history and CWD
             set agent_args $agent_args --cwd (pwd)
             set -l ext_history (history | head -n 20 | string collect)
             if test -n "$ext_history"
@@ -85,7 +82,6 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
             set rejected 0
         end
 
-        # Run agent and process its signals
         set -l response_type ""
         echo -n "" > "$signal_file"
 
@@ -111,26 +107,26 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                         if test "$thought_line" = "END_THOUGHT"
                             break
                         end
-                        set thought_content "$thought_content$thought_line\n"
+                        set thought_content "$thought_content$thought_line"\n
                     end
                     echo -e "$thought_content" | "$_fish_ai_install_dir/bin/render"
                 case 'TOOL_CALL:*'
                     set -l call (string replace "TOOL_CALL: " "" "$line")
                     echo "🛠️  "$yellow$bold"Action:"$normal" "$yellow"$call"$normal
                 case TOOL_RESULT
-                    echo "📋 "$cyan$bold"Result:"$normal
+                    echo "📋 "$cyan$bold"Result:"$normal" "
                     set -l result_content ""
                     while read -l result_line
                         if test "$result_line" = "END_RESULT"
                             break
                         end
-                        set result_content "$result_content$result_line\n"
+                        set result_content "$result_content$result_line"\n
                     end
-                    if test (string length "$result_content") -gt 500
-                        echo (string sub --length 500 "$result_content")
+                    if test (string length "$result_content") -gt 1000
+                        echo -e (string sub --length 1000 "$result_content")
                         echo "$cyan... [Output Truncated]$normal"
                     else
-                        echo "$result_content"
+                        echo -e "$result_content"
                     end
                 case EXECUTE CONTINUE CHAT DONE ERROR
                     echo "$line" > "$signal_file"

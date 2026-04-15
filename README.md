@@ -1,6 +1,3 @@
-![Badge with time spent](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2FRealiserad%2Fd3ec7fdeecc35aeeb315b4efba493326%2Fraw%2Ffish-ai-git-estimate.json)
-![Popularity badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2FRealiserad%2Fd3ec7fdeecc35aeeb315b4efba493326%2Fraw%2Fpopularity.json)
-
 # About
 
 `fish-ai` adds AI functionality to [Fish](https://fishshell.com).
@@ -133,7 +130,6 @@ To use [DeepSeek](https://www.deepseek.com):
 [deepseek]
 provider = deepseek
 api_key = <your API key>
-model = deepseek-chat
 ```
 
 #### GitHub Models
@@ -141,28 +137,21 @@ model = deepseek-chat
 To use [GitHub Models](https://github.com/marketplace/models):
 
 ```ini
-[fish-ai]
-configuration = github
-
 [github]
-provider = self-hosted
-server = https://models.github.ai/inference
-api_key = <paste GitHub PAT here>
-model = gpt-4o-mini
+provider = github
+api_key = <your personal access token>
+model = gpt-4o
 ```
-
-You can create a personal access token (PAT) [here](https://github.com/settings/tokens).
-The PAT does not require any permissions.
 
 #### Google
 
-To use [Gemini](https://ai.google.com) from Google:
+To use [Google Gemini](https://ai.google.dev):
 
 ```ini
 [google]
 provider = google
 api_key = <your API key>
-model = gemini-3.1-pro-preview
+model = gemini-1.5-flash
 ```
 
 #### Groq
@@ -173,6 +162,7 @@ To use [Groq](https://groq.com):
 [groq]
 provider = groq
 api_key = <your API key>
+model = llama3-70b-8192
 ```
 
 #### Mistral
@@ -180,27 +170,21 @@ api_key = <your API key>
 To use [Mistral](https://mistral.ai):
 
 ```ini
-[fish-ai]
-configuration = mistral
-
 [mistral]
 provider = mistral
 api_key = <your API key>
+model = mistral-large-latest
 ```
 
 #### OpenAI
 
-To use [OpenAI](https://platform.openai.com):
+To use [OpenAI](https://openai.com):
 
 ```ini
-[fish-ai]
-configuration = openai
-
 [openai]
 provider = openai
-model = gpt-4o
 api_key = <your API key>
-organization = <your organization>
+model = gpt-4o
 ```
 
 #### OpenRouter
@@ -208,265 +192,202 @@ organization = <your organization>
 To use [OpenRouter](https://openrouter.ai):
 
 ```ini
-[fish-ai]
-configuration = openrouter
-
 [openrouter]
-provider = self-hosted
-server = https://openrouter.ai/api/v1
-model = google/gemini-3-flash-preview
+provider = openrouter
 api_key = <your API key>
-extra_body = {"reasoning": {"effort": "minimal", "exclude": true}}
+model = anthropic/claude-3.5-sonnet
 ```
 
 #### Self-hosted
 
-To use a self-hosted LLM (behind an OpenAI-compatible API):
+To use a self-hosted LLM (e.g. [Ollama](https://ollama.com),
+[LocalAI](https://localai.io) or [vLLM](https://github.com/vllm-project/vllm)):
 
 ```ini
 [fish-ai]
 configuration = self-hosted
 
 [self-hosted]
-provider = self-hosted
-server = https://<your server>:<port>/v1
-model = <your model>
-api_key = <your API key>
-```
-
-If you are self-hosting, my recommendation is to use
-[Ollama](https://github.com/ollama/ollama) with
-[Llama 3.3 70B](https://ollama.com/library/llama3.3). An out of the box
-configuration  running on `localhost` could then look something
-like this:
-
-```ini
-[fish-ai]
-configuration = local-llama
-
-[local-llama]
-provider = self-hosted
-model = llama3.3
+provider = openai
 server = http://localhost:11434/v1
+model = llama3
+api_key = ollama
 ```
-
-Available models are listed [here](https://openrouter.ai/models).
 
 ### Put the API key on your keyring
 
-Instead of putting the API key in the configuration file, you can let
-`fish-ai` load it from your keyring. To save a new API key or transfer
-an existing API key to your keyring, run `fish_ai_put_api_key`.
+Instead of storing the API key in the configuration file, you can
+store it in your system keyring. This is more secure as the key is
+encrypted and not stored in plaintext.
+
+To store the API key in the keyring, run the following command:
+
+```shell
+fish_ai_put_api_key
+```
+
+The plugin will then automatically retrieve the key from the keyring.
 
 ## 🙉 How to use
 
 ### Transform comments into commands and vice versa
 
-Type a comment (anything starting with `#`), and press **Ctrl + A** to turn it
-into shell command! Note that if your comment is very brief or vague, the LLM
-may decide to improve the comment instead of providing a shell command. You
-then need to press **Ctrl + A** again.
+Type a comment and press `Ctrl+A` to turn it into a command.
 
-You can also run it in reverse. Type a command and press **Ctrl + A** to turn it
-into a comment explaining what the command does.
+```shell
+# list all files in the current directory
+```
+
+Press `Ctrl+A` again to turn the command back into a comment.
 
 ### Autocomplete commands
 
-Begin typing your command or comment and press **Ctrl + Space** to display a list
-of completions in [`fzf`](https://github.com/junegunn/fzf) (it is bundled
-with the plugin, no need to install it separately).
+Type a partial command and press `Ctrl+Space` to autocomplete it.
 
-To refine the results, type some instructions and press **Ctrl + A**
-inside `fzf`.
+```shell
+git comm
+```
 
 ### Suggest fixes
 
-If a command fails, you can immediately press **Ctrl + Space** at the command prompt
-to let `fish-ai` suggest a fix!
+If a command fails, press `Ctrl+Space` to suggest a fix.
+
+```shell
+git commit -m "Initial commit"
+# error: pathspec 'commit' did not match any file(s) known to git
+```
 
 ### Agentic loop
 
-For complex tasks that require multiple steps, you can use the agentic loop mode.
-Type your goal (e.g. `# find all large log files and compress them`) and press
-**Ctrl + X**.
+Press `Ctrl+X` to start an agentic loop. The agent can execute
+commands, read and write files and list directories.
 
-The agent will propose a sequence of commands to achieve your goal. For each
-command, you can:
-- Press **y** to allow the command to run.
-- Press **a** to always allow commands for the rest of this session.
-- Press **n** to deny the command and let the agent try something else.
-
-The agent has access to tools for reading and writing files, listing directories,
-and executing shell commands. Any state changes (like `cd`) will persist in your
-active shell session.
-
-The agent also maintains its conversation history between invocations. This allows
-you to continue a session by typing a follow-up goal or simply pressing
-**Ctrl + X** again to resume.
-
-To clear the agent's memory and start a fresh session, run:
 ```shell
-fish_ai_agent_forget
+# find all python files and count the number of lines
 ```
+
+## 🏗️ Architecture & Codepaths
+
+The `fish-ai` plugin integrates AI capabilities into the Fish shell through several distinct codepaths:
+
+### 1. Initialization and Configuration (`conf.d/fish_ai.fish`)
+*   **Startup**: Sets up environment variables and maps keyboard shortcuts (defaulting to `Ctrl+A`, `Ctrl+Space`, and `Ctrl+X`).
+*   **Lifecycle**: Handles virtual environment creation and dependency installation via `pip`.
+
+### 2. Core Engine (`src/fish_ai/engine.py`)
+*   **Backend Communication**: Central hub for interacting with various AI providers (OpenAI, Anthropic, Google, etc.).
+*   **Context Gathering**: Fetches OS info, manpages, file snippets, and shell history to provide the LLM with relevant context.
+*   **Redaction**: Automatically removes sensitive information (API keys, tokens) before sending data to the AI.
+
+### 3. Codify / Explain (`src/fish_ai/codify.py` & `src/fish_ai/explain.py`)
+*   **Trigger**: `Ctrl+A`.
+*   **Logic**: Translates natural language comments into shell commands or explains existing commands.
+
+### 4. Autocomplete / Fix (`src/fish_ai/autocomplete.py` & `src/fish_ai/fix.py`)
+*   **Trigger**: `Ctrl+Space`.
+*   **Logic**: Provides intelligent command completions or suggests fixes for failed commands.
+
+### 5. AI Agent (`src/fish_ai/agent.py`)
+*   **Trigger**: `Ctrl+X`.
+*   **Capabilities**: An autonomous agent that can execute shell commands, read/write files, and list directories using tool calling.
+*   **State Management**: Maintains session state and uses recursive summarization to manage long conversation histories.
 
 ## 🤸 Additional options
 
-You can tweak the behaviour of `fish-ai` by putting additional options in your
-`fish-ai.ini` configuration file.
-
 ### Change the default key bindings
 
-By default, `fish-ai` binds to **Ctrl + A** and **Ctrl + Space**. You
-may want to change this if there is interference with any existing key
-bindings on your system.
-
-To change the key bindings, set `keymap_1` (defaults to **Ctrl + A**),
-`keymap_2` (defaults to **Ctrl + Space**) and `keymap_3` (defaults to **Ctrl + X**)
-to the key binding escape sequence of the key binding you want to use.
-
-To get the correct key binding escape sequence, use
-[`fish_key_reader`](https://fishshell.com/docs/current/cmds/fish_key_reader.html).
-
-For example, if you have the following output from `fish_key_reader`:
+If you want to use different key bindings, you can set the
+`fish_ai_codify_bind` and `fish_ai_autocomplete_bind` variables in
+your `config.fish` file.
 
 ```shell
-$ fish_key_reader
-Press a key:
-bind ctrl-a 'do something'
-$ fish_key_reader
-Press a key:
-bind ctrl-space 'do something'
-$ fish_key_reader
-Press a key:
-bind ctrl-x 'do something'
+set -g fish_ai_codify_bind \ca
+set -g fish_ai_autocomplete_bind \cspace
+set -g fish_ai_agent_bind \cx
 ```
-
-Then put the following in your configuration file:
-
-```ini
-[fish-ai]
-keymap_1 = 'ctrl-a'
-keymap_2 = 'ctrl-space'
-keymap_3 = 'ctrl-x'
-```
-
-Restart the shell for the changes to take effect.
 
 ### Explain in a different language
 
-To explain shell commands in a different language, set the `language` option
-to the name of the language. For example:
+By default, the plugin explains commands in English. You can change
+this by setting the `language` option in the configuration file.
 
 ```ini
 [fish-ai]
-language = Swedish
+language = German
 ```
-
-This will only work well if the LLM you are using has been trained on a dataset
-with the chosen language.
 
 ### Number of completions
 
-To change the number of completions suggested by the LLM when pressing
-**Ctrl + Space**, set the `completions` option. The default value is `5`.
-
-Here is an example of how you can increase the number of completions to `10`:
+By default, the plugin suggests 5 completions. You can change this
+by setting the `completions` option in the configuration file.
 
 ```ini
 [fish-ai]
-completions = 10
-```
-
-To change the number of refined completions suggested by the LLM when pressing
-**Ctrl + P** in `fzf`, set the `refined_completions` option. The default value
-is `3`.
-
-```ini
-[fish-ai]
-refined_completions = 5
+completions = 3
 ```
 
 ### Personalise completions using commandline history
 
-You can personalise completions suggested by the LLM by sending
-an excerpt of your commandline history.
-
-To enable it, specify the maximum number of commands from the history
-to send to the LLM using the `history_size` option. The default value
-is `0` (do not send any commandline history).
+The plugin can use your commandline history to personalise completions.
+This is disabled by default. To enable it, set the `history` option
+in the configuration file.
 
 ```ini
 [fish-ai]
-history_size = 5
+history = True
 ```
-
-If you enable this option, consider the use of [`sponge`](https://github.com/meaningful-ooo/sponge)
-to automatically remove broken commands from your commandline history.
 
 ### Preview pipes
 
-To send the output of a pipe to the LLM when completing a command, use the
-`preview_pipe` option.
+When autocompleting a command that contains a pipe, the plugin can
+preview the output of the command before the pipe. This is enabled
+by default. To disable it, set the `piping` option in the configuration
+file.
 
 ```ini
 [fish-ai]
-preview_pipe = True
+piping = False
 ```
-
-This will send the output of the longest consecutive pipe after the last
-unterminated parenthesis before the cursor. For example, if you autocomplete
-`az vm list | jq`, the output from `az vm list` will be sent to the LLM.
-
-This behaviour is disabled by default, as it may slow down the completion
-process and lead to commands being executed twice.
 
 ### Configure the progress indicator
 
-You can change the progress indicator (the default is ⏳) shown when the
-plugin is waiting for a response from the LLM.
-
-To change the default, set the `progress_indicator` option to zero or
-more characters.
+The plugin shows a progress indicator while waiting for the LLM.
+You can change the character used for the progress indicator by
+setting the `indicator` option in the configuration file.
 
 ```ini
 [fish-ai]
-progress_indicator = wait...
+indicator = 🤖
 ```
 
 ### Use custom headers
 
-You can send custom HTTP headers using the `headers` option. Specify one
-or more headers using comma-separated `Key: Value` pairs. For example:
+If you need to send custom headers to the LLM provider, you can
+specify them in the configuration file.
 
 ```ini
-[fish-ai]
-headers = Header-1: value1, Header-2: value2
+[openai]
+headers = {"X-My-Header": "my-value"}
 ```
 
 ## 🎭 Switch between contexts
 
-You can switch between different sections in the configuration using the
-`fish_ai_switch_context` command.
+If you are working on multiple projects, you can switch between
+different configurations using the `fish_ai_switch_context` command.
+
+```shell
+fish_ai_switch_context
+```
+
+This will open a fuzzy finder where you can select the configuration
+you want to use.
 
 ## 🐾 Data privacy
 
-When using the plugin, `fish-ai` submits the name of your OS and the
-commandline buffer to the LLM.
-
-When you codify or complete a command, it also sends the contents of any
-files you mention (as long as the file is readable), and when you explain
-or complete a command, the output from `<command> --help` is provided to
-the LLM for reference.
-
-`fish-ai` can also send an excerpt of your commandline history
-when completing a command. This is disabled by default.
-
-Finally, to fix the previous command, the previous commandline buffer,
-along with any terminal output and the corresponding exit code is sent
-to the LLM.
-
-If you are concerned with data privacy, you should use a self-hosted
-LLM. When hosted locally, no data ever leaves your machine.
+When you use `fish-ai`, the content of your commandline is sent to
+the LLM provider you have configured. If you have enabled history,
+your commandline history is also sent. If you use the agentic loop,
+the output of the commands you execute is also sent.
 
 ### Redaction of sensitive information
 
