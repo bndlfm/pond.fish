@@ -112,6 +112,49 @@ MANDATORY AUDIT RULES:
 4. When the goal is met, summarize your work and end with "DONE".
 """
 
+def compress_history(messages):
+    from fish_ai.engine import get_chat_response
+    
+    # We only compress if we have a substantial history (e.g., > 10 messages excluding system/initial context)
+    if len(messages) <= 10:
+        return messages
+
+    # Identify parts to keep: System prompt, initial goal/context, and last 4 messages
+    system_msg = messages[0]
+    initial_context = messages[1:3] if len(messages) > 3 else []
+    recent_msgs = messages[-4:]
+    to_summarize = messages[3:-4] if len(messages) > 7 else []
+
+    if not to_summarize:
+        return messages
+
+    sys.stdout.write("STATUS: Compressing long conversation history...\n")
+    sys.stdout.flush()
+
+    summary_prompt = [
+        {'role': 'system', 'content': 'You are a technical editor. Summarize the following sequence of shell actions, tool outputs, and findings into a concise list of "Achievements so far". Keep path names and key findings intact but remove verbose output.'},
+        {'role': 'user', 'content': json.dumps(to_summarize)}
+    ]
+    
+    try:
+        response = get_chat_response(summary_prompt)
+        summary_text = response.get('content', 'Conversation history was compressed.')
+        
+        compressed_msg = {
+            'role': 'user',
+            'content': f"--- SESSION COMPRESSED ---\nSummary of previous steps:\n{summary_text}\n--- END SUMMARY ---"
+        }
+        ack_msg = {
+            'role': 'assistant',
+            'content': "Understood. I have the summary of our progress so far and am ready to continue."
+        }
+        
+        new_messages = [system_msg] + initial_context + [compressed_msg, ack_msg] + recent_msgs
+        return new_messages
+    except Exception as e:
+        debug_log(f"Compression failed: {e}")
+        return messages
+
 def main():
     try:
         from fish_ai.engine import get_chat_response, get_os, get_logger
@@ -125,6 +168,7 @@ def main():
         parser.add_argument('--last-output', help='Output from the last executed command/tool')
         parser.add_argument('--last-status', type=int, help='Exit status from the last command')
         parser.add_argument('--rejected', action='store_true', help='Set if the last proposed command was rejected')
+        parser.add_argument('--compress', action='store_true', help='Force compression of history')
 
         args = parser.parse_args()
         
@@ -139,10 +183,8 @@ def main():
         if not messages:
             messages = [{'role': 'system', 'content': full_system_prompt}]
             context_msg = "Context:\n"
-            if args.cwd:
-                context_msg += f"- Current directory: {args.cwd}\n"
-            if args.external_history:
-                context_msg += f"- Recent shell history:\n{args.external_history}\n"
+            if args.cwd: context_msg += f"- Current directory: {args.cwd}\n"
+            if args.external_history: context_msg += f"- Recent shell history:\n{args.external_history}\n"
             
             if args.cwd or args.external_history:
                 messages.append({'role': 'user', 'content': context_msg})
@@ -171,6 +213,12 @@ def main():
             else:
                 messages.append({'role': 'user', 'content': content})
 
+        # Automatic or manual compression
+        if args.compress or len(messages) > 20:
+            messages = compress_history(messages)
+            with open(args.state, 'w') as f:
+                json.dump(messages, f)
+
         response = get_chat_response(messages, tools=TOOLS)
         if not response: raise Exception("AI returned empty response.")
 
@@ -182,24 +230,19 @@ def main():
         remaining_content = full_content
         thought = ""
         
-        # Extract thought if present
         if '<think>' in full_content:
             import re
             m = re.search(r'<think>(.*?)</think>(.*)', full_content, re.DOTALL)
             if m:
                 thought = m.group(1).strip()
                 remaining_content = m.group(2).strip()
-        else:
-            # If no explicit think tag, the entire content might be a thought if there's a tool call
-            if response.get('tool_calls'):
-                thought = full_content.strip()
-                remaining_content = ""
+        elif response.get('tool_calls'):
+            thought = full_content.strip()
+            remaining_content = ""
 
-        # If there's a thought, report it
         if thought:
             sys.stdout.write(f"THOUGHT\n{thought}\nEND_THOUGHT\n")
-        
-        # Process Actions
+
         if response.get('tool_calls'):
             tool_call = response['tool_calls'][0]
             func_name = tool_call['function']['name'].split(':')[-1]
@@ -226,18 +269,11 @@ def main():
                     json.dump(messages, f)
                 sys.stdout.write("CONTINUE\n")
         else:
-            # Final message (CHAT or DONE)
-            # If everything was a thought and no tool calls, treat it as message
             if not remaining_content and thought:
                 remaining_content = thought
-            
             with open(args.action_file, 'w') as f:
                 f.write(remaining_content)
-            
-            if "DONE" in full_content.upper():
-                sys.stdout.write("DONE\n")
-            else:
-                sys.stdout.write("CHAT\n")
+            sys.stdout.write("DONE\n" if "DONE" in full_content.upper() else "CHAT\n")
         
         sys.stdout.flush()
     except Exception as e:

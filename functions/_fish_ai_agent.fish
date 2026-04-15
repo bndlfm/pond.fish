@@ -10,6 +10,23 @@ function fish_ai_agent_forget --description "Clear the current agentic loop sess
     end
 end
 
+function fish_ai_agent_compress --description "Compress the current agentic loop session history."
+    set -l state_file "$_fish_ai_install_dir/agent_session.json"
+    if not test -f "$state_file"
+        echo "ℹ️  No active agent session to compress."
+        return
+    end
+    
+    set -l action_file (mktemp -t fish-ai-action.XXXXXX)
+    set -l signal_file (mktemp -t fish-ai-signal.XXXXXX)
+    
+    echo "🗜️  Compressing session history..."
+    "$_fish_ai_install_dir/bin/agent" --state "$state_file" --action-file "$action_file" --compress > /dev/null
+    
+    rm "$action_file" "$signal_file"
+    echo "✅ Compression complete."
+end
+
 function _fish_ai_agent --description "Run an autonomous agent to achieve a goal."
     set -l goal (commandline --current-buffer | string collect)
     
@@ -72,11 +89,9 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
         set -l response_type ""
         echo -n "" > "$signal_file"
 
-        # Use a temporary file for the agent output to handle pipes better
         set -l agent_out (mktemp -t fish-ai-agent-out.XXXXXX)
         "$_fish_ai_install_dir/bin/agent" $agent_args > "$agent_out"
         
-        # If the agent was interrupted, exit the loop
         if test $status -ne 0
             rm "$agent_out"
             echo "👋 "$red"Agent session interrupted."$normal
@@ -85,6 +100,9 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
 
         cat "$agent_out" | while read -l line
             switch "$line"
+                case 'STATUS:*'
+                    set -l status_msg (string replace "STATUS: " "" "$line")
+                    echo "⏳ $status_msg"
                 case THOUGHT
                     echo "$blue---$normal"
                     echo "💭 "$blue$bold"Thought:"$normal
@@ -108,7 +126,6 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                         end
                         set result_content "$result_content$result_line\n"
                     end
-                    # Truncate large tool results for the UI
                     if test (string length "$result_content") -gt 500
                         echo (string sub --length 500 "$result_content")
                         echo "$cyan... [Output Truncated]$normal"
@@ -138,7 +155,6 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                     echo "   ["$red$bold"n"$normal"] Deny this command"
                     read -l -P (set_color green)"Allow? [y/a/n]: "(set_color normal) user_choice
                     
-                    # Clear the prompt block (5 lines)
                     printf "\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K"
                     
                     switch "$user_choice"
