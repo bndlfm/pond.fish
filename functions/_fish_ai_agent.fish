@@ -41,17 +41,15 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
             set rejected 0
         end
 
-        echo "⏳ Agent is thinking..."
-        
-        # Clear previous signal
+        # Run agent and process its stdout line by line
+        set -l response_type ""
         echo -n "" > "$signal_file"
 
-        # Run agent and process its stdout line by line
-        # Use a temporary file for the final signal because loop variables are lost in pipes
         "$_fish_ai_install_dir/bin/agent" $agent_args | while read -l line
             switch "$line"
                 case THOUGHT
-                    echo "💭 Thought:"
+                    echo "---"
+                    echo "💭 Agent Thought:"
                     set -l thought_content ""
                     while read -l thought_line
                         if test "$thought_line" = "END_THOUGHT"
@@ -62,7 +60,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                     echo -e "$thought_content" | "$_fish_ai_install_dir/bin/render"
                 case 'TOOL_CALL:*'
                     set -l call (string replace "TOOL_CALL: " "" "$line")
-                    echo "🛠️  Tool: $call"
+                    echo "🛠️  Action: $call"
                 case EXECUTE CONTINUE CHAT DONE ERROR
                     echo "$line" > "$signal_file"
                 case '*'
@@ -74,7 +72,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
         set -l action_content (cat "$action_file")
 
         if test -z "$response_type"
-            echo "❌ Agent failed to respond. (Empty response type)"
+            echo "❌ Agent failed to respond."
             if test -n "$action_content"
                 echo "Error context: $action_content"
             end
@@ -114,7 +112,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 continue
 
             case CHAT
-                echo "💬 Agent:"
+                echo "💬 Agent Message:"
                 cat "$action_file" | "$_fish_ai_install_dir/bin/render"
                 # If it's a chat, the user might want to respond
                 echo -n "Your response (leave empty to continue): "
@@ -127,7 +125,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 set last_status 0
 
             case DONE
-                echo "✅ Agent finished:"
+                echo "✅ Goal Achieved:"
                 cat "$action_file" | "$_fish_ai_install_dir/bin/render"
                 echo "Press any key to exit..."
                 read -n 1

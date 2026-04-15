@@ -5,9 +5,20 @@ import sys
 import argparse
 import os
 
+def get_config_setting(name):
+    # Quick fallback to check for debug mode without full engine overhead
+    try:
+        from fish_ai.config import get_config
+        return get_config(name)
+    except:
+        return None
+
+DEBUG_ENABLED = get_config_setting('debug') == 'True'
+
 def debug_log(msg):
-    sys.stderr.write(f"DEBUG: {msg}\n")
-    sys.stderr.flush()
+    if DEBUG_ENABLED:
+        sys.stderr.write(f"DEBUG: {msg}\n")
+        sys.stderr.flush()
 
 def list_directory(path):
     try:
@@ -35,7 +46,7 @@ def main():
     try:
         debug_log("Agent script starting...")
         
-        # Delayed import of engine to avoid slow startup or import errors at top level
+        # Delayed import of engine
         from fish_ai.engine import get_chat_response, get_os, get_logger
         
         parser = argparse.ArgumentParser()
