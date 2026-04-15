@@ -11,6 +11,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
     commandline --replace ""
     commandline -f repaint
 
+    echo ""
     echo "🤖 Agent started with goal: $goal"
 
     set -l state_file (mktemp -t fish-ai-state.XXXXXX)
