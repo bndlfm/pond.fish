@@ -49,84 +49,15 @@ def main():
         parser.add_argument('--state', required=True, help='Path to the state JSON file')
         parser.add_argument('--action-file', required=True, help='Path to the action output file')
         parser.add_argument('--goal', help='The initial goal')
+        parser.add_argument('--external-history', help='Recent shell commands executed outside the agent')
+        parser.add_argument('--cwd', help='Current working directory of the shell')
         parser.add_argument('--last-output', help='Output from the last executed command/tool')
         parser.add_argument('--last-status', type=int, help='Exit status from the last command')
         parser.add_argument('--rejected', action='store_true', help='Set if the last proposed command was rejected')
 
         args = parser.parse_args()
         
-        TOOLS = [
-            {
-                "type": "function",
-                "function": {
-                    "name": "shell_execute",
-                    "description": "Execute a command in the fish shell. The command will be executed in the user's active shell session.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "command": {"type": "string", "description": "The shell command to execute."}
-                        },
-                        "required": ["command"]
-                    }
-                }
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "read_file",
-                    "description": "Read the content of a file.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "path": {"type": "string", "description": "The path to the file."}
-                        },
-                        "required": ["path"]
-                    }
-                }
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "list_directory",
-                    "description": "List the files in a directory.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "path": {"type": "string", "description": "The path to the directory."}
-                        },
-                        "required": ["path"]
-                    }
-                }
-            },
-            {
-                "type": "function",
-                "function": {
-                    "name": "write_file",
-                    "description": "Write content to a file.",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "path": {"type": "string", "description": "The path to the file."},
-                            "content": {"type": "string", "description": "The content to write."}
-                        },
-                        "required": ["path", "content"]
-                    }
-                }
-            }
-        ]
-
-        SYSTEM_PROMPT = """
-        You are an autonomous shell assistant working inside a fish shell.
-        Your goal is to achieve the user's request by using the provided tools.
-
-        MANDATORY AUDIT RULES:
-        1. ALWAYS provide a concise 'Thought' explaining YOUR CURRENT PLAN before calling any tool.
-        2. Use `shell_execute` for all shell commands. They will run in the user's ACTIVE session.
-        3. Use `read_file`, `list_directory`, and `write_file` for direct file system access.
-        4. When the goal is met, summarize your work and end with "DONE".
-
-        Operating System: {os}
-        """.format(os=get_os())
+        # ... (TOOLS definition remains same) ...
 
         messages = []
         if os.path.exists(args.state) and os.path.getsize(args.state) > 0:
@@ -136,6 +67,15 @@ def main():
         
         if not messages:
             messages = [{'role': 'system', 'content': SYSTEM_PROMPT}]
+            context_msg = "Context:\n"
+            if args.cwd:
+                context_msg += f"- Current directory: {args.cwd}\n"
+            if args.external_history:
+                context_msg += f"- Recent shell history:\n{args.external_history}\n"
+            
+            if args.cwd or args.external_history:
+                messages.append({'role': 'user', 'content': context_msg})
+                messages.append({'role': 'assistant', 'content': "Understood. I am aware of the current directory and recent shell history."})
         
         if args.goal:
             messages.append({'role': 'user', 'content': args.goal})

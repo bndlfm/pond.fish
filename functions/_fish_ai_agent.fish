@@ -52,6 +52,13 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
         if test -n "$goal"
             set agent_args $agent_args --goal "$goal"
             set goal ""
+            
+            # On first call, also pass the external history and CWD
+            set agent_args $agent_args --cwd (pwd)
+            set -l ext_history (history | head -n 20 | string collect)
+            if test -n "$ext_history"
+                set agent_args $agent_args --external-history "$ext_history"
+            end
         else
             set agent_args $agent_args --last-output "$last_output" --last-status "$last_status"
         end
