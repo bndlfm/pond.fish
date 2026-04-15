@@ -36,6 +36,8 @@ if get_config('log'):
 
 if get_config('debug') == 'True':
     logger.setLevel(logging.DEBUG)
+else:
+    logger.setLevel(logging.WARNING)
 
 
 def get_logger():
