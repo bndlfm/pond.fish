@@ -17,15 +17,12 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
     set -l action_file (mktemp -t fish-ai-action.XXXXXX)
     set -l signal_file (mktemp -t fish-ai-signal.XXXXXX)
     
-    # Check if we should resume or start fresh
     if test -z "$goal"; and not test -f "$state_file"
         echo "No goal provided and no active session to resume."
-        echo "Please type a goal and press the agent shortcut."
         rm "$action_file" "$signal_file"
         return
     end
 
-    # Clear commandline
     commandline --replace ""
     commandline -f repaint
 
@@ -56,7 +53,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
             set rejected 0
         end
 
-        # Run agent and process its stdout line by line
+        # Run agent and process its signals
         set -l response_type ""
         echo -n "" > "$signal_file"
 
@@ -64,7 +61,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
             switch "$line"
                 case THOUGHT
                     echo "---"
-                    echo "💭 Agent Thought:"
+                    echo "💭 Thought:"
                     set -l thought_content ""
                     while read -l thought_line
                         if test "$thought_line" = "END_THOUGHT"
@@ -76,10 +73,24 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 case 'TOOL_CALL:*'
                     set -l call (string replace "TOOL_CALL: " "" "$line")
                     echo "🛠️  Action: $call"
+                case TOOL_RESULT
+                    echo "✅ Result:"
+                    set -l result_content ""
+                    while read -l result_line
+                        if test "$result_line" = "END_RESULT"
+                            break
+                        end
+                        set result_content "$result_content$result_line\n"
+                    end
+                    # Truncate large tool results for the UI
+                    if test (string length "$result_content") -gt 500
+                        echo (string sub --length 500 "$result_content")
+                        echo "... [Output Truncated]"
+                    else
+                        echo "$result_content"
+                    end
                 case EXECUTE CONTINUE CHAT DONE ERROR
                     echo "$line" > "$signal_file"
-                case '*'
-                    # Ignore other output
             end
         end
 
@@ -88,9 +99,6 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
 
         if test -z "$response_type"
             echo "❌ Agent failed to respond."
-            if test -n "$action_content"
-                echo "Error context: $action_content"
-            end
             break
         end
 
@@ -113,20 +121,25 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                     end
                 end
                 
-                # Execute the command
                 echo "Executing..."
                 set last_output (eval $action_content 2>&1 | string collect)
                 set last_status $status
-                echo "Output: $last_output"
+                
+                # Show execution output for audit
+                echo "✅ Output:"
+                if test (string length "$last_output") -gt 500
+                    echo (string sub --length 500 "$last_output")
+                    echo "... [Output Truncated]"
+                else
+                    echo "$last_output"
+                end
             
             case CONTINUE
-                # Agent executed an internal tool and wants to continue immediately
                 continue
 
             case CHAT
                 echo "💬 Agent Message:"
                 cat "$action_file" | "$_fish_ai_install_dir/bin/render"
-                # If it's a chat, the user might want to respond
                 read -l -P "Your response (leave empty to continue): " user_response
                 if test -n "$user_response"
                     set last_output "$user_response"
@@ -142,16 +155,11 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
             
             case ERROR
                 echo "❌ Agent error: $action_content"
-                echo "Wait 5 seconds for debugging..."
                 sleep 5
                 break
             
             case '*'
-                echo "❓ Unknown agent response: $response_type"
-                if test -n "$action_content"
-                    echo "Content: $action_content"
-                end
-                echo "Wait 5 seconds for debugging..."
+                echo "❓ Unknown response: $response_type"
                 sleep 5
                 break
         end
