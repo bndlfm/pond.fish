@@ -107,7 +107,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                         if test "$thought_line" = "END_THOUGHT"
                             break
                         end
-                        set thought_content "$thought_content$thought_line"\n
+                        set thought_content "$thought_content$thought_line\n"
                     end
                     echo -e "$thought_content" | "$_fish_ai_install_dir/bin/render"
                 case 'TOOL_CALL:*'
@@ -120,7 +120,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                         if test "$result_line" = "END_RESULT"
                             break
                         end
-                        set result_content "$result_content$result_line"\n
+                        set result_content "$result_content$result_line\n"
                     end
                     if test (string length "$result_content") -gt 1000
                         echo -e (string sub --length 1000 "$result_content")
@@ -172,6 +172,17 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 echo "🛠️  "$yellow$bold"Agent executed:"$normal" "$bold"$action_content"$normal
                 set last_output (eval $action_content 2>&1 | string collect)
                 set last_status $status
+                
+                # Show truncated output for audit
+                if test -n "$last_output"
+                    echo "✅ "$green$bold"Output:"$normal
+                    if test (string length "$last_output") -gt 500
+                        echo (string sub --length 500 "$last_output")
+                        echo "$green... [Output Truncated]$normal"
+                    else
+                        echo "$last_output"
+                    end
+                end
             
             case CONTINUE
                 continue
