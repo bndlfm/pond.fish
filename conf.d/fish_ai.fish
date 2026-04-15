@@ -158,7 +158,26 @@ function _fish_ai_update --on-event fish_ai_update
     _fish_ai_warn_plaintext_api_keys
 end
 
+function _fish_ai_unbind --description "Remove keybindings for fish-ai."
+    if set -q _fish_ai_keymap_1
+        bind -e $_fish_ai_keymap_1
+        bind -M insert -e $_fish_ai_keymap_1 2>/dev/null
+    end
+    if set -q _fish_ai_keymap_2
+        bind -e $_fish_ai_keymap_2
+        bind -M insert -e $_fish_ai_keymap_2 2>/dev/null
+    end
+    if set -q _fish_ai_keymap_3
+        bind -e $_fish_ai_keymap_3
+        bind -M insert -e $_fish_ai_keymap_3 2>/dev/null
+    end
+    # Also explicitly unbind the old default Ctrl+P just in case
+    bind -e \cp 2>/dev/null
+    bind -M insert -e \cp 2>/dev/null
+end
+
 function _fish_ai_uninstall --on-event fish_ai_uninstall
+    _fish_ai_unbind
     if test -d "$_fish_ai_install_dir"
         echo "💣 Nuking the virtual environment..."
         rm -r "$_fish_ai_install_dir"
