@@ -112,38 +112,35 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
 
         switch "$response_type"
             case EXECUTE
-                echo "👉 "$yellow$bold"Agent wants to execute:"$normal" "$bold"$action_content"$normal
                 if test "$confirm_mode" = "ask"
+                    echo "👉 "$yellow$bold"Agent wants to execute:"$normal" "$bold"$action_content"$normal
                     echo "   ["$green$bold"y"$normal"] Allow once"
                     echo "   ["$cyan$bold"a"$normal"] Always allow for this session"
                     echo "   ["$red$bold"n"$normal"] Deny this command"
                     read -l -P (set_color green)"Allow? [y/a/n]: "(set_color normal) user_choice
+                    
+                    # Clear the prompt block (5 lines)
+                    printf "\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K"
+                    
                     switch "$user_choice"
                         case a Always always
                             set confirm_mode "always"
                         case n No no
                             set rejected 1
+                            echo "❌ "$red"Command denied."$normal
                             continue
                         case y Yes yes ""
                             # Proceed
                         case '*'
                             set rejected 1
+                            echo "❌ "$red"Invalid choice."$normal
                             continue
                     end
                 end
                 
-                echo "Executing..."
+                echo "🛠️  "$yellow$bold"Agent executed:"$normal" "$bold"$action_content"$normal
                 set last_output (eval $action_content 2>&1 | string collect)
                 set last_status $status
-                
-                # Show execution output for audit
-                echo "✅ "$green$bold"Output:"$normal
-                if test (string length "$last_output") -gt 500
-                    echo (string sub --length 500 "$last_output")
-                    echo "$green... [Output Truncated]$normal"
-                else
-                    echo "$last_output"
-                end
             
             case CONTINUE
                 continue
