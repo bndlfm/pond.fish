@@ -288,7 +288,8 @@ def get_messages_for_gemini(messages):
                 import re
                 m = re.search(r'<think>(.*?)</think>(.*)', content_to_parse, re.DOTALL)
                 if m:
-                    parts.append({'thought': m.group(1).strip()})
+                    # For Gemini 3, reasoning turns must include the thought as a part
+                    parts.append({'text': m.group(1).strip(), 'thought': True})
                     content_to_parse = m.group(2).strip()
             
             if content_to_parse:
@@ -439,7 +440,7 @@ def get_chat_response(messages, tools=None):
         model = get_config('model') or 'gemini-3.1-pro-preview'
 
         # We must use the internal _api_client to bypass strict Pydantic
-        # validation that forbids 'thought_signature' in functionCall.
+        # validation that forbids 'thoughtSignature' in functionCall.
         generation_config = {}
         model_info = client.models.get(model=model)
         if getattr(model_info, 'thinking', False):
@@ -483,8 +484,11 @@ def get_chat_response(messages, tools=None):
         result = http_response.to_json_dict()
         
         # If the response is wrapped (contains headers/body), extract the body
-        if 'body' in result and isinstance(result['body'], str):
-            result = json.loads(result['body'])
+        if 'body' in result:
+            if isinstance(result['body'], str):
+                result = json.loads(result['body'])
+            elif isinstance(result['body'], dict):
+                result = result['body']
         
         if 'error' in result:
             raise Exception(f"Gemini API error: {result['error'].get('message', 'Unknown error')}")
