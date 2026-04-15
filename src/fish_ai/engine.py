@@ -441,7 +441,11 @@ def get_chat_response(messages, tools=None):
 
         # We must use the internal _api_client to bypass strict Pydantic
         # validation that forbids 'thoughtSignature' in functionCall.
-        generation_config = {}
+        generation_config = {
+            'temperature': 0.0,
+            'maxOutputTokens': 4096,
+        }
+        
         model_info = client.models.get(model=model)
         if getattr(model_info, 'thinking', False):
             if 'gemini-2.5' in model:
@@ -469,6 +473,13 @@ def get_chat_response(messages, tools=None):
         # Prepare raw request body
         request_body = {
             'contents': get_messages_for_gemini(messages),
+            'safetySettings': [
+                {'category': 'HARM_CATEGORY_HARASSMENT', 'threshold': 'BLOCK_NONE'},
+                {'category': 'HARM_CATEGORY_HATE_SPEECH', 'threshold': 'BLOCK_NONE'},
+                {'category': 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'threshold': 'BLOCK_NONE'},
+                {'category': 'HARM_CATEGORY_DANGEROUS_CONTENT', 'threshold': 'BLOCK_NONE'},
+                {'category': 'HARM_CATEGORY_CIVIC_INTEGRITY', 'threshold': 'BLOCK_NONE'}
+            ]
         }
         if system_instruction:
             request_body['systemInstruction'] = system_instruction

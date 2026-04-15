@@ -179,8 +179,8 @@ def main():
                 thought = m.group(1).strip()
                 remaining_content = m.group(2).strip()
         
-        # If there's a thought and we're about to do a tool call, report the thought
-        if thought and response.get('tool_calls'):
+        # If there's a thought, report it
+        if thought:
             sys.stdout.write(f"THOUGHT\n{thought}\nEND_THOUGHT\n")
         
         # Process Actions
@@ -211,7 +211,7 @@ def main():
                 sys.stdout.write("CONTINUE\n")
         else:
             # Final message (CHAT or DONE)
-            # If everything was a thought, move it back to remaining_content so it's visible as a message
+            # If everything was a thought and no tool calls, treat it as message
             if not remaining_content and thought:
                 remaining_content = thought
             
