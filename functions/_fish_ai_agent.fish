@@ -27,7 +27,10 @@ function fish_ai_agent_compress --description "Compress the current agentic loop
 end
 
 function _fish_ai_agent --description "Run an autonomous agent to achieve a goal."
-    set -l goal (commandline --current-buffer | string collect)
+    set -l goal (commandline --current-buffer | string collect | string trim)
+    
+    # Strip leading '#' and trim again if present
+    set goal (string replace -r '^#\s*' '' "$goal")
     
     set -l state_file "$_fish_ai_install_dir/agent_session.json"
     set -l action_file (mktemp -t fish-ai-action.XXXXXX)
