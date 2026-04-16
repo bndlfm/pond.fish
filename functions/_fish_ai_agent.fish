@@ -67,13 +67,13 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
         echo "🤖 "$bold"Agent received goal:"$normal" $goal"
     else
         echo ""
-        echo "🤖 "$bold"Resuming agent session..."$normal
+        echo "🤖 Resuming agent session..."
     end
 
     set -l last_output ""
     set -l last_status 0
     set -l rejected 0
-    set -l confirm_mode "ask" # ask, always, deny
+    set -l confirm_mode "ask" # ask, always, turn, deny
 
     while true
         set -l agent_args --state "$state_file" --action-file "$action_file"
@@ -158,26 +158,33 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
             case EXECUTE
                 # SOPHISTICATED WHITELIST CHECK
                 set -l is_whitelisted 0
-                
-                # 1. Block any redirection, piping, or command chaining
                 if not string match -rq '[>|;&]' "$action_content"
-                    # 2. Extract first word and check whitelist
                     set -l first_word (string split -m 1 " " -- "$action_content")[1]
                     if contains "$first_word" $trimmed_whitelist
                         set is_whitelisted 1
                     end
                 end
 
+                # Check if we are in a mode that bypasses confirmation
+                set -l skip_confirm 0
+                if test "$confirm_mode" = "always"; or test "$confirm_mode" = "turn"
+                    set skip_confirm 1
+                end
+
                 if test "$confirm_mode" = "ask" -a $is_whitelisted -eq 0
                     echo "👉 "$yellow$bold"Agent wants to execute:"$normal" "$bold"$action_content"$normal
                     echo "   ["$green$bold"y"$normal"] Allow once"
+                    echo "   ["$blue$bold"t"$normal"] Allow for this turn (automatic until goal/chat)"
                     echo "   ["$cyan$bold"a"$normal"] Always allow for this session"
                     echo "   ["$red$bold"n"$normal"] Deny this command"
-                    read -l -P (set_color green)"Allow? [y/a/n]: "(set_color normal) user_choice
+                    read -l -P (set_color green)"Allow? [y/t/a/n]: "(set_color normal) user_choice
                     
-                    printf "\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K"
+                    # Clear the prompt block (6 lines)
+                    printf "\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K"
                     
                     switch "$user_choice"
+                        case t Turn turn
+                            set confirm_mode "turn"
                         case a Always always
                             set confirm_mode "always"
                         case n No no
@@ -195,6 +202,8 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 
                 if test $is_whitelisted -eq 1
                     echo "🛠️  "$yellow$bold"Agent executed (whitelisted):"$normal" "$bold"$action_content"$normal
+                else if test "$confirm_mode" = "turn"; or test "$confirm_mode" = "always"
+                    echo "🛠️  "$yellow$bold"Agent executed (authorized):"$normal" "$bold"$action_content"$normal
                 else
                     echo "🛠️  "$yellow$bold"Agent executed:"$normal" "$bold"$action_content"$normal
                 end
@@ -216,6 +225,10 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 continue
 
             case CHAT
+                # After a chat, reset 'turn' mode to 'ask'
+                if test "$confirm_mode" = "turn"
+                    set confirm_mode "ask"
+                end
                 echo "💬 "$blue$bold"Agent Message:"$normal
                 cat "$action_file" | "$_fish_ai_install_dir/bin/render"
                 read -l -P (set_color blue)"Your response (leave empty to continue): "(set_color normal) user_response
@@ -227,6 +240,10 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 set last_status 0
 
             case DONE
+                # After goal completion, reset 'turn' mode to 'ask'
+                if test "$confirm_mode" = "turn"
+                    set confirm_mode "ask"
+                end
                 echo "✅ "$green$bold"Goal Achieved:"$normal" "
                 cat "$action_file" | "$_fish_ai_install_dir/bin/render"
                 break
