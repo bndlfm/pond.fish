@@ -174,7 +174,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 if test "$confirm_mode" = "ask" -a $is_whitelisted -eq 0
                     echo "👉 "$yellow$bold"Agent wants to execute:"$normal" "$bold"$action_content"$normal
                     echo "   ["$green$bold"y"$normal"] Allow once"
-                    echo "   ["$blue$bold"t"$normal"] Allow for this turn (automatic until goal/chat)"
+                    echo "   ["$blue$bold"t"$normal"] Allow for this task (automatic until goal/chat)"
                     echo "   ["$cyan$bold"a"$normal"] Always allow for this session"
                     echo "   ["$red$bold"n"$normal"] Deny this command"
                     read -l -P (set_color green)"Allow? [y/t/a/n]: "(set_color normal) user_choice
