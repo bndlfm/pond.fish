@@ -28,8 +28,6 @@ end
 
 function _fish_ai_agent --description "Run an autonomous agent to achieve a goal."
     set -l goal (commandline --current-buffer | string collect | string trim)
-    
-    # Strip leading '#' and trim again if present
     set goal (string replace -r '^#\s*' '' "$goal")
     
     set -l state_file "$_fish_ai_install_dir/agent_session.json"
@@ -52,6 +50,13 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
     set -l blue (set_color blue)
     set -l normal (set_color normal)
     set -l bold (set_color --bold)
+
+    # Load whitelist
+    set -l whitelist ("$_fish_ai_install_dir/bin/lookup_setting" whitelist | string split ",")
+    set -l trimmed_whitelist
+    for cmd in $whitelist
+        set trimmed_whitelist $trimmed_whitelist (string trim $cmd)
+    end
 
     if test -n "$goal"
         echo ""
@@ -123,7 +128,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                         if test "$result_line" = "END_RESULT"
                             break
                         end
-                        set result_content "$result_content$result_line"\n
+                        set result_content "$result_content$result_line\n"
                     end
                     if test (string length "$result_content") -gt 250
                         echo -e (string sub --length 250 "$result_content")
@@ -147,7 +152,13 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
 
         switch "$response_type"
             case EXECUTE
-                if test "$confirm_mode" = "ask"
+                set -l first_word (string split -m 1 " " -- "$action_content")[1]
+                set -l is_whitelisted 0
+                if contains "$first_word" $trimmed_whitelist
+                    set is_whitelisted 1
+                end
+
+                if test "$confirm_mode" = "ask" -a $is_whitelisted -eq 0
                     echo "👉 "$yellow$bold"Agent wants to execute:"$normal" "$bold"$action_content"$normal
                     echo "   ["$green$bold"y"$normal"] Allow once"
                     echo "   ["$cyan$bold"a"$normal"] Always allow for this session"
@@ -172,11 +183,15 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                     end
                 end
                 
-                echo "🛠️  "$yellow$bold"Agent executed:"$normal" "$bold"$action_content"$normal
+                if test $is_whitelisted -eq 1
+                    echo "🛠️  "$yellow$bold"Agent executed (whitelisted):"$normal" "$bold"$action_content"$normal
+                else
+                    echo "🛠️  "$yellow$bold"Agent executed:"$normal" "$bold"$action_content"$normal
+                end
+                
                 set last_output (eval $action_content 2>&1 | string collect)
                 set last_status $status
                 
-                # Show truncated output for audit
                 if test -n "$last_output"
                     echo "✅ "$green$bold"Output:"$normal
                     if test (string length "$last_output") -gt 250
