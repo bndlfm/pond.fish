@@ -52,9 +52,16 @@ def get_config(key):
 
 
 def get_mcp_servers():
-    if not config.has_section('mcp'):
-        return {}
-    return {name: config.get('mcp', name) for name in config.options('mcp')}
+    servers = {}
+    for section in config.sections():
+        if section.startswith('mcp.'):
+            name = section[4:]
+            servers[name] = dict(config.items(section))
+        elif section == 'mcp':
+            # Support old style name = command entries
+            for name in config.options('mcp'):
+                servers[name] = {'command': config.get('mcp', name)}
+    return servers
 
 
 config = ConfigParser()

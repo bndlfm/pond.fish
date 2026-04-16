@@ -54,30 +54,49 @@ def web_search(query):
     except Exception as e:
         return f"Search error: {str(e)}"
 
-async def call_mcp_tool(server_name, tool_name, arguments):
-    from fish_ai.config import get_mcp_servers
-    from mcp import ClientSession, StdioServerParameters
-    from mcp.client.stdio import stdio_client
-    
-    command_str = get_mcp_servers().get(server_name)
-    if not command_str:
-        return f"Error: MCP server '{server_name}' not found."
-    
-    # Simple shlex-like split
+def get_server_params(server_config):
+    from mcp import StdioServerParameters
     import shlex
-    command_parts = shlex.split(command_str)
-    server_params = StdioServerParameters(
-        command=command_parts[0],
-        args=command_parts[1:],
+    
+    command = server_config.get('command')
+    if not command:
+        return None
+    
+    args = []
+    # Handle structured 'args' if they exist, else split the command string
+    if 'args' in server_config:
+        args = shlex.split(server_config['args'])
+    else:
+        parts = shlex.split(command)
+        command = parts[0]
+        args = parts[1:]
+        
+    return StdioServerParameters(
+        command=command,
+        args=args,
         env=os.environ.copy()
     )
+
+async def call_mcp_tool(server_name, tool_name, arguments):
+    from fish_ai.config import get_mcp_servers
+    from mcp import ClientSession
+    from mcp.client.stdio import stdio_client
+    
+    server_config = get_mcp_servers().get(server_name)
+    if not server_config:
+        return f"Error: MCP server '{server_name}' not found."
+    
+    params = get_server_params(server_config)
+    if not params:
+        return f"Error: Invalid configuration for MCP server '{server_name}'."
+    
+    timeout = float(server_config.get('timeout', 10.0))
     
     try:
-        async with stdio_client(server_params) as (read, write):
+        async with stdio_client(params) as (read, write):
             async with ClientSession(read, write) as session:
-                await session.initialize()
+                await asyncio.wait_for(session.initialize(), timeout=timeout)
                 result = await session.call_tool(tool_name, arguments)
-                # MCP tool result usually has content which is a list of parts
                 text_content = []
                 for part in result.content:
                     if hasattr(part, 'text'):
@@ -85,30 +104,28 @@ async def call_mcp_tool(server_name, tool_name, arguments):
                     else:
                         text_content.append(str(part))
                 return "\n".join(text_content)
+    except asyncio.TimeoutError:
+        return f"MCP Error: Server '{server_name}' timed out during initialization."
     except Exception as e:
         return f"MCP Error ({server_name}): {str(e)}"
 
 async def get_all_mcp_tools():
     from fish_ai.config import get_mcp_servers
-    from mcp import ClientSession, StdioServerParameters
+    from mcp import ClientSession
     from mcp.client.stdio import stdio_client
-    import shlex
     
     servers = get_mcp_servers()
     all_tools = []
     
-    for name, command_str in servers.items():
-        command_parts = shlex.split(command_str)
-        server_params = StdioServerParameters(
-            command=command_parts[0],
-            args=command_parts[1:],
-            env=os.environ.copy()
-        )
+    for name, config in servers.items():
+        params = get_server_params(config)
+        if not params: continue
+        
+        timeout = float(config.get('timeout', 10.0))
         try:
-            # We connect briefly to list tools
-            async with stdio_client(server_params) as (read, write):
+            async with stdio_client(params) as (read, write):
                 async with ClientSession(read, write) as session:
-                    await session.initialize()
+                    await asyncio.wait_for(session.initialize(), timeout=timeout)
                     tools_result = await session.list_tools()
                     for tool in tools_result.tools:
                         all_tools.append({
@@ -297,7 +314,6 @@ async def main_async():
                     sys.stdout.write(f"TOOL_CALL: web_search({func_args.get('query')})\n")
                     result = web_search(func_args['query'])
                 elif func_name.startswith('mcp__'):
-                    # MCP tool call
                     _, s_name, t_name = func_name.split('__', 2)
                     sys.stdout.write(f"TOOL_CALL: {s_name}:{t_name}(...)\n")
                     result = await call_mcp_tool(s_name, t_name, func_args)
@@ -320,8 +336,6 @@ async def main_async():
     except KeyboardInterrupt: sys.exit(130)
     except Exception as e:
         debug_log(str(e))
-        import traceback
-        debug_log(traceback.format_exc())
         with open(args.action_file, 'w') as f: f.write(str(e))
         sys.stdout.write("ERROR\n")
         sys.stdout.flush()
