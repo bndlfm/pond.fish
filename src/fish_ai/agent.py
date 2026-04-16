@@ -19,15 +19,11 @@ def debug_log(msg):
         sys.stderr.write(f"DEBUG: {msg}\n")
         sys.stderr.flush()
 
-def list_directory(path):
-    try:
-        items = os.listdir(path)
-        return "\n".join(items)
-    except Exception as e:
-        return str(e)
-
 def read_file(path):
     try:
+        if os.path.isdir(path):
+            items = os.listdir(path)
+            return f"Directory listing for {path}:\n" + "\n".join(items)
         with open(path, 'r') as f:
             return f.read()
     except Exception as e:
@@ -75,11 +71,11 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "read_file",
-            "description": "Read the entire content of a file.",
+            "description": "Read the content of a file or list the contents of a directory.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "path": {"type": "string", "description": "The path to the file."}
+                    "path": {"type": "string", "description": "The path to the file or directory."}
                 },
                 "required": ["path"]
             }
@@ -115,36 +111,21 @@ TOOLS = [
                 "required": ["path", "content"]
             }
         }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "list_directory",
-            "description": "List the files in a directory.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "path": {"type": "string", "description": "The path to the directory."}
-                },
-                "required": ["path"]
-            }
-        }
     }
 ]
 
 SYSTEM_PROMPT = """
-You are an expert coding assistant. You help users with tasks by reading files, executing commands, editing code, and writing files.
+You are an expert coding assistant. You help users with tasks by reading paths, executing commands, editing code, and writing files.
 
 Available tools:
-- read_file: Read file contents
+- read_file: Read file contents OR list directory contents
 - shell_execute: Execute shell commands
 - edit_file: Make surgical edits (old_text must match exactly)
 - write_file: Create or overwrite files
-- list_directory: Explore file structure
 
 Guidelines:
-- Use shell_execute for operations like ls, grep, find.
-- Use read_file to examine files before editing.
+- Use shell_execute for operations like grep, find, or system tasks.
+- Use read_file to explore directories or examine files before editing.
 - Use edit_file for precise changes.
 - Use write_file only for new files or complete rewrites.
 - ALWAYS provide a concise 'Thought' explaining your reasoning before any tool call.
@@ -263,7 +244,6 @@ def main():
                 
                 result = ""
                 if func_name == 'read_file': result = read_file(func_args['path'])
-                elif func_name == 'list_directory': result = list_directory(func_args['path'])
                 elif func_name == 'write_file': result = write_file(func_args['path'], func_args['content'])
                 elif func_name == 'edit_file': result = edit_file(func_args['path'], func_args['old_text'], func_args['new_text'])
                 else: result = f"Unknown tool: {func_name}"
@@ -277,7 +257,6 @@ def main():
             with open(args.action_file, 'w') as f: f.write(remaining_content)
             sys.stdout.write("DONE\n" if "DONE" in full_content.upper() else "CHAT\n")
         
-        # Report usage if available
         if 'usage' in response:
             u = response['usage']
             sys.stdout.write(f"USAGE: prompt={u.get('prompt_tokens', 0)} completion={u.get('completion_tokens', 0)} total={u.get('total_tokens', 0)}\n")
