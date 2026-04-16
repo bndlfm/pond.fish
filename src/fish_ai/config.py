@@ -57,10 +57,6 @@ def get_mcp_servers():
         if section.startswith('mcp.'):
             name = section[4:]
             servers[name] = dict(config.items(section))
-        elif section == 'mcp':
-            # Support old style name = command entries
-            for name in config.options('mcp'):
-                servers[name] = {'command': config.get('mcp', name)}
     return servers
 
 
