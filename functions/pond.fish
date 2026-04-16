@@ -14,12 +14,12 @@ function pond --description "The master command for the pond AI suite."
     set -l normal (set_color normal)
 
     switch "$subcommand"
-        case agent -a
+        case agent
             set -l action "$remaining_args[1]"
             set -l state_file "$_fish_ai_install_dir/agent_session.json"
 
             switch "$action"
-                case forget clear
+                case forget
                     if test -f "$state_file"
                         rm "$state_file"
                         echo "🧹 "$green"Agent session cleared."$normal
@@ -80,7 +80,7 @@ function pond --description "The master command for the pond AI suite."
             echo "Usage: pond <command> [arguments]"
             echo ""
             echo "$bold""Agent Commands:""$normal"
-            echo "  agent, -a <goal>    Trigger the autonomous agent"
+            echo "  agent <goal>        Trigger the autonomous agent"
             echo "  agent forget        Clear the agent's session memory"
             echo "  agent compress      Summarize long conversation history"
             echo "  agent status        Show current session statistics"
