@@ -59,7 +59,7 @@ function pond --description "The master command for the pond AI suite."
                     _fish_ai_agent
             end
 
-        case ai q query ask
+        case ai
             # General stateless query (supports piping)
             "$_fish_ai_install_dir/bin/ai" $remaining_args
 
@@ -86,7 +86,7 @@ function pond --description "The master command for the pond AI suite."
             echo "  agent status        Show current session statistics"
             echo ""
             echo "$bold""Stateless Commands:""$normal"
-            echo "  ai, q, ask <prompt> Run a one-off query (supports piping)"
+            echo "  ai <prompt>         Run a one-off query (supports piping)"
             echo "  pond <prompt>       Shortcut for 'ai' query"
             echo ""
             echo "$bold""General Commands:""$normal"
