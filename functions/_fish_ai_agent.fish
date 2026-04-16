@@ -100,7 +100,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
         set -l agent_out (mktemp -t fish-ai-agent-out.XXXXXX)
         "$_fish_ai_install_dir/bin/agent" $agent_args > "$agent_out"
         
-        # Elegant exit on interrupt during agent thinking
+        # Elegant exit on interrupt
         set -l agent_status $status
         if test $agent_status -ne 0
             rm "$agent_out" "$action_file" "$signal_file"
@@ -148,6 +148,8 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                         end
                     end
                     echo ""
+                case 'USAGE:*'
+                    # Optional usage reporting
                 case EXECUTE CONTINUE CHAT DONE ERROR
                     echo "$line" > "$signal_file"
             end
@@ -180,7 +182,6 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                     echo "   ["$red$bold"n"$normal"] Deny this command"
                     
                     if not read -l -P (set_color green)"Allow? [y/t/a/n]: "(set_color normal) user_choice
-                        # Elegant exit on interrupt during prompt
                         rm "$action_file" "$signal_file"
                         echo "👋 "$red"Agent session interrupted."$normal
                         commandline -f repaint
@@ -218,7 +219,6 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 set last_output (eval $action_content 2>&1 | string collect)
                 set last_status $status
                 
-                # Check if eval was interrupted
                 if test $last_status -eq 130
                     rm "$action_file" "$signal_file"
                     echo "👋 "$red"Agent session interrupted."$normal
@@ -226,7 +226,6 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                     return
                 end
 
-                # Show truncated output for audit
                 if test -n "$last_output"
                     echo "✅ "$green$bold"Output:"$normal
                     echo "$last_output" | head -n 4
@@ -240,32 +239,20 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 continue
 
             case CHAT
+                # After an autonomous run is done, reset 'turn' mode to 'ask'
                 if test "$confirm_mode" = "turn"
                     set confirm_mode "ask"
                 end
-                echo "💬 "$blue$bold"Agent Message:"$normal
+                echo "💬 "$blue$bold"Agent Report:"$normal
                 cat "$action_file" | "$_fish_ai_install_dir/bin/render"
-                
-                if not read -l -P (set_color blue)"Your response (leave empty to continue): "(set_color normal) user_response
-                    # Elegant exit on interrupt during chat response
-                    rm "$action_file" "$signal_file"
-                    echo "👋 "$red"Agent session interrupted."$normal
-                    commandline -f repaint
-                    return
-                end
-                
-                if test -n "$user_response"
-                    set last_output "$user_response"
-                else
-                    set last_output "Continue"
-                end
-                set last_status 0
+                # Control returns to user shell immediately
+                break
 
             case DONE
                 if test "$confirm_mode" = "turn"
                     set confirm_mode "ask"
                 end
-                echo "✅ "$green$bold"Goal Achieved:"$normal" "
+                echo "✅ "$green$bold"Final Achievement:"$normal" "
                 cat "$action_file" | "$_fish_ai_install_dir/bin/render"
                 break
             

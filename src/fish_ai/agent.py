@@ -37,23 +37,14 @@ def web_search(query):
     try:
         import httpx
         url = "https://api.search.brave.com/res/v1/web/search"
-        headers = {
-            "Accept": "application/json",
-            "X-Subscription-Token": api_key
-        }
+        headers = {"Accept": "application/json", "X-Subscription-Token": api_key}
         params = {"q": query, "count": 5}
-        
         response = httpx.get(url, headers=headers, params=params, timeout=10.0)
         response.raise_for_status()
         data = response.json()
-        
         results = []
         for result in data.get('web', {}).get('results', []):
-            title = result.get('title', 'No Title')
-            link = result.get('url', 'No Link')
-            snippet = result.get('description', 'No description available.')
-            results.append(f"Title: {title}\nURL: {link}\nSnippet: {snippet}\n")
-        
+            results.append(f"Title: {result.get('title')}\nURL: {result.get('url')}\nSnippet: {result.get('description')}\n")
         return "\n".join(results) if results else "No results found."
     except Exception as e:
         return f"Search error: {str(e)}"
@@ -66,9 +57,7 @@ TOOLS = [
             "description": "Execute a command in the fish shell.",
             "parameters": {
                 "type": "object",
-                "properties": {
-                    "command": {"type": "string", "description": "The shell command to execute."}
-                },
+                "properties": {"command": {"type": "string", "description": "The shell command to execute."}},
                 "required": ["command"]
             }
         }
@@ -80,9 +69,7 @@ TOOLS = [
             "description": "Read the content of a file or list the contents of a directory.",
             "parameters": {
                 "type": "object",
-                "properties": {
-                    "path": {"type": "string", "description": "The path to the file or directory."}
-                },
+                "properties": {"path": {"type": "string", "description": "The path to the file or directory."}},
                 "required": ["path"]
             }
         }
@@ -91,12 +78,10 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "web_search",
-            "description": "Search the web using Brave Search for up-to-date information, documentation, or troubleshooting help.",
+            "description": "Search the web using Brave Search for documentation or troubleshooting help.",
             "parameters": {
                 "type": "object",
-                "properties": {
-                    "query": {"type": "string", "description": "The search query."}
-                },
+                "properties": {"query": {"type": "string", "description": "The search query."}},
                 "required": ["query"]
             }
         }
@@ -104,19 +89,15 @@ TOOLS = [
 ]
 
 SYSTEM_PROMPT = """
-You are an expert coding assistant. You help users with tasks by reading paths, searching the web, and executing shell commands.
+You are an expert coding assistant working inside a fish shell.
+Your goal is to achieve the user's request by using the provided tools.
 
-Available tools:
-- read_path: Read file contents OR list directory contents
-- shell_execute: Execute shell commands
-- web_search: Search the web for information you don't have locally
-
-Guidelines:
-- Use web_search for finding documentation, latest versions, or fixing errors.
-- Use read_path to explore the local project.
-- Use shell_execute for ALL other system tasks (searching, editing files, etc).
-- ALWAYS provide a concise 'Thought' explaining your reasoning before any tool call.
-- Be concise. When the goal is met, end with "DONE".
+MANDATORY AUDIT RULES:
+1. ALWAYS provide a concise 'Thought' explaining YOUR CURRENT PLAN before calling any tool.
+2. Use `shell_execute` for all shell commands. They will run in the user's ACTIVE session.
+3. Use `read_path` for direct file system access.
+4. Use `web_search` for any information you don't have locally.
+5. Work through your plan turn-by-turn. Provide a final summary of your findings or actions when complete.
 """
 
 def compress_history(messages):
@@ -141,13 +122,11 @@ def compress_history(messages):
         compressed_msg = {'role': 'user', 'content': f"[SYSTEM: History Compressed]\nSummary:\n{summary_text}"}
         ack_msg = {'role': 'assistant', 'content': "Understood. Resuming with previous context."}
         return [system_msg] + initial_context + [compressed_msg, ack_msg] + recent_msgs
-    except:
-        return messages
+    except: return messages
 
 def main():
     try:
         from fish_ai.engine import get_chat_response, get_os, get_logger
-        
         parser = argparse.ArgumentParser()
         parser.add_argument('--state', required=True)
         parser.add_argument('--action-file', required=True)
@@ -160,7 +139,6 @@ def main():
         parser.add_argument('--compress', action='store_true')
 
         args = parser.parse_args()
-        
         messages = []
         if os.path.exists(args.state) and os.path.getsize(args.state) > 0:
             with open(args.state, 'r') as f:
@@ -172,22 +150,22 @@ def main():
             messages = [{'role': 'system', 'content': full_prompt}]
             context = "Context:\n"
             if args.cwd: context += f"- Current directory: {args.cwd}\n"
-            if args.external_history: context += f"- Recent history:\n{args.external_history}\n"
-            
+            if args.external_history: context += f"- Recent shell history:\n{args.external_history}\n"
             if args.cwd or args.external_history:
                 messages.append({'role': 'user', 'content': context})
-                messages.append({'role': 'assistant', 'content': "Understood. I am aware of the current directory and recent shell history."})
+                messages.append({'role': 'assistant', 'content': "Context received."})
         
         if args.goal:
             messages.append({'role': 'user', 'content': args.goal})
         elif not messages or len(messages) <= 1:
-            messages.append({'role': 'user', 'content': 'Hello, how can I help you today?'})
+            messages.append({'role': 'user', 'content': 'Ready.'})
 
         if args.rejected:
             messages.append({'role': 'user', 'content': 'I rejected that command. Please try a different way.'})
         elif args.last_output is not None:
             content = args.last_output
-            if args.last_status is not None: content = f"Exit status: {args.last_status}\n\nOutput:\n{content}"
+            if args.last_status is not None:
+                content = f"Exit status: {args.last_status}\n\nOutput:\n{content}"
             last_id = next((m['tool_calls'][0]['id'] for m in reversed(messages) if m.get('role') == 'assistant' and m.get('tool_calls')), None)
             if last_id: messages.append({'role': 'tool', 'tool_call_id': last_id, 'content': content})
             else: messages.append({'role': 'user', 'content': content})
@@ -197,7 +175,7 @@ def main():
             with open(args.state, 'w') as f: json.dump(messages, f)
 
         response = get_chat_response(messages, tools=TOOLS)
-        if not response: raise Exception("No response from AI.")
+        if not response: raise Exception("AI returned empty response.")
 
         messages.append(response)
         with open(args.state, 'w') as f: json.dump(messages, f)
@@ -229,12 +207,10 @@ def main():
             else:
                 args_str = ", ".join([f"{k}={v}" for k, v in func_args.items()])
                 sys.stdout.write(f"TOOL_CALL: {func_name}({args_str})\n")
-                
                 result = ""
                 if func_name == 'read_path': result = read_path(func_args['path'])
                 elif func_name == 'web_search': result = web_search(func_args['query'])
                 else: result = f"Unknown tool: {func_name}"
-                
                 sys.stdout.write(f"TOOL_RESULT\n{result}\nEND_RESULT\n")
                 messages.append({'role': 'tool', 'tool_call_id': tool_call['id'], 'content': result})
                 with open(args.state, 'w') as f: json.dump(messages, f)
@@ -242,15 +218,14 @@ def main():
         else:
             if not remaining_content and thought: remaining_content = thought
             with open(args.action_file, 'w') as f: f.write(remaining_content)
-            sys.stdout.write("DONE\n" if "DONE" in full_content.upper() else "CHAT\n")
+            # Use CHAT as a generic signal that tool calls are done
+            sys.stdout.write("CHAT\n")
         
         if 'usage' in response:
             u = response['usage']
             sys.stdout.write(f"USAGE: prompt={u.get('prompt_tokens', 0)} completion={u.get('completion_tokens', 0)} total={u.get('total_tokens', 0)}\n")
-
         sys.stdout.flush()
-    except KeyboardInterrupt:
-        sys.exit(130)
+    except KeyboardInterrupt: sys.exit(130)
     except Exception as e:
         debug_log(str(e))
         with open(args.action_file, 'w') as f: f.write(str(e))
@@ -263,8 +238,6 @@ def render_markdown():
         from rich.console import Console
         from rich.markdown import Markdown
         Console().print(Markdown(sys.stdin.read() or ""))
-    except:
-        sys.stdout.write(sys.stdin.read())
+    except: sys.stdout.write(sys.stdin.read())
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()
