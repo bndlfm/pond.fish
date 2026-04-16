@@ -12,7 +12,10 @@ set -g _fish_ai_config_path (test -z "$XDG_CONFIG_HOME"; and echo "$HOME/.config
 ## and restart the terminal emulator to change the keybindings from their defaults.
 ##
 function _fish_ai_bind --description "Create keybindings for fish-ai."
-    if test -n ("$_fish_ai_install_dir/bin/lookup_setting" keymap_1)
+    # Support environment variables for keybindings (useful for Nix/Home Manager)
+    if set -q FISH_AI_KEYMAP_1
+        set -g _fish_ai_keymap_1 (echo -n "$FISH_AI_KEYMAP_1" | string unescape)
+    else if test -n ("$_fish_ai_install_dir/bin/lookup_setting" keymap_1)
         "$_fish_ai_install_dir/bin/lookup_setting" keymap_1 | string unescape | read -g -a _fish_ai_keymap_1
     else
         # prefer fish key names above fish 4.x
@@ -22,7 +25,10 @@ function _fish_ai_bind --description "Create keybindings for fish-ai."
             set -g _fish_ai_keymap_1 ctrl-a
         end
     end
-    if test -n ("$_fish_ai_install_dir/bin/lookup_setting" keymap_2)
+
+    if set -q FISH_AI_KEYMAP_2
+        set -g _fish_ai_keymap_2 (echo -n "$FISH_AI_KEYMAP_2" | string unescape)
+    else if test -n ("$_fish_ai_install_dir/bin/lookup_setting" keymap_2)
         "$_fish_ai_install_dir/bin/lookup_setting" keymap_2 | string unescape | read -g -a _fish_ai_keymap_2
     else
         # prefer fish key names above fish 4.x
@@ -32,7 +38,10 @@ function _fish_ai_bind --description "Create keybindings for fish-ai."
             set -g _fish_ai_keymap_2 ctrl-space
         end
     end
-    if test -n ("$_fish_ai_install_dir/bin/lookup_setting" keymap_3)
+
+    if set -q FISH_AI_KEYMAP_3
+        set -g _fish_ai_keymap_3 (echo -n "$FISH_AI_KEYMAP_3" | string unescape)
+    else if test -n ("$_fish_ai_install_dir/bin/lookup_setting" keymap_3)
         "$_fish_ai_install_dir/bin/lookup_setting" keymap_3 | string unescape | read -g -a _fish_ai_keymap_3
     else
         # prefer fish key names above fish 4.x
