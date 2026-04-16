@@ -124,7 +124,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                     echo -e "$thought_content" | "$_fish_ai_install_dir/bin/render"
                 case 'TOOL_CALL:*'
                     set -l call (string replace "TOOL_CALL: " "" "$line")
-                    echo "🛠️  "$yellow$bold"Action:"$normal" "$yellow"$call"$normal
+                    echo "🛠️  "$yellow$bold"Action: $call"$normal
                 case TOOL_RESULT
                     echo "📋 "$cyan$bold"Result:"$normal" "
                     set -l result_content ""
