@@ -134,11 +134,11 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                         end
                         set result_content "$result_content$result_line\n"
                     end
-                    if test (string length "$result_content") -gt 250
-                        echo -e (string sub --length 250 "$result_content")
-                        echo "$cyan... [Output Truncated]$normal"
-                    else
-                        echo -e "$result_content"
+                    if test (string length "$result_content") -gt 0
+                        echo -e "$result_content" | head -n 4
+                        if test (echo -e "$result_content" | wc -l) -gt 4
+                            echo "$cyan... [Output Truncated]$normal"
+                        end
                     end
                     echo ""
                 case EXECUTE CONTINUE CHAT DONE ERROR
@@ -211,14 +211,12 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 
                 set last_output (eval $action_content 2>&1 | string collect)
                 set last_status $status
-                
+                # Show truncated output for audit
                 if test -n "$last_output"
                     echo "✅ "$green$bold"Output:"$normal
-                    if test (string length "$last_output") -gt 250
-                        echo (string sub --length 250 "$last_output")
+                    echo "$last_output" | head -n 4
+                    if test (echo "$last_output" | wc -l) -gt 4
                         echo "$green... [Output Truncated]$normal"
-                    else
-                        echo "$last_output"
                     end
                 end
                 echo ""
