@@ -142,6 +142,7 @@ def main():
         parser.add_argument('--last-status', type=int)
         parser.add_argument('--rejected', action='store_true')
         parser.add_argument('--compress', action='store_true')
+        parser.add_argument('--json', action='store_true', help='Output raw JSON response')
 
         args = parser.parse_args()
         messages = []
@@ -181,6 +182,10 @@ def main():
 
         response = get_chat_response(messages, tools=TOOLS)
         if not response: raise Exception("AI returned empty response.")
+
+        if args.json:
+            print(json.dumps(response, indent=2))
+            sys.exit(0)
 
         messages.append(response)
         with open(args.state, 'w') as f: json.dump(messages, f)

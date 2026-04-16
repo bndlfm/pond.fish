@@ -3,6 +3,19 @@
 function pond --description "The master command for the pond AI suite."
     set -l subcommand $argv[1]
     set -l remaining_args $argv[2..-1]
+    set -l json_flag 0
+    
+    if contains -- --json $argv
+        set json_flag 1
+        set -l clean_args
+        for arg in $argv
+            if test "$arg" != "--json"
+                set clean_args $clean_args "$arg"
+            end
+        end
+        set subcommand "$clean_args[1]"
+        set remaining_args $clean_args[2..-1]
+    end
 
     # Helper for colored output
     set -l blue (set_color blue)
@@ -56,12 +69,23 @@ function pond --description "The master command for the pond AI suite."
                     if test -n "$remaining_args"
                         commandline -r "$remaining_args"
                     end
-                    _fish_ai_agent
+                    
+                    if test $json_flag -eq 1
+                        set -l action_file (mktemp -t fish-ai-action.XXXXXX)
+                        "$_fish_ai_install_dir/bin/agent" --state "$state_file" --action-file "$action_file" --goal "$remaining_args" --json
+                        rm "$action_file"
+                    else
+                        _fish_ai_agent
+                    end
             end
 
         case ai
             # General stateless query (supports piping)
-            "$_fish_ai_install_dir/bin/ai" $remaining_args
+            if test $json_flag -eq 1
+                "$_fish_ai_install_dir/bin/ai" $remaining_args --json
+            else
+                "$_fish_ai_install_dir/bin/ai" $remaining_args
+            end
 
         case forget
             pond agent forget
@@ -91,7 +115,7 @@ function pond --description "The master command for the pond AI suite."
         case help -h --help
             echo "🐟 "$blue$bold"pond: AI-Powered Fish Shell Suite"$normal
             echo ""
-            echo "Usage: pond <command> [arguments]"
+            echo "Usage: pond <command> [arguments] [--json]"
             echo ""
             echo "$bold""Agent Commands:""$normal"
             echo "  agent <goal>        Trigger the autonomous agent"
@@ -104,13 +128,16 @@ function pond --description "The master command for the pond AI suite."
             echo "  ai <prompt>         Run a one-off query (supports piping)"
             echo "  pond <prompt>       Shortcut for 'ai' query"
             echo ""
+            echo "$bold""Options:""$normal"
+            echo "  --json              Output raw JSON response (ai/agent only)"
+            echo ""
             echo "$bold""General Commands:""$normal"
             echo "  version, -v         Display version information"
             echo "  help, -h            Show this help message"
             echo ""
             echo "$bold""Examples:""$normal"
-            echo "  cat logs.txt | pond ai \"find errors\""
-            echo "  pond agent \"organize my downloads folder\""
+            echo "  cat logs.txt | pond ai \"find errors\" --json"
+            echo "  pond agent \"fix the tests\" --json"
             echo "  pond \"how do I use the 'find' command?\""
 
         case '*'
@@ -118,7 +145,11 @@ function pond --description "The master command for the pond AI suite."
                 pond help
             else
                 # Default to stateless query if subcommand is unknown
-                "$_fish_ai_install_dir/bin/ai" $argv
+                if test $json_flag -eq 1
+                    "$_fish_ai_install_dir/bin/ai" $argv --json
+                else
+                    "$_fish_ai_install_dir/bin/ai" $argv
+                end
             end
     end
 end

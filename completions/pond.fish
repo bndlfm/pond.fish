@@ -13,6 +13,9 @@ complete -c pond -n "__fish_use_subcommand" -a edit -d "Edit session history in 
 complete -c pond -n "__fish_use_subcommand" -a version -d "Show version"
 complete -c pond -n "__fish_use_subcommand" -a help -d "Show help"
 
+# Options
+complete -c pond -l json -d "Output raw JSON response"
+
 # Subcommands for 'agent'
 complete -c pond -n "__fish_seen_subcommand_from agent" -a forget -d "Clear agent memory"
 complete -c pond -n "__fish_seen_subcommand_from agent" -a compress -d "Summarize agent history"

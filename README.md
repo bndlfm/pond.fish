@@ -58,13 +58,10 @@ The `pond` command provides a stateless interface for quick LLM queries, support
 
 ```shell
 # Pipe context in
-cat README.md | pond "summarize this in 3 bullet points"
+cat README.md | pond "summarize this"
 
-# Redirect output out
-pond "write a python script to ping a list of IPs" > pinger.py
-
-# Quick questions
-pond "how do I use the 'tar' command?"
+# Output raw JSON
+pond "find python entrypoints" --json
 ```
 
 Aliases like `pond ai`, `pond q`, or `pond ask` can also be used. It does not include shell history or previous agent state, making it ideal for scripting and data processing.
