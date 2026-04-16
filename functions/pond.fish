@@ -70,6 +70,20 @@ function pond --description "The master command for the pond AI suite."
         case status
             pond agent status
 
+        case edit
+            set -l state_file "$_fish_ai_install_dir/agent_session.json"
+            if not test -f "$state_file"
+                echo "ℹ️  "$yellow"No active agent session to edit."$normal
+                return
+            end
+            if set -q VISUAL
+                $VISUAL "$state_file"
+            else if set -q EDITOR
+                $EDITOR "$state_file"
+            else
+                vi "$state_file"
+            end
+
         case version -v --version
             set -l version "2.11.1" # Hardcoded for speed, matches pyproject.toml
             echo "🐟 "$bold"pond"$normal" v$version"
@@ -84,6 +98,7 @@ function pond --description "The master command for the pond AI suite."
             echo "  agent forget        Clear the agent's session memory"
             echo "  agent compress      Summarize long conversation history"
             echo "  agent status        Show current session statistics"
+            echo "  edit                Open session history in your editor"
             echo ""
             echo "$bold""Stateless Commands:""$normal"
             echo "  ai <prompt>         Run a one-off query (supports piping)"

@@ -9,6 +9,7 @@ complete -c pond -n "__fish_use_subcommand" -a ai -d "Stateless query (supports 
 complete -c pond -n "__fish_use_subcommand" -a forget -d "Clear agent memory"
 complete -c pond -n "__fish_use_subcommand" -a compress -d "Summarize agent history"
 complete -c pond -n "__fish_use_subcommand" -a status -d "Show session stats"
+complete -c pond -n "__fish_use_subcommand" -a edit -d "Edit session history in editor"
 complete -c pond -n "__fish_use_subcommand" -a version -d "Show version"
 complete -c pond -n "__fish_use_subcommand" -a help -d "Show help"
 
