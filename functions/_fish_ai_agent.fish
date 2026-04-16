@@ -100,10 +100,12 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
         set -l agent_out (mktemp -t fish-ai-agent-out.XXXXXX)
         "$_fish_ai_install_dir/bin/agent" $agent_args > "$agent_out"
         
+        # Elegant exit on interrupt during agent thinking
         if test $status -ne 0
-            rm "$agent_out"
+            rm "$agent_out" "$action_file" "$signal_file"
             echo "👋 "$red"Agent session interrupted."$normal
-            break
+            commandline -f repaint
+            return
         end
 
         cat "$agent_out" | while read -l line
@@ -157,51 +159,54 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
 
         switch "$response_type"
             case EXECUTE
-                # SOPHISTICATED WHITELIST CHECK
-                set -l is_whitelisted 0
-                if not string match -rq '[>|;&]' "$action_content"
-                    set -l first_word (string split -m 1 " " -- "$action_content")[1]
-                    if contains "$first_word" $trimmed_whitelist
-                        set is_whitelisted 1
+                if test "$confirm_mode" = "ask" -a (not contains (string split -m 1 " " -- "$action_content")[1] $trimmed_whitelist)
+                    # Block redirections etc from auto-execution
+                    if string match -rq '[>|;&]' "$action_content"
+                         set is_whitelisted 0
+                    else
+                         set is_whitelisted 1
                     end
-                end
-
-                # Check if we are in a mode that bypasses confirmation
-                set -l skip_confirm 0
-                if test "$confirm_mode" = "always"; or test "$confirm_mode" = "turn"
-                    set skip_confirm 1
-                end
-
-                if test "$confirm_mode" = "ask" -a $is_whitelisted -eq 0
-                    echo "👉 "$yellow$bold"Agent wants to execute:"$normal" "$bold"$action_content"$normal
-                    echo "   ["$green$bold"y"$normal"] Allow once"
-                    echo "   ["$blue$bold"t"$normal"] Allow for this task (automatic until goal/chat)"
-                    echo "   ["$cyan$bold"a"$normal"] Always allow for this session"
-                    echo "   ["$red$bold"n"$normal"] Deny this command"
-                    read -l -P (set_color green)"Allow? [y/t/a/n]: "(set_color normal) user_choice
                     
-                    # Clear the prompt block (6 lines)
-                    printf "\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K"
-                    
-                    switch "$user_choice"
-                        case t Turn turn
-                            set confirm_mode "turn"
-                        case a Always always
-                            set confirm_mode "always"
-                        case n No no
-                            set rejected 1
-                            echo "❌ "$red"Command denied."$normal
-                            continue
-                        case y Yes yes ""
-                            # Proceed
-                        case '*'
-                            set rejected 1
-                            echo "❌ "$red"Invalid choice."$normal
-                            continue
+                    # If whitelisted AND safe, skip prompt
+                    if test $is_whitelisted -eq 0
+                        echo "👉 "$yellow$bold"Agent wants to execute:"$normal" "$bold"$action_content"$normal
+                        echo "   ["$green$bold"y"$normal"] Allow once"
+                        echo "   ["$blue$bold"t"$normal"] Allow for this task (automatic until goal/chat)"
+                        echo "   ["$cyan$bold"a"$normal"] Always allow for this session"
+                        echo "   ["$red$bold"n"$normal"] Deny this command"
+                        
+                        if not read -l -P (set_color green)"Allow? [y/t/a/n]: "(set_color normal) user_choice
+                            # Elegant exit on interrupt during prompt
+                            rm "$action_file" "$signal_file"
+                            echo "👋 "$red"Agent session interrupted."$normal
+                            commandline -f repaint
+                            return
+                        end
+                        
+                        printf "\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K"
+                        
+                        switch "$user_choice"
+                            case t Turn turn
+                                set confirm_mode "turn"
+                            case a Always always
+                                set confirm_mode "always"
+                            case n No no
+                                set rejected 1
+                                echo "❌ "$red"Command denied."$normal
+                                continue
+                            case y Yes yes ""
+                                # Proceed
+                            case '*'
+                                set rejected 1
+                                echo "❌ "$red"Invalid choice."$normal
+                                continue
+                        end
                     end
                 end
                 
-                if test $is_whitelisted -eq 1
+                # Check whitelist again for logging consistency
+                set -l first_word (string split -m 1 " " -- "$action_content")[1]
+                if contains "$first_word" $trimmed_whitelist; and not string match -rq '[>|;&]' "$action_content"
                     echo "🛠️  "$yellow$bold"Agent executed (whitelisted):"$normal" "$bold"$action_content"$normal
                 else if test "$confirm_mode" = "turn"; or test "$confirm_mode" = "always"
                     echo "🛠️  "$yellow$bold"Agent executed (authorized):"$normal" "$bold"$action_content"$normal
@@ -225,13 +230,20 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 continue
 
             case CHAT
-                # After a chat, reset 'turn' mode to 'ask'
                 if test "$confirm_mode" = "turn"
                     set confirm_mode "ask"
                 end
                 echo "💬 "$blue$bold"Agent Message:"$normal
                 cat "$action_file" | "$_fish_ai_install_dir/bin/render"
-                read -l -P (set_color blue)"Your response (leave empty to continue): "(set_color normal) user_response
+                
+                if not read -l -P (set_color blue)"Your response (leave empty to continue): "(set_color normal) user_response
+                    # Elegant exit on interrupt during chat response
+                    rm "$action_file" "$signal_file"
+                    echo "👋 "$red"Agent session interrupted."$normal
+                    commandline -f repaint
+                    return
+                end
+                
                 if test -n "$user_response"
                     set last_output "$user_response"
                 else
@@ -240,7 +252,6 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 set last_status 0
 
             case DONE
-                # After goal completion, reset 'turn' mode to 'ask'
                 if test "$confirm_mode" = "turn"
                     set confirm_mode "ask"
                 end
