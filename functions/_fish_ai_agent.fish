@@ -152,10 +152,16 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
 
         switch "$response_type"
             case EXECUTE
-                set -l first_word (string split -m 1 " " -- "$action_content")[1]
+                # SOPHISTICATED WHITELIST CHECK
                 set -l is_whitelisted 0
-                if contains "$first_word" $trimmed_whitelist
-                    set is_whitelisted 1
+                
+                # 1. Block any redirection, piping, or command chaining
+                if not string match -rq '[>|;&]' "$action_content"
+                    # 2. Extract first word and check whitelist
+                    set -l first_word (string split -m 1 " " -- "$action_content")[1]
+                    if contains "$first_word" $trimmed_whitelist
+                        set is_whitelisted 1
+                    end
                 end
 
                 if test "$confirm_mode" = "ask" -a $is_whitelisted -eq 0
