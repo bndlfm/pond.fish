@@ -51,5 +51,11 @@ def get_config(key):
     return None
 
 
+def get_mcp_servers():
+    if not config.has_section('mcp'):
+        return {}
+    return {name: config.get('mcp', name) for name in config.options('mcp')}
+
+
 config = ConfigParser()
 config.read(get_config_path())
