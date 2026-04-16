@@ -19,7 +19,7 @@ def debug_log(msg):
         sys.stderr.write(f"DEBUG: {msg}\n")
         sys.stderr.flush()
 
-def read_file(path):
+def read_path(path):
     try:
         if os.path.isdir(path):
             items = os.listdir(path)
@@ -29,28 +29,9 @@ def read_file(path):
     except Exception as e:
         return str(e)
 
-def write_file(path, content):
-    try:
-        with open(path, 'w') as f:
-            f.write(content)
-        return "File written successfully."
-    except Exception as e:
-        return str(e)
-
-def edit_file(path, old_text, new_text):
-    try:
-        with open(path, 'r') as f:
-            content = f.read()
-        if old_text not in content:
-            return f"Error: Could not find exact match for 'old_text' in {path}."
-        if content.count(old_text) > 1:
-            return f"Error: Multiple occurrences of 'old_text' found in {path}. Please be more specific."
-        new_content = content.replace(old_text, new_text)
-        with open(path, 'w') as f:
-            f.write(new_content)
-        return "File edited successfully."
-    except Exception as e:
-        return str(e)
+# edit_file and write_file are disabled for hyper-minimalist mode
+# def write_file(path, content): ...
+# def edit_file(path, old_text, new_text): ...
 
 TOOLS = [
     {
@@ -70,7 +51,7 @@ TOOLS = [
     {
         "type": "function",
         "function": {
-            "name": "read_file",
+            "name": "read_path",
             "description": "Read the content of a file or list the contents of a directory.",
             "parameters": {
                 "type": "object",
@@ -80,54 +61,19 @@ TOOLS = [
                 "required": ["path"]
             }
         }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "edit_file",
-            "description": "Make a surgical edit to a file by replacing old_text with new_text. old_text must match exactly one occurrence.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "path": {"type": "string", "description": "The path to the file."},
-                    "old_text": {"type": "string", "description": "The exact text to be replaced."},
-                    "new_text": {"type": "string", "description": "The new text to insert."}
-                },
-                "required": ["path", "old_text", "new_text"]
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "write_file",
-            "description": "Create a new file or overwrite an existing one.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "path": {"type": "string", "description": "The path to the file."},
-                    "content": {"type": "string", "description": "The content to write."}
-                },
-                "required": ["path", "content"]
-            }
-        }
     }
 ]
 
 SYSTEM_PROMPT = """
-You are an expert coding assistant. You help users with tasks by reading paths, executing commands, editing code, and writing files.
+You are an expert coding assistant. You help users with tasks by reading paths and executing shell commands.
 
 Available tools:
-- read_file: Read file contents OR list directory contents
+- read_path: Read file contents OR list directory contents
 - shell_execute: Execute shell commands
-- edit_file: Make surgical edits (old_text must match exactly)
-- write_file: Create or overwrite files
 
 Guidelines:
-- Use shell_execute for operations like grep, find, or system tasks.
-- Use read_file to explore directories or examine files before editing.
-- Use edit_file for precise changes.
-- Use write_file only for new files or complete rewrites.
+- Use read_path to explore the project or examine files.
+- Use shell_execute for ALL other tasks (grepping, searching, editing files via sed/echo, etc).
 - ALWAYS provide a concise 'Thought' explaining your reasoning before any tool call.
 - Be concise. When the goal is met, end with "DONE".
 """
@@ -243,9 +189,7 @@ def main():
                 sys.stdout.write(f"TOOL_CALL: {func_name}({args_str})\n")
                 
                 result = ""
-                if func_name == 'read_file': result = read_file(func_args['path'])
-                elif func_name == 'write_file': result = write_file(func_args['path'], func_args['content'])
-                elif func_name == 'edit_file': result = edit_file(func_args['path'], func_args['old_text'], func_args['new_text'])
+                if func_name == 'read_path': result = read_path(func_args['path'])
                 else: result = f"Unknown tool: {func_name}"
                 
                 sys.stdout.write(f"TOOL_RESULT\n{result}\nEND_RESULT\n")
