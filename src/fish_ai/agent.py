@@ -29,6 +29,35 @@ def read_path(path):
     except Exception as e:
         return str(e)
 
+def web_search(query):
+    api_key = get_config_setting('brave_search_api_key')
+    if not api_key:
+        return "Error: Brave Search API key not configured. Add 'brave_search_api_key' to your fish-ai.ini or use fish_ai_put_api_key."
+    
+    try:
+        import httpx
+        url = "https://api.search.brave.com/res/v1/web/search"
+        headers = {
+            "Accept": "application/json",
+            "X-Subscription-Token": api_key
+        }
+        params = {"q": query, "count": 5}
+        
+        response = httpx.get(url, headers=headers, params=params, timeout=10.0)
+        response.raise_for_status()
+        data = response.json()
+        
+        results = []
+        for result in data.get('web', {}).get('results', []):
+            title = result.get('title', 'No Title')
+            link = result.get('url', 'No Link')
+            snippet = result.get('description', 'No description available.')
+            results.append(f"Title: {title}\nURL: {link}\nSnippet: {snippet}\n")
+        
+        return "\n".join(results) if results else "No results found."
+    except Exception as e:
+        return f"Search error: {str(e)}"
+
 TOOLS = [
     {
         "type": "function",
@@ -57,19 +86,35 @@ TOOLS = [
                 "required": ["path"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "web_search",
+            "description": "Search the web using Brave Search for up-to-date information, documentation, or troubleshooting help.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "The search query."}
+                },
+                "required": ["query"]
+            }
+        }
     }
 ]
 
 SYSTEM_PROMPT = """
-You are an expert coding assistant. You help users with tasks by reading paths and executing shell commands.
+You are an expert coding assistant. You help users with tasks by reading paths, searching the web, and executing shell commands.
 
 Available tools:
 - read_path: Read file contents OR list directory contents
 - shell_execute: Execute shell commands
+- web_search: Search the web for information you don't have locally
 
 Guidelines:
-- Use read_path to explore the project or examine files.
-- Use shell_execute for ALL other tasks (grepping, searching, editing files via sed/echo, etc).
+- Use web_search for finding documentation, latest versions, or fixing errors.
+- Use read_path to explore the local project.
+- Use shell_execute for ALL other system tasks (searching, editing files, etc).
 - ALWAYS provide a concise 'Thought' explaining your reasoning before any tool call.
 - Be concise. When the goal is met, end with "DONE".
 """
@@ -123,25 +168,26 @@ def main():
                 except: messages = []
         
         if not messages:
-            full_prompt = SYSTEM_PROMPT + "\nOS: {os}\n".format(os=get_os())
+            full_prompt = SYSTEM_PROMPT + "\nOperating System: {os}\n".format(os=get_os())
             messages = [{'role': 'system', 'content': full_prompt}]
             context = "Context:\n"
-            if args.cwd: context += f"- CWD: {args.cwd}\n"
+            if args.cwd: context += f"- Current directory: {args.cwd}\n"
             if args.external_history: context += f"- Recent history:\n{args.external_history}\n"
+            
             if args.cwd or args.external_history:
                 messages.append({'role': 'user', 'content': context})
-                messages.append({'role': 'assistant', 'content': "Context received."})
+                messages.append({'role': 'assistant', 'content': "Understood. I am aware of the current directory and recent shell history."})
         
         if args.goal:
             messages.append({'role': 'user', 'content': args.goal})
         elif not messages or len(messages) <= 1:
-            messages.append({'role': 'user', 'content': 'Ready.'})
+            messages.append({'role': 'user', 'content': 'Hello, how can I help you today?'})
 
         if args.rejected:
-            messages.append({'role': 'user', 'content': 'Command rejected.'})
+            messages.append({'role': 'user', 'content': 'I rejected that command. Please try a different way.'})
         elif args.last_output is not None:
             content = args.last_output
-            if args.last_status is not None: content = f"Status: {args.last_status}\nOutput:\n{content}"
+            if args.last_status is not None: content = f"Exit status: {args.last_status}\n\nOutput:\n{content}"
             last_id = next((m['tool_calls'][0]['id'] for m in reversed(messages) if m.get('role') == 'assistant' and m.get('tool_calls')), None)
             if last_id: messages.append({'role': 'tool', 'tool_call_id': last_id, 'content': content})
             else: messages.append({'role': 'user', 'content': content})
@@ -186,6 +232,7 @@ def main():
                 
                 result = ""
                 if func_name == 'read_path': result = read_path(func_args['path'])
+                elif func_name == 'web_search': result = web_search(func_args['query'])
                 else: result = f"Unknown tool: {func_name}"
                 
                 sys.stdout.write(f"TOOL_RESULT\n{result}\nEND_RESULT\n")
