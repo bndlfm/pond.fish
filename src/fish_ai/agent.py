@@ -29,10 +29,6 @@ def read_path(path):
     except Exception as e:
         return str(e)
 
-# edit_file and write_file are disabled for hyper-minimalist mode
-# def write_file(path, content): ...
-# def edit_file(path, old_text, new_text): ...
-
 TOOLS = [
     {
         "type": "function",
@@ -206,6 +202,8 @@ def main():
             sys.stdout.write(f"USAGE: prompt={u.get('prompt_tokens', 0)} completion={u.get('completion_tokens', 0)} total={u.get('total_tokens', 0)}\n")
 
         sys.stdout.flush()
+    except KeyboardInterrupt:
+        sys.exit(130)
     except Exception as e:
         debug_log(str(e))
         with open(args.action_file, 'w') as f: f.write(str(e))
