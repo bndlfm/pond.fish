@@ -1,31 +1,5 @@
 #!/usr/bin/env fish
 
-function fish_ai_agent_forget --description "Clear the current agentic loop session state."
-    set -l state_file "$_fish_ai_install_dir/agent_session.json"
-    if test -f "$state_file"
-        rm "$state_file"
-        echo "🧹 Agent session cleared."
-    else
-        echo "ℹ️  No active agent session found."
-    end
-end
-
-function fish_ai_agent_compress --description "Compress the current agentic loop session history."
-    set -l state_file "$_fish_ai_install_dir/agent_session.json"
-    if not test -f "$state_file"
-        echo "ℹ️  No active agent session to compress."
-        return
-    end
-    
-    set -l action_file (mktemp -t fish-ai-action.XXXXXX)
-    
-    echo "🗜️  Compressing session history..."
-    "$_fish_ai_install_dir/bin/agent" --state "$state_file" --action-file "$action_file" --compress > /dev/null
-    
-    rm "$action_file"
-    echo "✅ Compression complete."
-end
-
 function _fish_ai_agent --description "Run an autonomous agent to achieve a goal."
     set -l goal (commandline --current-buffer | string collect | string trim)
     set goal (string replace -r '^#\s*' '' "$goal")

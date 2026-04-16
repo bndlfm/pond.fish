@@ -43,8 +43,13 @@ The agent will work turn-by-turn. When it needs to execute a command, it will pr
 - **`[n]` Deny**: Prevent the command from running and let the agent rethink.
 
 **Manage Session State:**
-- `fish_ai_agent_forget`: Wipes the agent's memory to start a fresh task.
-- `fish_ai_agent_compress`: Manually trigger a summarization of long histories to save tokens.
+- `pond agent forget`: Wipes the agent's memory to start a fresh task.
+- `pond agent compress`: Manually trigger a summarization of long histories to save tokens.
+
+You can also trigger the agent directly from the CLI:
+```shell
+pond agent "find all large files"
+```
 
 ### 🛡️ Command Whitelist
 
