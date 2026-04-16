@@ -140,6 +140,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                     else
                         echo -e "$result_content"
                     end
+                    echo ""
                 case EXECUTE CONTINUE CHAT DONE ERROR
                     echo "$line" > "$signal_file"
             end
@@ -220,6 +221,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                         echo "$last_output"
                     end
                 end
+                echo ""
             
             case CONTINUE
                 continue
