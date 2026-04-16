@@ -72,6 +72,18 @@ automatically detects if your input is a command or natural language.
 
 Start typing and press **Ctrl + Space** for completions. If a command fails, press **Ctrl + Space** to get a fix.
 
+### 🤖 `ai` command
+
+A stateless CLI tool for quick LLM queries, supporting piping:
+
+```shell
+cat log.txt | ai "extract all ip addresses"
+ai "write a python hello world" > hello.py
+```
+
+It does not include shell history or previous agent state, making it ideal for
+scripting and data processing.
+
 ## 🤸 Configuration
 
 Edit `~/.config/fish-ai.ini` to configure your provider.

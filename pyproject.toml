@@ -44,6 +44,7 @@ lookup_setting = "fish_ai.config:lookup_setting"
 put_setting = "fish_ai.config:put_setting"
 refine = "fish_ai.autocomplete:refine_completions"
 agent = "fish_ai.agent:main"
+ai = "fish_ai.ai:main"
 render = "fish_ai.agent:render_markdown"
 
 [tool.pytest.ini_options]
