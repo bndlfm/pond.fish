@@ -51,8 +51,12 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
     set -l normal (set_color normal)
     set -l bold (set_color --bold)
 
-    # Load whitelist
-    set -l whitelist ("$_fish_ai_install_dir/bin/lookup_setting" whitelist | string split ",")
+    # Load whitelist (default to common safe exploration tools)
+    set -l whitelist_raw ("$_fish_ai_install_dir/bin/lookup_setting" whitelist)
+    if test -z "$whitelist_raw"
+        set whitelist_raw "ls,grep,find,cat,pwd,date,eza,fd,rg,ripgrep"
+    end
+    set -l whitelist (string split "," "$whitelist_raw")
     set -l trimmed_whitelist
     for cmd in $whitelist
         set trimmed_whitelist $trimmed_whitelist (string trim $cmd)

@@ -42,6 +42,19 @@ The agent will propose commands and ask for permission:
 To clear the agent's memory, run `fish_ai_agent_forget`.
 To compress long sessions, run `fish_ai_agent_compress`.
 
+### 🛡️ Command Whitelist
+
+The agent can execute safe commands (like `ls`, `rg`, `fd`) automatically without
+asking for permission. You can customize this list in your configuration:
+
+```ini
+[fish-ai]
+whitelist = ls, grep, find, cat, pwd, date, eza, fd, rg
+```
+
+Note: Any command containing redirections (`>`), pipes (`|`), or chaining (`;`, `&&`)
+will **always** require manual permission, even if the command is whitelisted.
+
 ### 📝 Codify / Explain
 
 Type a goal and press **Ctrl + A** to get a shell command. You can type the goal
