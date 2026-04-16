@@ -30,27 +30,38 @@ function pond --description "Main control command for the pond AI plugin."
                 case '*'
                     # If no action or unrecognized action, trigger the agent loop with the remaining args as goal
                     if test -n "$remaining_args"
-                        # Set the commandline and call the agent function
                         commandline -r "$remaining_args"
                         _fish_ai_agent
                     else
-                        # Just trigger agent (resumes session)
                         _fish_ai_agent
                     end
             end
+        case ai q query ask
+            # General stateless query (pipeable)
+            "$_fish_ai_install_dir/bin/ai" $remaining_args
         case forget
-            # Shortcut for agent forget
             pond agent forget
         case compress
-            # Shortcut for agent compress
             pond agent compress
         case help -h --help
-            echo "Usage: pond agent [forget|compress|<goal>]"
-            echo "       pond forget"
-            echo "       pond compress"
+            echo "Usage: pond <command> [args]"
+            echo ""
+            echo "Commands:"
+            echo "  agent, -a    Run or manage the autonomous agent"
+            echo "  ai, q, ask   Run a stateless query (supports piping)"
+            echo "  forget       Clear the agent's session memory"
+            echo "  compress     Summarize long agent history"
+            echo ""
+            echo "Examples:"
+            echo "  pond agent \"fix the tests\""
+            echo "  cat logs.txt | pond ai \"find errors\""
+            echo "  pond \"how do I extract a tar file?\""
         case '*'
-            echo "❓ Unknown subcommand: $subcommand"
-            echo "Try 'pond help' for usage."
-            return 1
+            if test -z "$subcommand"
+                pond help
+            else
+                # Default to stateless query for anything else
+                "$_fish_ai_install_dir/bin/ai" $argv
+            end
     end
 end

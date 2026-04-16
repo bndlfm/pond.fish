@@ -9,7 +9,7 @@
 ## 🚀 Key Features
 
 1.  **Autonomous AI Agent (`Ctrl+X`)**: A multi-turn expert that can read files, list directories, search the web, and execute shell commands to achieve complex goals.
-2.  **Stateless `ai` Command**: A unix-style utility for piping data to and from an LLM. Perfect for one-off tasks like `cat logs.txt | ai "summarize errors"`.
+2.  **Stateless `ai` Command**: A unix-style utility for piping data to and from an LLM. Integrated into the `pond` command.
 3.  **Codify / Explain (`Ctrl+A`)**: Instantly turn natural language into shell commands or get clear explanations of what a command does.
 4.  **Autocomplete / Fix (`Ctrl+Space`)**: Intelligent, context-aware command completions and instant fixes for your last failed command.
 5.  **Brave Search Integration**: Real-time web access for troubleshooting, documentation, and research.
@@ -43,13 +43,30 @@ The agent will work turn-by-turn. When it needs to execute a command, it will pr
 - **`[n]` Deny**: Prevent the command from running and let the agent rethink.
 
 **Manage Session State:**
-- `pond agent forget`: Wipes the agent's memory to start a fresh task.
-- `pond agent compress`: Manually trigger a summarization of long histories to save tokens.
+- `pond agent forget`: Wipes the agent's memory to start a fresh session.
+- `pond agent compress`: Manually trigger a summarization of long histories.
 
 You can also trigger the agent directly from the CLI:
 ```shell
 pond agent "find all large files"
 ```
+
+### 🐚 `pond ai` Command (Piping & Query)
+
+A stateless interface for quick LLM queries, supporting piping:
+
+```shell
+# Pipe context in
+cat README.md | pond ai "summarize this in 3 bullet points"
+
+# Redirect output out
+pond ai "write a python script to ping a list of IPs" > pinger.py
+
+# Quick questions
+pond "how do I extract a tar file?"
+```
+
+It does not include shell history or previous agent state, making it ideal for scripting and data processing. Aliases: `pond q`, `pond ask`.
 
 ### 🛡️ Command Whitelist
 
@@ -81,17 +98,6 @@ Press **Ctrl + A** to swap between natural language and shell commands:
 
 - Press **Ctrl + Space** while typing for intelligent completions.
 - Press **Ctrl + Space** after a command fails to receive an immediate fix based on the error output.
-
-### 🐚 Stateless `ai` Command
-
-Use the `ai` tool for piping and scripting:
-```shell
-# Pipe context in
-cat README.md | ai "summarize this in 3 bullet points"
-
-# Redirect output out
-ai "write a python script to ping a list of IPs" > pinger.py
-```
 
 ## 🤸 Configuration
 
