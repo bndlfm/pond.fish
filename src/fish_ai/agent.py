@@ -44,7 +44,12 @@ def web_search(query):
         data = response.json()
         results = []
         for result in data.get('web', {}).get('results', []):
-            results.append(f"Title: {result.get('title')}\nURL: {result.get('url')}\nSnippet: {result.get('description')}\n")
+            snippet = result.get('description', 'No description available.')
+            # Limit snippet to 2 lines
+            snippet_lines = snippet.splitlines()
+            if len(snippet_lines) > 2:
+                snippet = "\n".join(snippet_lines[:2]) + "..."
+            results.append(f"Title: {result.get('title')}\nURL: {result.get('url')}\nSnippet: {snippet}\n")
         return "\n".join(results) if results else "No results found."
     except Exception as e:
         return f"Search error: {str(e)}"
