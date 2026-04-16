@@ -63,18 +63,23 @@ def get_server_params(server_config):
         return None
     
     args = []
-    # Handle structured 'args' if they exist, else split the command string
     if 'args' in server_config:
         args = shlex.split(server_config['args'])
     else:
         parts = shlex.split(command)
         command = parts[0]
         args = parts[1:]
+    
+    # Silence the server as much as possible
+    env = os.environ.copy()
+    env["FASTMCP_LOG_LEVEL"] = "CRITICAL"
+    env["MCP_LOG_LEVEL"] = "CRITICAL"
+    env["PYTHON_LOG_LEVEL"] = "CRITICAL"
         
     return StdioServerParameters(
         command=command,
         args=args,
-        env=os.environ.copy()
+        env=env
     )
 
 async def call_mcp_tool(server_name, tool_name, arguments):
@@ -93,6 +98,7 @@ async def call_mcp_tool(server_name, tool_name, arguments):
     timeout = float(server_config.get('timeout', 10.0))
     
     try:
+        # We redirect stderr to suppress banners and noise
         async with stdio_client(params) as (read, write):
             async with ClientSession(read, write) as session:
                 await asyncio.wait_for(session.initialize(), timeout=timeout)
@@ -105,7 +111,7 @@ async def call_mcp_tool(server_name, tool_name, arguments):
                         text_content.append(str(part))
                 return "\n".join(text_content)
     except asyncio.TimeoutError:
-        return f"MCP Error: Server '{server_name}' timed out during initialization."
+        return f"MCP Error: Server '{server_name}' timed out."
     except Exception as e:
         return f"MCP Error ({server_name}): {str(e)}"
 
@@ -319,7 +325,6 @@ async def main_async():
                     result = await call_mcp_tool(s_name, t_name, func_args)
                 else:
                     result = f"Unknown tool: {func_name}"
-                
                 sys.stdout.write(f"TOOL_RESULT\n{result}\nEND_RESULT\n")
                 messages.append({'role': 'tool', 'tool_call_id': tool_call['id'], 'content': result})
                 with open(args.state, 'w') as f: json.dump(messages, f)
