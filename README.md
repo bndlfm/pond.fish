@@ -9,7 +9,7 @@
 ## 🚀 Key Features
 
 1.  **Autonomous AI Agent (`Ctrl+X`)**: A multi-turn expert that can read files, list directories, search the web, and execute shell commands to achieve complex goals.
-2.  **Stateless `ai` Command**: A unix-style utility for piping data to and from an LLM. Integrated into the `pond` command.
+2.  **Unified `pond` Command**: A master utility for piping data to an LLM, managing the agent, or asking quick questions.
 3.  **Codify / Explain (`Ctrl+A`)**: Instantly turn natural language into shell commands or get clear explanations of what a command does.
 4.  **Autocomplete / Fix (`Ctrl+Space`)**: Intelligent, context-aware command completions and instant fixes for your last failed command.
 5.  **Brave Search Integration**: Real-time web access for troubleshooting, documentation, and research.
@@ -45,28 +45,29 @@ The agent will work turn-by-turn. When it needs to execute a command, it will pr
 **Manage Session State:**
 - `pond agent forget`: Wipes the agent's memory to start a fresh session.
 - `pond agent compress`: Manually trigger a summarization of long histories.
+- `pond agent status`: View current session statistics.
 
 You can also trigger the agent directly from the CLI:
 ```shell
 pond agent "find all large files"
 ```
 
-### 🐚 `pond ai` Command (Piping & Query)
+### 🐚 Unified `pond` Command (Piping & Query)
 
-A stateless interface for quick LLM queries, supporting piping:
+The `pond` command provides a stateless interface for quick LLM queries, supporting piping:
 
 ```shell
 # Pipe context in
-cat README.md | pond ai "summarize this in 3 bullet points"
+cat README.md | pond "summarize this in 3 bullet points"
 
 # Redirect output out
-pond ai "write a python script to ping a list of IPs" > pinger.py
+pond "write a python script to ping a list of IPs" > pinger.py
 
 # Quick questions
-pond "how do I extract a tar file?"
+pond "how do I use the 'tar' command?"
 ```
 
-It does not include shell history or previous agent state, making it ideal for scripting and data processing. Aliases: `pond q`, `pond ask`.
+Aliases like `pond ai`, `pond q`, or `pond ask` can also be used. It does not include shell history or previous agent state, making it ideal for scripting and data processing.
 
 ### 🛡️ Command Whitelist
 
