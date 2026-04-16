@@ -4,16 +4,18 @@
 
 # 🐟 pond: AI for Fish shell
 
-`pond` is a fork of `fish-ai` that provides autonomous agentic capabilities and integrated AI assistance for the Fish shell.
+`pond` is a powerful fork of `fish-ai` designed for developers who want a minimalist yet capable autonomous AI agent living directly in their Fish shell. It prioritizes **auditability**, **security**, and **seamless shell integration**.
 
-## 🚀 Features
+## 🚀 Key Features
 
-1.  **AI Agent (`Ctrl+X`)**: An autonomous agent that can execute shell commands, read/write files, and list directories.
-2.  **Codify / Explain (`Ctrl+A`)**: Turn natural language into commands or explain what a command does.
-3.  **Autocomplete / Fix (`Ctrl+Space`)**: Intelligent completions and instant fixes for failed commands.
-4.  **Markdown Support**: Agent responses are beautifully rendered with Markdown in your terminal.
-5.  **Auditability**: Real-time streaming of agent thoughts, tool calls, and results.
-6.  **Session Persistence**: The agent maintains state between invocations.
+1.  **Autonomous AI Agent (`Ctrl+X`)**: A multi-turn expert that can read files, list directories, search the web, and execute shell commands to achieve complex goals.
+2.  **Stateless `ai` Command**: A unix-style utility for piping data to and from an LLM. Perfect for one-off tasks like `cat logs.txt | ai "summarize errors"`.
+3.  **Codify / Explain (`Ctrl+A`)**: Instantly turn natural language into shell commands or get clear explanations of what a command does.
+4.  **Autocomplete / Fix (`Ctrl+Space`)**: Intelligent, context-aware command completions and instant fixes for your last failed command.
+5.  **Brave Search Integration**: Real-time web access for troubleshooting, documentation, and research.
+6.  **Advanced Audit UI**: Color-coded streaming of agent thoughts, tool calls, and truncated results directly in your terminal.
+7.  **Surgical Permissions**: A 4-tier permission system (`[y/t/a/n]`) that puts you in full control of every system-modifying action.
+8.  **Session Persistence**: Maintains conversation state between loops, allowing for long-running, multi-step collaborations.
 
 ## 📦 Installation
 
@@ -23,85 +25,96 @@ Install using [fisher](https://github.com/jorgebucaran/fisher):
 fisher install bndlfm/pond
 ```
 
-## 🙉 How to use
+## 🤖 Usage Guide
 
-### 🤖 AI Agent
+### 🦾 The AI Agent
 
-Press **Ctrl + X** to trigger the agent. You can type a goal in plain text or as a comment:
+Type a goal in plain text or as a comment and press **Ctrl + X**:
 
 ```shell
-find all large files and compress them
-# (then press Ctrl+X)
+# find all python files and search for TODOs
+(press Ctrl+X)
 ```
 
-The agent will propose commands and ask for permission:
-- **y**: Allow once.
-- **a**: Always allow for this session.
-- **n**: Deny this command.
+The agent will work turn-by-turn. When it needs to execute a command, it will prompt you:
+- **`[y]` Allow once**: Permit only this specific command.
+- **`[t]` Allow for this task**: Grant temporary autonomy until the current goal is met or the agent asks a question.
+- **`[a]` Always allow**: Grant full autonomy for the rest of the shell session.
+- **`[n]` Deny**: Prevent the command from running and let the agent rethink.
 
-To clear the agent's memory, run `fish_ai_agent_forget`.
-To compress long sessions, run `fish_ai_agent_compress`.
+**Manage Session State:**
+- `fish_ai_agent_forget`: Wipes the agent's memory to start a fresh task.
+- `fish_ai_agent_compress`: Manually trigger a summarization of long histories to save tokens.
 
 ### 🛡️ Command Whitelist
 
-The agent can execute safe commands (like `ls`, `rg`, `fd`) automatically without
-asking for permission. You can customize this list in your configuration:
+`pond` can run safe commands automatically. Customize this list in your configuration:
 
 ```ini
 [fish-ai]
 whitelist = ls, grep, find, cat, pwd, date, eza, fd, rg
 ```
 
-Note: Any command containing redirections (`>`), pipes (`|`), or chaining (`;`, `&&`)
-will **always** require manual permission, even if the command is whitelisted.
+**Security Guard:** Any command containing redirections (`>`), pipes (`|`), or chaining (`;`, `&&`) is **never** whitelisted and will always require your manual approval.
 
-### 📝 Codify / Explain
+### 🌐 Web Search
 
-Type a goal and press **Ctrl + A** to get a shell command. You can type the goal
-in plain text or as a comment starting with `#`:
+To enable web research, add your [Brave Search API key](https://api.search.brave.com/app/dashboard) to your config:
 
-```shell
-list all files larger than 1MB
-# (then press Ctrl+A)
+```ini
+[fish-ai]
+brave_search_api_key = <your_key>
 ```
 
-Or type a command and press **Ctrl + A** to get an explanation. `pond`
-automatically detects if your input is a command or natural language.
+### 📝 Codify & Explain
 
-### 🪄 Autocomplete / Fix
+Press **Ctrl + A** to swap between natural language and shell commands:
+- `list files larger than 1gb` &rarr; `find . -size +1G`
+- `tar -xvzf archive.tar.gz` &rarr; Explains the command and flags.
 
-Start typing and press **Ctrl + Space** for completions. If a command fails, press **Ctrl + Space** to get a fix.
+### 🪄 Autocomplete & Fix
 
-### 🤖 `ai` command
+- Press **Ctrl + Space** while typing for intelligent completions.
+- Press **Ctrl + Space** after a command fails to receive an immediate fix based on the error output.
 
-A stateless CLI tool for quick LLM queries, supporting piping:
+### 🐚 Stateless `ai` Command
 
+Use the `ai` tool for piping and scripting:
 ```shell
-cat log.txt | ai "extract all ip addresses"
-ai "write a python hello world" > hello.py
-```
+# Pipe context in
+cat README.md | ai "summarize this in 3 bullet points"
 
-It does not include shell history or previous agent state, making it ideal for
-scripting and data processing.
+# Redirect output out
+ai "write a python script to ping a list of IPs" > pinger.py
+```
 
 ## 🤸 Configuration
 
-Edit `~/.config/fish-ai.ini` to configure your provider.
+Edit `~/.config/fish-ai.ini` or use environment variables (ideal for **Nix/Home Manager**):
 
 ```ini
 [fish-ai]
 configuration = my-provider
+whitelist = ls, rg, fd, cat
 
 [my_provider]
 provider = google
-api_key = <your key>
+api_key = <your_key>
 model = gemini-3.1-pro-preview
 ```
 
-## 🐾 Data privacy
-
-Content is sent to your configured LLM provider. Sensitive information (keys, tokens) is redacted before sending.
+### Runtime Keybindings (Nix/Home Manager)
+You can customize keybindings via environment variables in your shell config:
+- `FISH_AI_KEYMAP_1`: Defaults to `ctrl-a` (Codify)
+- `FISH_AI_KEYMAP_2`: Defaults to `ctrl-space` (Autocomplete)
+- `FISH_AI_KEYMAP_3`: Defaults to `ctrl-x` (Agent)
 
 ## 🛠️ Development
 
-See [DEVELOPMENT.md](DEVELOPMENT.md) for instructions on setting up a development environment with **Nix**.
+`pond` includes a **Nix Flake** for a reproducible development environment.
+Run `nix develop` to enter a shell with all dependencies configured.
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) for more details.
+
+---
+*Based on the original [fish-ai](https://github.com/Realiserad/fish-ai) by Bastian Fredriksson.*
