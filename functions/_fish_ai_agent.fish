@@ -111,6 +111,9 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 echo "❌ "$red"Agent crashed with status $agent_status."$normal
                 echo "Error details:"
                 cat "$agent_out"
+                echo ""
+                echo "Press any key to return to shell..."
+                read -n 1
             end
             rm "$agent_out" "$action_file" "$signal_file"
             commandline -f repaint

@@ -23,18 +23,25 @@ def debug_log(msg):
         sys.stderr.flush()
 
 def get_skills_dir():
-    from fish_ai.config import get_config_path
-    skills_dir = os.path.join(os.path.dirname(get_config_path()), 'skills')
-    if not os.path.exists(skills_dir):
-        try: os.makedirs(skills_dir, exist_ok=True)
-        except: pass
-    return skills_dir
+    try:
+        from fish_ai.config import get_config_path
+        skills_dir = os.path.join(os.path.dirname(get_config_path()), 'skills')
+        if not os.path.exists(skills_dir):
+            try: os.makedirs(skills_dir, exist_ok=True)
+            except: pass
+        return skills_dir
+    except Exception as e:
+        debug_log(f"Error resolving skills directory: {e}")
+        return os.path.expanduser('~/.config/fish-ai/skills')
 
 class SkillManager:
     def __init__(self):
         self.skills_dir = get_skills_dir()
         self.catalog = {} # name -> description
-        self.discover_skills()
+        try:
+            self.discover_skills()
+        except Exception as e:
+            debug_log(f"Skill discovery failed: {e}")
 
     def discover_skills(self):
         if not os.path.exists(self.skills_dir): return
@@ -76,22 +83,22 @@ class SkillManager:
         return prompt
 
     def get_skill_manifest(self, name):
-        target_dir = None
-        for item in os.listdir(self.skills_dir):
-            skill_path = os.path.join(self.skills_dir, item)
-            if not os.path.isdir(skill_path): continue
-            md_path = os.path.join(skill_path, 'SKILL.md')
-            if os.path.exists(md_path):
-                try:
-                    with open(md_path, 'r') as f:
-                        content_start = f.read(512)
-                        if f'name: {name}' in content_start:
-                            target_dir = skill_path
-                            break
-                except: continue
-        if not target_dir: return None
-
         try:
+            target_dir = None
+            for item in os.listdir(self.skills_dir):
+                skill_path = os.path.join(self.skills_dir, item)
+                if not os.path.isdir(skill_path): continue
+                md_path = os.path.join(skill_path, 'SKILL.md')
+                if os.path.exists(md_path):
+                    try:
+                        with open(md_path, 'r') as f:
+                            content_start = f.read(512)
+                            if f'name: {name}' in content_start:
+                                target_dir = skill_path
+                                break
+                    except: continue
+            if not target_dir: return None
+
             with open(os.path.join(target_dir, 'SKILL.md'), 'r') as f:
                 content = f.read()
                 body = re.sub(r'^---\s*\n.*?\n---\s*\n', '', content, flags=re.DOTALL).strip()
@@ -249,6 +256,7 @@ def compress_history(messages):
 def main():
     try:
         from fish_ai.engine import get_chat_response, get_os, get_logger
+        
         parser = argparse.ArgumentParser()
         parser.add_argument('--state', required=True)
         parser.add_argument('--action-file', required=True)
@@ -261,14 +269,21 @@ def main():
         parser.add_argument('--compress', action='store_true')
         parser.add_argument('--json', action='store_true')
         args = parser.parse_args()
-        skill_manager = SkillManager()
+        
+        try:
+            skill_manager = SkillManager()
+        except Exception as e:
+            debug_log(f"SkillManager initialization failed: {e}")
+            skill_manager = None
+            
         messages = []
         if os.path.exists(args.state) and os.path.getsize(args.state) > 0:
             with open(args.state, 'r') as f:
                 try: messages = json.load(f)
                 except: messages = []
         if not messages:
-            full_prompt = SYSTEM_PROMPT + skill_manager.get_catalog_prompt() + "\nOperating System: {os}\n".format(os=get_os())
+            catalog = skill_manager.get_catalog_prompt() if skill_manager else ""
+            full_prompt = SYSTEM_PROMPT + catalog + "\nOperating System: {os}\n".format(os=get_os())
             messages = [{'role': 'system', 'content': full_prompt}]
             context_msg = "Context:\n"
             if args.cwd: context_msg += f"- Current directory: {args.cwd}\n"
@@ -328,11 +343,11 @@ def main():
                     result = web_search(func_args['query'])
                 elif func_name == 'list_skills':
                     sys.stdout.write(f"TOOL_CALL: list_skills()\n")
-                    result = skill_manager.get_catalog_text()
+                    result = skill_manager.get_catalog_text() if skill_manager else "Skill manager unavailable."
                 elif func_name == 'activate_skill':
                     skill_name = func_args.get('name')
                     sys.stdout.write(f"SKILL_ACTIVATE: {skill_name}\n")
-                    result = skill_manager.get_skill_manifest(skill_name)
+                    result = skill_manager.get_skill_manifest(skill_name) if skill_manager else "Skill manager unavailable."
                     if not result: result = f"Error: Skill '{skill_name}' not found."
                 else: result = f"Unknown tool: {func_name}"
                 sys.stdout.write(f"TOOL_RESULT\n{result}\nEND_RESULT\n")
@@ -344,15 +359,13 @@ def main():
             if not remaining_content: remaining_content = "The task is complete."
             with open(args.action_file, 'w') as f: f.write(remaining_content)
             sys.stdout.write("CHAT\n")
-        
-        if 'usage' in response:
-            u = response['usage']
-            sys.stdout.write(f"USAGE: prompt={u.get('prompt_tokens', 0)} completion={u.get('completion_tokens', 0)} total={u.get('total_tokens', 0)}\n")
         sys.stdout.flush()
     except KeyboardInterrupt: sys.exit(130)
     except Exception as e:
-        debug_log(str(e))
-        with open(args.action_file, 'w') as f: f.write(str(e))
+        import traceback
+        error_msg = f"{e}\n{traceback.format_exc()}"
+        debug_log(error_msg)
+        with open(args.action_file, 'w') as f: f.write(error_msg)
         sys.stdout.write("ERROR\n")
         sys.stdout.flush()
         sys.exit(1)
