@@ -58,6 +58,13 @@ class SkillManager:
                                 debug_log(f"Discovered skill: {name}")
                 except Exception as e: debug_log(f"Error parsing skill {item}: {e}")
 
+    def get_catalog_text(self):
+        if not self.catalog: return "No skills installed in ~/.config/fish-ai/skills/"
+        text = "Available skills:\n"
+        for name, desc in self.catalog.items():
+            text += f"- {name}: {desc}\n"
+        return text
+
     def get_catalog_prompt(self):
         if not self.catalog: return ""
         prompt = "\nAVAILABLE SKILLS:\n"
@@ -173,6 +180,17 @@ TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "list_skills",
+            "description": "List all available skills in the catalog.",
+            "parameters": {
+                "type": "object",
+                "properties": {}
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "activate_skill",
             "description": "Load the detailed instructions, scripts, and references for a specific skill from the catalog.",
             "parameters": {
@@ -193,7 +211,8 @@ MANDATORY AUDIT RULES:
 2. Use `shell_execute` for all shell commands. They will run in the user's ACTIVE session.
 3. Use `read_path` for direct file system access.
 4. Use `web_search` for any information you don't have locally.
-5. Work through your plan turn-by-turn. Provide a final summary of your findings or actions when complete.
+5. Use `list_skills` to see available specialized experts and `activate_skill(name)` to load their knowledge.
+6. Work through your plan turn-by-turn. Provide a final summary of your findings or actions when complete.
 """
 
 def compress_history(messages):
@@ -293,6 +312,9 @@ def main():
                 elif func_name == 'web_search':
                     sys.stdout.write(f"TOOL_CALL: web_search({func_args.get('query')})\n")
                     result = web_search(func_args['query'])
+                elif func_name == 'list_skills':
+                    sys.stdout.write(f"TOOL_CALL: list_skills()\n")
+                    result = skill_manager.get_catalog_text()
                 elif func_name == 'activate_skill':
                     skill_name = func_args.get('name')
                     sys.stdout.write(f"SKILL_ACTIVATE: {skill_name}\n")
