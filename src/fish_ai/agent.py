@@ -23,7 +23,7 @@ def debug_log(msg):
         sys.stderr.flush()
 
 def get_skills_dir():
-    from fish_ai.config import get_config_path
+    from fish_ai.engine import get_config_path
     path = os.path.join(os.path.dirname(get_config_path()), 'skills')
     if not os.path.exists(path):
         try: os.makedirs(path, exist_ok=True)
@@ -59,8 +59,10 @@ class SkillManager:
                 except Exception as e: debug_log(f"Error parsing skill {item}: {e}")
 
     def get_catalog_text(self):
-        if not self.catalog: return "No skills installed in ~/.config/fish-ai/skills/"
-        text = "Available skills:\n"
+        text = f"Searching for skills in {self.skills_dir}...\n"
+        if not self.catalog:
+            return text + "No skills found. To add a skill, create a folder with a SKILL.md file in that directory."
+        text += "Available skills:\n"
         for name, desc in self.catalog.items():
             text += f"- {name}: {desc}\n"
         return text
@@ -70,7 +72,7 @@ class SkillManager:
         prompt = "\nAVAILABLE SKILLS:\n"
         for name, desc in self.catalog.items():
             prompt += f"- {name}: {desc}\n"
-        prompt += "\nTo use a skill, call 'activate_skill(name)' to see its instructions, scripts, and references.\n"
+        prompt += "\nTo use a skill, you MUST call 'activate_skill(name)' to see its full instructions and tool manifest.\n"
         return prompt
 
     def get_skill_manifest(self, name):
@@ -81,7 +83,8 @@ class SkillManager:
             md_path = os.path.join(skill_path, 'SKILL.md')
             if os.path.exists(md_path):
                 with open(md_path, 'r') as f:
-                    if f'name: {name}' in f.read(512):
+                    content_start = f.read(512)
+                    if f'name: {name}' in content_start:
                         target_dir = skill_path
                         break
         if not target_dir: return None
@@ -181,7 +184,7 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "list_skills",
-            "description": "List all available skills in the catalog.",
+            "description": "List all available specialized skills (experts) in the local skills directory.",
             "parameters": {
                 "type": "object",
                 "properties": {}
@@ -192,7 +195,7 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "activate_skill",
-            "description": "Load the detailed instructions, scripts, and references for a specific skill from the catalog.",
+            "description": "Activate a specific skill to load its detailed instructions and tool manifest.",
             "parameters": {
                 "type": "object",
                 "properties": {"name": {"type": "string", "description": "The name of the skill to activate."}},
@@ -211,8 +214,9 @@ MANDATORY AUDIT RULES:
 2. Use `shell_execute` for all shell commands. They will run in the user's ACTIVE session.
 3. Use `read_path` for direct file system access.
 4. Use `web_search` for any information you don't have locally.
-5. Use `list_skills` to see available specialized experts and `activate_skill(name)` to load their knowledge.
-6. Work through your plan turn-by-turn. Provide a final summary of your findings or actions when complete.
+5. If the user asks about your abilities or expertise, USE `list_skills` to see what experts are installed.
+6. To load the rules or scripts for a specific expert, USE `activate_skill(name)`.
+7. Work through your plan turn-by-turn. Provide a final summary of your findings when complete.
 """
 
 def compress_history(messages):
