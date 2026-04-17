@@ -4,6 +4,9 @@ import json
 import sys
 import argparse
 import os
+import re
+import subprocess
+import shlex
 
 def get_config_setting(name):
     try:
@@ -19,6 +22,112 @@ def debug_log(msg):
         sys.stderr.write(f"DEBUG: {msg}\n")
         sys.stderr.flush()
 
+def get_skills_dir():
+    from fish_ai.engine import get_install_dir
+    path = os.path.join(os.path.dirname(get_install_dir()), 'fish-ai', 'skills')
+    if not os.path.exists(path):
+        try:
+            os.makedirs(path, exist_ok=True)
+        except:
+            pass
+    return path
+
+class SkillManager:
+    def __init__(self):
+        self.skills_dir = get_skills_dir()
+        self.catalog = {} # name -> description
+        self.tools = []   # list of OpenAI-style tool definitions
+        self.discover_skills()
+
+    def discover_skills(self):
+        if not os.path.exists(self.skills_dir):
+            return
+        
+        for item in os.listdir(self.skills_dir):
+            skill_path = os.path.join(self.skills_dir, item)
+            if not os.path.isdir(skill_path):
+                continue
+            
+            # 1. Parse metadata
+            skill_md_path = os.path.join(skill_path, 'SKILL.md')
+            skill_name = item # Default to folder name
+            if os.path.exists(skill_md_path):
+                try:
+                    with open(skill_md_path, 'r') as f:
+                        content = f.read()
+                        m = re.search(r'^---\s*\n(.*?)\n---\s*\n', content, re.DOTALL)
+                        if m:
+                            frontmatter = m.group(1)
+                            for line in frontmatter.splitlines():
+                                if line.startswith('name:'):
+                                    skill_name = line.split(':', 1)[1].strip()
+                                if line.startswith('description:'):
+                                    self.catalog[skill_name] = line.split(':', 1)[1].strip()
+                except Exception as e:
+                    debug_log(f"Error parsing SKILL.md in {item}: {e}")
+
+            # 2. Discover scripts
+            scripts_dir = os.path.join(skill_path, 'scripts')
+            if os.path.exists(scripts_dir):
+                for script in os.listdir(scripts_dir):
+                    script_path = os.path.join(scripts_dir, script)
+                    if os.access(script_path, os.X_OK):
+                        try:
+                            # Run with --info to get tool schema
+                            result = subprocess.run([script_path, '--info'], capture_output=True, text=True)
+                            if result.returncode == 0:
+                                schema = json.loads(result.stdout)
+                                # Prepend skill name to tool name to prevent collisions
+                                tool_name = f"skill__{skill_name}__{schema['name']}"
+                                schema['name'] = tool_name
+                                self.tools.append({"type": "function", "function": schema})
+                                debug_log(f"Registered tool: {tool_name}")
+                        except Exception as e:
+                            debug_log(f"Error registering tool from {script}: {e}")
+
+    def get_catalog_prompt(self):
+        if not self.catalog:
+            return ""
+        prompt = "\nAVAILABLE SKILLS:\n"
+        for name, desc in self.catalog.items():
+            prompt += f"- {name}: {desc}\n"
+        prompt += "\nTo see full instructions for a skill, call 'activate_skill(name)'.\n"
+        return prompt
+
+    def get_skill_body(self, name):
+        # Look for SKILL.md by name in subdirectories
+        for item in os.listdir(self.skills_dir):
+            skill_md_path = os.path.join(self.skills_dir, item, 'SKILL.md')
+            if os.path.exists(skill_md_path):
+                with open(skill_md_path, 'r') as f:
+                    if f'name: {name}' in f.read(512):
+                        f.seek(0)
+                        content = f.read()
+                        return re.sub(r'^---\s*\n.*?\n---\s*\n', '', content, flags=re.DOTALL).strip()
+        return None
+
+    def execute_skill_tool(self, tool_name, arguments):
+        # Format: skill__skillname__scriptname
+        parts = tool_name.split('__', 2)
+        if len(parts) < 3: return f"Error: Invalid tool name format {tool_name}"
+        skill_name, script_name = parts[1], parts[2]
+        
+        # Locate script
+        for item in os.listdir(self.skills_dir):
+            script_path = os.path.join(self.skills_dir, item, 'scripts', script_name)
+            if os.path.exists(script_path):
+                try:
+                    # Pass arguments as environment variables
+                    env = os.environ.copy()
+                    for k, v in arguments.items():
+                        env[str(k)] = str(v)
+                    
+                    result = subprocess.run([script_path], capture_output=True, text=True, env=env)
+                    return result.stdout if result.returncode == 0 else f"Error ({result.returncode}): {result.stderr}"
+                except Exception as e:
+                    return f"Execution error: {str(e)}"
+        return f"Error: Could not find script for {tool_name}"
+
 def read_path(path):
     try:
         if os.path.isdir(path):
@@ -33,7 +142,6 @@ def web_search(query):
     api_key = get_config_setting('brave_search_api_key')
     if not api_key:
         return "Error: Brave Search API key not configured."
-    
     try:
         import httpx
         url = "https://api.search.brave.com/res/v1/web/search"
@@ -46,8 +154,7 @@ def web_search(query):
         for result in data.get('web', {}).get('results', []):
             snippet = result.get('description', 'No description.')
             snippet_lines = snippet.splitlines()
-            if len(snippet_lines) > 2:
-                snippet = "\n".join(snippet_lines[:2]) + "..."
+            if len(snippet_lines) > 2: snippet = "\n".join(snippet_lines[:2]) + "..."
             results.append(f"Title: {result.get('title')}\nURL: {result.get('url')}\nSnippet: {snippet}\n")
         return "\n".join(results) if results else "No results found."
     except Exception as e:
@@ -89,6 +196,18 @@ TOOLS = [
                 "required": ["query"]
             }
         }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "activate_skill",
+            "description": "Load the detailed instructions for a specific skill from the catalog.",
+            "parameters": {
+                "type": "object",
+                "properties": {"name": {"type": "string", "description": "The name of the skill to activate."}},
+                "required": ["name"]
+            }
+        }
     }
 ]
 
@@ -103,30 +222,6 @@ MANDATORY AUDIT RULES:
 4. Use `web_search` for any information you don't have locally.
 5. Work through your plan turn-by-turn. Provide a final summary of your findings or actions when complete.
 """
-
-def compress_history(messages):
-    from fish_ai.engine import get_chat_response
-    if len(messages) <= 10: return messages
-    system_msg = messages[0]
-    initial_context = messages[1:3] if len(messages) > 3 else []
-    recent_msgs = messages[-4:]
-    to_summarize = messages[3:-4] if len(messages) > 7 else []
-    if not to_summarize: return messages
-
-    sys.stdout.write("STATUS: Compressing history...\n")
-    sys.stdout.flush()
-
-    summary_prompt = [
-        {'role': 'system', 'content': 'Summarize the following shell actions and findings into a concise list of "Achievements so far".'},
-        {'role': 'user', 'content': json.dumps(to_summarize)}
-    ]
-    try:
-        response = get_chat_response(summary_prompt)
-        summary_text = response.get('content', 'History compressed.')
-        compressed_msg = {'role': 'user', 'content': f"[SYSTEM: History Compressed]\nSummary:\n{summary_text}"}
-        ack_msg = {'role': 'assistant', 'content': "Understood. Resuming with previous context."}
-        return [system_msg] + initial_context + [compressed_msg, ack_msg] + recent_msgs
-    except: return messages
 
 def main():
     try:
@@ -144,6 +239,9 @@ def main():
         parser.add_argument('--json', action='store_true')
 
         args = parser.parse_args()
+        
+        skill_manager = SkillManager()
+        
         messages = []
         if os.path.exists(args.state) and os.path.getsize(args.state) > 0:
             with open(args.state, 'r') as f:
@@ -151,14 +249,14 @@ def main():
                 except: messages = []
         
         if not messages:
-            full_prompt = SYSTEM_PROMPT + "\nOperating System: {os}\n".format(os=get_os())
+            full_prompt = SYSTEM_PROMPT + skill_manager.get_catalog_prompt() + "\nOperating System: {os}\n".format(os=get_os())
             messages = [{'role': 'system', 'content': full_prompt}]
-            context = "Context:\n"
-            if args.cwd: context += f"- Current directory: {args.cwd}\n"
-            if args.external_history: context += f"- Recent shell history:\n{args.external_history}\n"
+            context_msg = "Context:\n"
+            if args.cwd: context_msg += f"- Current directory: {args.cwd}\n"
+            if args.external_history: context_msg += f"- Recent shell history:\n{args.external_history}\n"
             if args.cwd or args.external_history:
-                messages.append({'role': 'user', 'content': context})
-                messages.append({'role': 'assistant', 'content': "Context received."})
+                messages.append({'role': 'user', 'content': context_msg})
+                messages.append({'role': 'assistant', 'content': "Understood."})
         
         if args.goal:
             messages.append({'role': 'user', 'content': args.goal})
@@ -166,20 +264,18 @@ def main():
             messages.append({'role': 'user', 'content': 'Ready.'})
 
         if args.rejected:
-            messages.append({'role': 'user', 'content': 'I rejected that command. Please try a different way.'})
+            messages.append({'role': 'user', 'content': 'I rejected that command.'})
         elif args.last_output is not None:
             content = args.last_output
-            if args.last_status is not None:
-                content = f"Exit status: {args.last_status}\n\nOutput:\n{content}"
+            if args.last_status is not None: content = f"Exit status: {args.last_status}\n\nOutput:\n{content}"
             last_id = next((m['tool_calls'][0]['id'] for m in reversed(messages) if m.get('role') == 'assistant' and m.get('tool_calls')), None)
             if last_id: messages.append({'role': 'tool', 'tool_call_id': last_id, 'content': content})
             else: messages.append({'role': 'user', 'content': content})
 
-        if args.compress or len(messages) > 20:
-            messages = compress_history(messages)
-            with open(args.state, 'w') as f: json.dump(messages, f)
+        # Combine native tools with skill-provided tools
+        combined_tools = TOOLS + skill_manager.tools
 
-        response = get_chat_response(messages, tools=TOOLS)
+        response = get_chat_response(messages, tools=combined_tools)
         if not response: raise Exception("AI returned empty response.")
 
         if args.json:
@@ -194,7 +290,6 @@ def main():
         thought = ""
         
         if '<think>' in full_content:
-            import re
             m = re.search(r'<think>(.*?)</think>(.*)', full_content, re.DOTALL)
             if m:
                 thought = m.group(1).strip()
@@ -221,6 +316,14 @@ def main():
                 elif func_name == 'web_search':
                     sys.stdout.write(f"TOOL_CALL: web_search({func_args.get('query')})\n")
                     result = web_search(func_args['query'])
+                elif func_name == 'activate_skill':
+                    skill_name = func_args.get('name')
+                    sys.stdout.write(f"TOOL_CALL: activate_skill({skill_name})\n")
+                    body = skill_manager.get_skill_body(skill_name)
+                    result = f"Skill '{skill_name}' activated:\n{body}" if body else f"Error: Skill '{skill_name}' not found."
+                elif func_name.startswith('skill__'):
+                    # Call scripted skill tool
+                    result = skill_manager.execute_skill_tool(func_name, func_args)
                 else:
                     result = f"Unknown tool: {func_name}"
                 
@@ -231,12 +334,8 @@ def main():
         else:
             if not remaining_content and thought: remaining_content = thought
             with open(args.action_file, 'w') as f: f.write(remaining_content)
-            # Use CHAT as a generic signal that tool calls are done
             sys.stdout.write("CHAT\n")
         
-        if 'usage' in response:
-            u = response['usage']
-            sys.stdout.write(f"USAGE: prompt={u.get('prompt_tokens', 0)} completion={u.get('completion_tokens', 0)} total={u.get('total_tokens', 0)}\n")
         sys.stdout.flush()
     except KeyboardInterrupt: sys.exit(130)
     except Exception as e:
@@ -253,5 +352,4 @@ def render_markdown():
         Console().print(Markdown(sys.stdin.read() or ""))
     except: sys.stdout.write(sys.stdin.read())
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()
