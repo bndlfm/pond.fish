@@ -51,14 +51,5 @@ def get_config(key):
     return None
 
 
-def get_mcp_servers():
-    servers = {}
-    for section in config.sections():
-        if section.startswith('mcp.'):
-            name = section[4:]
-            servers[name] = dict(config.items(section))
-    return servers
-
-
 config = ConfigParser()
 config.read(get_config_path())

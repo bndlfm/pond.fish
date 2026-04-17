@@ -86,21 +86,6 @@ To enable web research, add your [Brave Search API key](https://api.search.brave
 brave_search_api_key = <your_key>
 ```
 
-### 🔌 Model Context Protocol (MCP)
-
-`pond` supports external tools via MCP. To add a server, create a section in your
-config for it:
-
-```ini
-[mcp.nixos]
-command = nix
-args = run github:utensils/mcp-nixos --
-timeout = 30
-```
-
-The agent will automatically discover and use tools from all configured MCP
-servers.
-
 ### 📝 Codify & Explain
 
 Press **Ctrl + A** to swap between natural language and shell commands:

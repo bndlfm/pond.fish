@@ -4,7 +4,6 @@ import json
 import sys
 import argparse
 import os
-import asyncio
 
 def get_config_setting(name):
     try:
@@ -53,100 +52,6 @@ def web_search(query):
         return "\n".join(results) if results else "No results found."
     except Exception as e:
         return f"Search error: {str(e)}"
-
-def get_server_params(server_config):
-    from mcp import StdioServerParameters
-    import shlex
-    
-    command = server_config.get('command')
-    if not command:
-        return None
-    
-    args = []
-    if 'args' in server_config:
-        args = shlex.split(server_config['args'])
-    else:
-        parts = shlex.split(command)
-        command = parts[0]
-        args = parts[1:]
-    
-    # Silence the startup noise but preserve actual errors
-    env = os.environ.copy()
-    env["FASTMCP_NO_BANNER"] = "1"
-    env["FASTMCP_LOG_LEVEL"] = "ERROR"
-    env["MCP_LOG_LEVEL"] = "ERROR"
-    env["PYTHON_LOG_LEVEL"] = "ERROR"
-        
-    return StdioServerParameters(
-        command=command,
-        args=args,
-        env=env
-    )
-
-async def call_mcp_tool(server_name, tool_name, arguments):
-    from fish_ai.config import get_mcp_servers
-    from mcp import ClientSession
-    from mcp.client.stdio import stdio_client
-    
-    server_config = get_mcp_servers().get(server_name)
-    if not server_config:
-        return f"Error: MCP server '{server_name}' not found."
-    
-    params = get_server_params(server_config)
-    if not params:
-        return f"Error: Invalid configuration for MCP server '{server_name}'."
-    
-    timeout = float(server_config.get('timeout', 10.0))
-    
-    try:
-        # We redirect stderr to suppress banners and noise
-        async with stdio_client(params) as (read, write):
-            async with ClientSession(read, write) as session:
-                await asyncio.wait_for(session.initialize(), timeout=timeout)
-                result = await session.call_tool(tool_name, arguments)
-                text_content = []
-                for part in result.content:
-                    if hasattr(part, 'text'):
-                        text_content.append(part.text)
-                    else:
-                        text_content.append(str(part))
-                return "\n".join(text_content)
-    except asyncio.TimeoutError:
-        return f"MCP Error: Server '{server_name}' timed out."
-    except Exception as e:
-        return f"MCP Error ({server_name}): {str(e)}"
-
-async def get_all_mcp_tools():
-    from fish_ai.config import get_mcp_servers
-    from mcp import ClientSession
-    from mcp.client.stdio import stdio_client
-    
-    servers = get_mcp_servers()
-    all_tools = []
-    
-    for name, config in servers.items():
-        params = get_server_params(config)
-        if not params: continue
-        
-        timeout = float(config.get('timeout', 10.0))
-        try:
-            async with stdio_client(params) as (read, write):
-                async with ClientSession(read, write) as session:
-                    await asyncio.wait_for(session.initialize(), timeout=timeout)
-                    tools_result = await session.list_tools()
-                    for tool in tools_result.tools:
-                        all_tools.append({
-                            "type": "function",
-                            "function": {
-                                "name": f"mcp__{name}__{tool.name}",
-                                "description": f"(MCP: {name}) {tool.description}",
-                                "parameters": tool.inputSchema
-                            }
-                        })
-        except Exception as e:
-            debug_log(f"Failed to load tools from MCP server '{name}': {e}")
-            
-    return all_tools
 
 TOOLS = [
     {
@@ -199,7 +104,7 @@ MANDATORY AUDIT RULES:
 5. Work through your plan turn-by-turn. Provide a final summary of your findings or actions when complete.
 """
 
-async def compress_history(messages):
+def compress_history(messages):
     from fish_ai.engine import get_chat_response
     if len(messages) <= 10: return messages
     system_msg = messages[0]
@@ -223,7 +128,7 @@ async def compress_history(messages):
         return [system_msg] + initial_context + [compressed_msg, ack_msg] + recent_msgs
     except: return messages
 
-async def main_async():
+def main():
     try:
         from fish_ai.engine import get_chat_response, get_os, get_logger
         parser = argparse.ArgumentParser()
@@ -271,14 +176,10 @@ async def main_async():
             else: messages.append({'role': 'user', 'content': content})
 
         if args.compress or len(messages) > 20:
-            messages = await compress_history(messages)
+            messages = compress_history(messages)
             with open(args.state, 'w') as f: json.dump(messages, f)
 
-        # Load MCP Tools
-        mcp_tools = await get_all_mcp_tools()
-        combined_tools = TOOLS + mcp_tools
-
-        response = get_chat_response(messages, tools=combined_tools)
+        response = get_chat_response(messages, tools=TOOLS)
         if not response: raise Exception("AI returned empty response.")
 
         if args.json:
@@ -320,12 +221,9 @@ async def main_async():
                 elif func_name == 'web_search':
                     sys.stdout.write(f"TOOL_CALL: web_search({func_args.get('query')})\n")
                     result = web_search(func_args['query'])
-                elif func_name.startswith('mcp__'):
-                    _, s_name, t_name = func_name.split('__', 2)
-                    sys.stdout.write(f"TOOL_CALL: {s_name}:{t_name}(...)\n")
-                    result = await call_mcp_tool(s_name, t_name, func_args)
                 else:
                     result = f"Unknown tool: {func_name}"
+                
                 sys.stdout.write(f"TOOL_RESULT\n{result}\nEND_RESULT\n")
                 messages.append({'role': 'tool', 'tool_call_id': tool_call['id'], 'content': result})
                 with open(args.state, 'w') as f: json.dump(messages, f)
@@ -333,6 +231,7 @@ async def main_async():
         else:
             if not remaining_content and thought: remaining_content = thought
             with open(args.action_file, 'w') as f: f.write(remaining_content)
+            # Use CHAT as a generic signal that tool calls are done
             sys.stdout.write("CHAT\n")
         
         if 'usage' in response:
@@ -347,9 +246,6 @@ async def main_async():
         sys.stdout.flush()
         sys.exit(1)
 
-def main():
-    asyncio.run(main_async())
-
 def render_markdown():
     try:
         from rich.console import Console
@@ -357,4 +253,5 @@ def render_markdown():
         Console().print(Markdown(sys.stdin.read() or ""))
     except: sys.stdout.write(sys.stdin.read())
 
-if __name__ == "__main__": main()
+if __name__ == "__main__":
+    main()
