@@ -23,8 +23,8 @@ def debug_log(msg):
         sys.stderr.flush()
 
 def get_skills_dir():
-    from fish_ai.engine import get_install_dir
-    path = os.path.join(os.path.dirname(get_install_dir()), 'fish-ai', 'skills')
+    from fish_ai.config import get_config_path
+    path = os.path.join(os.path.dirname(get_config_path()), 'skills')
     if not os.path.exists(path):
         try: os.makedirs(path, exist_ok=True)
         except: pass
