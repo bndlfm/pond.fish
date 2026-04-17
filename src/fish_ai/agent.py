@@ -72,6 +72,7 @@ def get_server_params(server_config):
     
     # Silence the startup noise but preserve actual errors
     env = os.environ.copy()
+    env["FASTMCP_NO_BANNER"] = "1"
     env["FASTMCP_LOG_LEVEL"] = "ERROR"
     env["MCP_LOG_LEVEL"] = "ERROR"
     env["PYTHON_LOG_LEVEL"] = "ERROR"
