@@ -70,11 +70,11 @@ def get_server_params(server_config):
         command = parts[0]
         args = parts[1:]
     
-    # Silence the server as much as possible
+    # Silence the startup noise but preserve actual errors
     env = os.environ.copy()
-    env["FASTMCP_LOG_LEVEL"] = "CRITICAL"
-    env["MCP_LOG_LEVEL"] = "CRITICAL"
-    env["PYTHON_LOG_LEVEL"] = "CRITICAL"
+    env["FASTMCP_LOG_LEVEL"] = "ERROR"
+    env["MCP_LOG_LEVEL"] = "ERROR"
+    env["PYTHON_LOG_LEVEL"] = "ERROR"
         
     return StdioServerParameters(
         command=command,
