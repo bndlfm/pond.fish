@@ -23,7 +23,7 @@ def debug_log(msg):
         sys.stderr.flush()
 
 def get_skills_dir():
-    from fish_ai.engine import get_config_path
+    from fish_ai.config import get_config_path
     path = os.path.join(os.path.dirname(get_config_path()), 'skills')
     if not os.path.exists(path):
         try: os.makedirs(path, exist_ok=True)
@@ -82,38 +82,43 @@ class SkillManager:
             if not os.path.isdir(skill_path): continue
             md_path = os.path.join(skill_path, 'SKILL.md')
             if os.path.exists(md_path):
-                with open(md_path, 'r') as f:
-                    content_start = f.read(512)
-                    if f'name: {name}' in content_start:
-                        target_dir = skill_path
-                        break
+                try:
+                    with open(md_path, 'r') as f:
+                        content_start = f.read(512)
+                        if f'name: {name}' in content_start:
+                            target_dir = skill_path
+                            break
+                except: continue
         if not target_dir: return None
 
-        with open(os.path.join(target_dir, 'SKILL.md'), 'r') as f:
-            content = f.read()
-            body = re.sub(r'^---\s*\n.*?\n---\s*\n', '', content, flags=re.DOTALL).strip()
-        
-        def list_files(subdir):
-            path = os.path.join(target_dir, subdir)
-            if os.path.exists(path):
-                return [os.path.join(path, f) for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
-            return []
+        try:
+            with open(os.path.join(target_dir, 'SKILL.md'), 'r') as f:
+                content = f.read()
+                body = re.sub(r'^---\s*\n.*?\n---\s*\n', '', content, flags=re.DOTALL).strip()
+            
+            def list_files(subdir):
+                path = os.path.join(target_dir, subdir)
+                if os.path.exists(path):
+                    return [os.path.join(path, f) for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
+                return []
 
-        scripts = [s for s in list_files('scripts') if os.access(s, os.X_OK)]
-        refs = list_files('references')
-        assets = list_files('assets')
-        
-        manifest = f"Skill '{name}' activated.\n\nINSTRUCTIONS:\n{body}\n"
-        if scripts:
-            manifest += "\nAVAILABLE SCRIPTS (Execute via shell_execute):\n"
-            for s in scripts: manifest += f"- {s}\n"
-        if refs:
-            manifest += "\nAVAILABLE REFERENCES (Examine via read_path):\n"
-            for r in refs: manifest += f"- {r}\n"
-        if assets:
-            manifest += "\nAVAILABLE ASSETS:\n"
-            for a in assets: manifest += f"- {a}\n"
-        return manifest
+            scripts = [s for s in list_files('scripts') if os.access(s, os.X_OK)]
+            refs = list_files('references')
+            assets = list_files('assets')
+            
+            manifest = f"Skill '{name}' activated.\n\nINSTRUCTIONS:\n{body}\n"
+            if scripts:
+                manifest += "\nAVAILABLE SCRIPTS (Execute via shell_execute):\n"
+                for s in scripts: manifest += f"- {s}\n"
+            if refs:
+                manifest += "\nAVAILABLE REFERENCES (Examine via read_path):\n"
+                for r in refs: manifest += f"- {r}\n"
+            if assets:
+                manifest += "\nAVAILABLE ASSETS:\n"
+                for a in assets: manifest += f"- {a}\n"
+            return manifest
+        except Exception as e:
+            return f"Error loading manifest for '{name}': {e}"
 
 def read_path(path):
     try:
@@ -277,7 +282,11 @@ def main():
         elif args.last_output is not None:
             content = args.last_output
             if args.last_status is not None: content = f"Exit status: {args.last_status}\n\nOutput:\n{content}"
-            last_id = next((m['tool_calls'][0]['id'] for m in reversed(messages) if m.get('role') == 'assistant' and m.get('tool_calls')), None)
+            last_id = None
+            for msg in reversed(messages):
+                if msg.get('role') == 'assistant' and msg.get('tool_calls'):
+                    last_id = msg['tool_calls'][0]['id']
+                    break
             if last_id: messages.append({'role': 'tool', 'tool_call_id': last_id, 'content': content})
             else: messages.append({'role': 'user', 'content': content})
         if args.compress or len(messages) > 20:
@@ -332,8 +341,13 @@ def main():
                 sys.stdout.write("CONTINUE\n")
         else:
             if not remaining_content and thought: remaining_content = thought
+            if not remaining_content: remaining_content = "The task is complete."
             with open(args.action_file, 'w') as f: f.write(remaining_content)
             sys.stdout.write("CHAT\n")
+        
+        if 'usage' in response:
+            u = response['usage']
+            sys.stdout.write(f"USAGE: prompt={u.get('prompt_tokens', 0)} completion={u.get('completion_tokens', 0)} total={u.get('total_tokens', 0)}\n")
         sys.stdout.flush()
     except KeyboardInterrupt: sys.exit(130)
     except Exception as e:

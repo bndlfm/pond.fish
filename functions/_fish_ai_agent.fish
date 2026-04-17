@@ -40,8 +40,8 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
         return
     end
 
+    # Clear current commandline but don't repaint yet
     commandline --replace ""
-    commandline -f repaint
 
     set -l cyan (set_color cyan)
     set -l yellow (set_color yellow)
@@ -52,7 +52,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
     set -l normal (set_color normal)
     set -l bold (set_color --bold)
 
-    # Load whitelist (default to common safe exploration tools)
+    # Load whitelist
     set -l whitelist_raw ("$_fish_ai_install_dir/bin/lookup_setting" whitelist)
     if test -z "$whitelist_raw"
         set whitelist_raw "ls,grep,find,cat,pwd,date,eza,fd,rg,ripgrep"
@@ -98,22 +98,26 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
         set -l response_type ""
         echo -n "" > "$signal_file"
 
+        # Execute agent and capture its output reliably
         set -l agent_out (mktemp -t fish-ai-agent-out.XXXXXX)
-        "$_fish_ai_install_dir/bin/agent" $agent_args > "$agent_out"
+        "$_fish_ai_install_dir/bin/agent" $agent_args > "$agent_out" 2>&1
         
-        # Elegant exit on interrupt
+        # Check if the agent crashed or was interrupted
         set -l agent_status $status
         if test $agent_status -ne 0
-            rm "$agent_out" "$action_file" "$signal_file"
             if test $agent_status -eq 130
                 echo "👋 "$red"Agent session interrupted."$normal
             else
                 echo "❌ "$red"Agent crashed with status $agent_status."$normal
+                echo "Error details:"
+                cat "$agent_out"
             end
+            rm "$agent_out" "$action_file" "$signal_file"
             commandline -f repaint
             return
         end
 
+        # Process the captured output
         cat "$agent_out" | while read -l line
             switch "$line"
                 case 'STATUS:*'
@@ -152,10 +156,10 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                         end
                     end
                     echo ""
-                case 'USAGE:*'
-                    # Optional usage reporting
                 case EXECUTE CONTINUE CHAT DONE ERROR
                     echo "$line" > "$signal_file"
+                case 'DEBUG:*' 'USAGE:*'
+                    # Silence but potentially log if needed
             end
         end
         rm "$agent_out"
@@ -243,13 +247,11 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 continue
 
             case CHAT
-                # After an autonomous run is done, reset 'turn' mode to 'ask'
                 if test "$confirm_mode" = "turn"
                     set confirm_mode "ask"
                 end
                 echo "💬 "$blue$bold"Agent Report:"$normal
                 cat "$action_file" | "$_fish_ai_install_dir/bin/render"
-                # Control returns to user shell immediately
                 break
 
             case DONE
@@ -262,12 +264,10 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
             
             case ERROR
                 echo "❌ "$red$bold"Agent error:"$normal" $action_content"
-                sleep 5
                 break
             
             case '*'
                 echo "❓ "$red"Unknown response:"$normal" $response_type"
-                sleep 5
                 break
         end
     end
