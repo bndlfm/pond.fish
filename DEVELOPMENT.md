@@ -28,14 +28,14 @@ editable mode.
 
 ## Enable debug logging
 
-Enable debug logging by putting `debug = True` in your `fish-ai.ini`.
+Enable debug logging by putting `debug = True` in your `config.ini`.
 Logging is done to syslog by default (if available). You can also enable
 logging to file using `log = <path to file>`, for example:
 
 ```ini
 [fish-ai]
 debug = True
-log = /tmp/fish-ai.log
+log = /home/neko/.config/fish-ai/fish-ai.log
 ```
 
 ## Run the tests

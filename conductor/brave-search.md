@@ -8,7 +8,7 @@ Enable the agent to search the web using `web_search(query)` when it needs docum
 ## Implementation Details
 
 ### 1. Configuration
--   **Setting**: Add `brave_search_api_key` to the `[fish-ai]` section in `~/.config/fish-ai.ini`.
+-   **Setting**: Add `brave_search_api_key` to the `[fish-ai]` section in `~/.config/config.ini`.
 -   **Keyring Support**: Update `fish_ai_put_api_key` to support saving the Brave key to the system keyring.
 
 ### 2. Python Agent Tool (`src/fish_ai/agent.py`)

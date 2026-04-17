@@ -99,7 +99,7 @@ Press **Ctrl + A** to swap between natural language and shell commands:
 
 ## 🤸 Configuration
 
-Edit `~/.config/fish-ai.ini` or use environment variables (ideal for **Nix/Home Manager**):
+Edit `~/.config/fish-ai/config.ini` or use environment variables (ideal for **Nix/Home Manager**):
 
 ```ini
 [fish-ai]

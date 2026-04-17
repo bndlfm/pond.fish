@@ -39,7 +39,7 @@ The wrapper will:
 
 ### 4. Integration & Configuration
 - **Entry Point**: `agent = 'fish_ai.agent:main'` in `pyproject.toml`.
-- **Key Binding**: `Ctrl+A` (configurable via `keymap_3` in `fish-ai.ini`).
+- **Key Binding**: `Ctrl+A` (configurable via `keymap_3` in `config.ini`).
 - **System Prompt**: Updated to guide the agent on tool usage and Fish shell specificities.
 
 ## Verification & Testing

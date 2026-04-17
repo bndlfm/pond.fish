@@ -5,10 +5,10 @@
 set -g _fish_ai_supported_versions 3.10 3.11 3.12 3.13 3.14
 
 set -g _fish_ai_install_dir (test -z "$XDG_DATA_HOME"; and echo "$HOME/.local/share/fish-ai"; or echo "$XDG_DATA_HOME/fish-ai")
-set -g _fish_ai_config_path (test -z "$XDG_CONFIG_HOME"; and echo "$HOME/.config/fish-ai.ini"; or echo "$XDG_CONFIG_HOME/fish-ai.ini")
+set -g _fish_ai_config_path (test -z "$XDG_CONFIG_HOME"; and echo "$HOME/.config/fish-ai/config.ini"; or echo "$XDG_CONFIG_HOME/fish-ai/config.ini")
 
 ##
-## This section creates the keybindings for fish-ai. Modify your `fish-ai.ini`
+## This section creates the keybindings for fish-ai. Modify your `config.ini`
 ## and restart the terminal emulator to change the keybindings from their defaults.
 ##
 function _fish_ai_bind --description "Create keybindings for fish-ai."
@@ -107,10 +107,11 @@ function _fish_ai_update --on-event fish_ai_update
         echo "👷 Moving installation directory to '$_fish_ai_install_dir'."
         mv "$HOME/.fish-ai" "$_fish_ai_install_dir"
     end
-    if test -f "$HOME/.config/fish-ai.ini"
-        if test "$_fish_ai_config_path" != "$HOME/.config/fish-ai.ini"
+    if test -f "$HOME/.config/config.ini"
+        if test "$_fish_ai_config_path" != "$HOME/.config/config.ini"
             echo "👷 Moving configuration file to '$_fish_ai_config_path'."
-            mv "$HOME/.config/fish-ai.ini" "$_fish_ai_config_path"
+            mkdir -p (dirname "$_fish_ai_config_path")
+            mv "$HOME/.config/config.ini" "$_fish_ai_config_path"
         end
     end
     # Upgrade to fish-ai 2.0.0
@@ -285,6 +286,7 @@ function _fish_ai_autoconfig_gh_models --description "Deploy configuration for G
     if test -z (gh ext ls | grep "gh models" 2>/dev/null)
         return
     end
+    mkdir -p (dirname "$_fish_ai_config_path")
     echo "[fish-ai]" >>"$_fish_ai_config_path"
     echo "configuration = github" >>"$_fish_ai_config_path"
     echo "" >>"$_fish_ai_config_path"

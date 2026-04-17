@@ -8,9 +8,15 @@ import os
 
 def get_config_path():
     if 'XDG_CONFIG_HOME' in os.environ:
-        return path.expandvars('$XDG_CONFIG_HOME/fish-ai.ini')
+        config_dir = path.expandvars('$XDG_CONFIG_HOME/fish-ai')
     else:
-        return path.expanduser('~/.config/fish-ai.ini')
+        config_dir = path.expanduser('~/.config/fish-ai')
+    
+    if not path.exists(config_dir):
+        try: os.makedirs(config_dir, exist_ok=True)
+        except: pass
+        
+    return path.join(config_dir, 'config.ini')
 
 
 def lookup_setting():

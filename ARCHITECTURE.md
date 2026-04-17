@@ -20,7 +20,7 @@ invoked by the fisher package manager.
 - `functions/_fish_ai_autocomplete_or_fix.fish`: Entrypoint when pressing
 `Ctrl + Space`.
 - `functions/_fish_ai_codify_or_explain.fish`: Entrypoint when pressing
-`Ctrl + P`.
+`Ctrl + A`.
 - `src/fish_ai`: Directory containing the `fish_ai` Python module with most
 of the business logic.
 
@@ -39,7 +39,7 @@ here on GitHub.
 The virtual environment is created in the `$XDG_DATA_HOME/fish-ai` directory. It
 contains the `fish_ai` module along with its dependencies.
 
-The configuration file `$XDG_CONFIG_HOME/fish-ai.ini` is the only file that lives
+The configuration file `$XDG_CONFIG_HOME/fish-ai/config.ini` is the only file that lives
 outside this virtual environment, so the user can remove the plugin without
 their configuration disappearing.
 
@@ -63,12 +63,12 @@ completions and displays the fuzzy finder window.
 commandline.
 - `src/fish_ai/redact.py`: Contains the logic for redacting sensitive information
 from the prompt.
-- `src/fish_ai/config.py`: Contains logic for parsing the contents of `fish-ai.ini`.
+- `src/fish_ai/config.py`: Contains logic for parsing the contents of `config.ini`.
 
 ## How the key bindings work
 
 The key bindings are registered using `bind` when the shell starts. When
-pressing `Ctrl + Space` or `Ctrl + P`, the corresponding function in
+pressing `Ctrl + Space` or `Ctrl + A`, the corresponding function in
 the `functions` directory is called. This function will grab the contents
 of the commandline buffer and pass it to the `fish_ai` module which is
 doing the actual API call.
@@ -77,7 +77,7 @@ Here is what it looks like:
 
 ```mermaid
 flowchart TD
-    KeyPress((fa:fa-user Key press)) -->|Ctrl+P| CodifyOrExplain(fa:fa-fish _fish_ai_codify_or_explain)
+    KeyPress((fa:fa-user Key press)) -->|Ctrl+A| CodifyOrExplain(fa:fa-fish _fish_ai_codify_or_explain)
     KeyPress -->|Ctrl+Space| AutocompleteOrFix(fa:fa-fish _fish_ai_autocomplete_or_fix)
     CodifyOrExplain --> Comment?{"Comment?"}
     Comment? -->|Yes| Codify(fa:fa-fish _fish_ai_codify)
@@ -94,5 +94,5 @@ flowchart TD
     PythonCodify -->|Messages| Engine(fa:fa-fish engine)
     PythonExplain -->|Messages| Engine(fa:fa-python engine)
     Engine --> Api[/API/]
-    Engine -->|Read config| Config("fish-ai.ini")
+    Engine -->|Read config| Config("config.ini")
 ```

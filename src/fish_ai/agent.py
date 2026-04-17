@@ -24,12 +24,11 @@ def debug_log(msg):
 
 def get_skills_dir():
     from fish_ai.config import get_config_path
-    config_dir = os.path.dirname(get_config_path())
-    path = os.path.join(config_dir, 'fish-ai', 'skills')
-    if not os.path.exists(path):
-        try: os.makedirs(path, exist_ok=True)
+    skills_dir = os.path.join(os.path.dirname(get_config_path()), 'skills')
+    if not os.path.exists(skills_dir):
+        try: os.makedirs(skills_dir, exist_ok=True)
         except: pass
-    return path
+    return skills_dir
 
 class SkillManager:
     def __init__(self):

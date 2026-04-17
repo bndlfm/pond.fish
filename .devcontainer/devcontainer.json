@@ -38,7 +38,7 @@
         "ghcr.io/meaningful-ooo/devcontainer-features/fish:1.2.2": {}
     },
     "mounts": [
-        "source=${localEnv:HOME}/.config/fish-ai.ini,target=/home/vscode/.config/fish-ai.ini,type=bind,consistency=cached"
+        "source=${localEnv:HOME}/.config/config.ini,target=/home/vscode/.config/config.ini,type=bind,consistency=cached"
     ],
     "postCreateCommand": "pre-commit install -t pre-commit -t commit-msg -t post-commit"
 }
