@@ -299,7 +299,8 @@ def main():
         if thought: sys.stdout.write(f"THOUGHT\n{thought}\nEND_THOUGHT\n")
         if response.get('tool_calls'):
             tool_call = response['tool_calls'][0]
-            func_name = tool_call['function']['name'].split(':')[-1]
+            raw_func_name = tool_call['function']['name']
+            func_name = raw_func_name.split(':')[-1]
             func_args = json.loads(tool_call['function']['arguments'])
             if func_name == 'shell_execute':
                 with open(args.action_file, 'w') as f: f.write(func_args['command'])
