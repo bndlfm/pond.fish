@@ -88,45 +88,59 @@ function pond --description "The master command for the pond AI suite."
                 set -l skill_id "$remaining_args[2]"
                 if test -z "$skill_id"
                     echo "❌ "$red"Error: No skill ID provided."$normal
-                    echo "Usage: pond skill install <owner>/<repo>"
+                    echo "Usage: pond skill install <owner>/<repo>/skills/<name>"
                     return 1
                 end
                 
+                # Expected format: owner/repo/path/to/skill
+                # Example: anthropics/skills/skills/pdf
+                set -l parts (string split "/" "$skill_id")
+                if test (count $parts) -lt 3
+                    echo "❌ "$red"Error: Invalid skill ID format."$normal
+                    echo "Usage: pond skill install <owner>/<repo>/[path/to/skill]"
+                    return 1
+                end
+
+                set -l owner $parts[1]
+                set -l repo $parts[2]
+                set -l skill_path (string join "/" $parts[3..-1])
+                set -l skill_name $parts[-1]
+
                 set -l skills_dir (dirname "$_fish_ai_config_path")/skills
                 mkdir -p "$skills_dir"
                 
-                # Extract repo name from owner/repo
-                set -l skill_name (string split "/" "$skill_id")[-1]
-
-                echo "📥 "$cyan"Downloading skill '$skill_id' from skills.sh..."$normal
+                echo "📥 "$cyan"Installing skill '$skill_name' from github.com/$owner/$repo..."$normal
                 
-                # Check for curl and tar
-                if not type -q curl; or not type -q tar
-                    echo "❌ "$red"Error: 'curl' and 'tar' are required to install skills."$normal
+                # Check for git
+                if not type -q git
+                    echo "❌ "$red"Error: 'git' is required to install skills."$normal
                     return 1
                 end
 
-                # Download and extract the skill
-                set -l tmp_file (mktemp -t skill-$skill_name.XXXXXX.tar.gz)
-                if curl -L -s "https://skills.sh/$skill_id.tar.gz" -o "$tmp_file"
-                    # Try to extract it. We expect it to be a gzipped tarball.
-                    if tar -xzf "$tmp_file" -C "$skills_dir"
-                        echo "✅ "$green"Skill '$skill_id' installed successfully."$normal
-                        echo "   Location: $skills_dir/$skill_name"
+                # Use a temporary directory for sparse clone
+                set -l tmp_clone_dir (mktemp -d -t skill-clone.XXXXXX)
+                
+                if git clone --depth 1 --filter=blob:none --sparse "https://github.com/$owner/$repo.git" "$tmp_clone_dir" >/dev/null 2>&1
+                    pushd "$tmp_clone_dir"
+                    if git sparse-checkout set "$skill_path" >/dev/null 2>&1
+                        if test -d "$skill_path"
+                            cp -R "$skill_path" "$skills_dir/"
+                            echo "✅ "$green"Skill '$skill_name' installed successfully."$normal
+                            echo "   Location: $skills_dir/$skill_name"
+                        else
+                            echo "❌ "$red"Error: Skill path '$skill_path' not found in repository."$normal
+                        end
                     else
-                        echo "❌ "$red"Failed to extract skill '$skill_id'."$normal
-                        rm -f "$tmp_file"
-                        return 1
+                        echo "❌ "$red"Error: Failed to perform sparse checkout for '$skill_path'."$normal
                     end
+                    popd
                 else
-                    echo "❌ "$red"Failed to download skill '$skill_id' from skills.sh."$normal
-                    rm -f "$tmp_file"
-                    return 1
+                    echo "❌ "$red"Error: Failed to clone repository 'https://github.com/$owner/$repo.git'."$normal
                 end
-                rm -f "$tmp_file"
+                rm -rf "$tmp_clone_dir"
             else
                 echo "❓ Unknown skill action: $action"
-                echo "Try 'pond skill list' or 'pond skill install <name>'."
+                echo "Try 'pond skill list' or 'pond skill install <owner/repo/path>'."
             end
 
         case forget
@@ -199,7 +213,7 @@ function pond --description "The master command for the pond AI suite."
             echo ""
             echo "$bold""General Commands:""$normal"
             echo "  skill list          List all available specialized skills"
-            echo "  skill install <id>  Install a skill (e.g., owner/repo) from skills.sh"
+            echo "  skill install <id>  Install a skill from GitHub (e.g., anthropics/skills/skills/pdf)"
             echo "  version, -v         Display version information"
             echo "  help, -h            Show this help message"
             echo ""

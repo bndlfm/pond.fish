@@ -19,4 +19,4 @@ complete -c pond -n "__fish_use_subcommand" -a help -d "Show help"
 
 # Subcommands for 'skill'
 complete -c pond -n "__fish_seen_subcommand_from skill skills" -a list -d "List available skills"
-complete -c pond -n "__fish_seen_subcommand_from skill skills" -a install -d "Install a skill from skills.sh"
+complete -c pond -n "__fish_seen_subcommand_from skill skills" -a install -d "Install a skill from GitHub"
