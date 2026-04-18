@@ -25,13 +25,15 @@ def debug_log(msg):
 def get_skills_dir():
     try:
         from fish_ai.config import get_config_path
-        skills_dir = os.path.join(os.path.dirname(get_config_path()), 'skills')
+        config_path = get_config_path()
+        if not config_path:
+            return os.path.expanduser('~/.config/fish-ai/skills')
+        skills_dir = os.path.join(os.path.dirname(config_path), 'skills')
         if not os.path.exists(skills_dir):
             try: os.makedirs(skills_dir, exist_ok=True)
             except: pass
         return skills_dir
     except Exception as e:
-        debug_log(f"Error resolving skills directory: {e}")
         return os.path.expanduser('~/.config/fish-ai/skills')
 
 class SkillManager:
@@ -62,7 +64,6 @@ class SkillManager:
                                 if line.startswith('description:'): desc = line.split(':', 1)[1].strip()
                             if name and desc:
                                 self.catalog[name] = desc
-                                debug_log(f"Discovered skill: {name}")
                 except Exception as e: debug_log(f"Error parsing skill {item}: {e}")
 
     def get_catalog_text(self):
@@ -92,8 +93,7 @@ class SkillManager:
                 if os.path.exists(md_path):
                     try:
                         with open(md_path, 'r') as f:
-                            content_start = f.read(512)
-                            if f'name: {name}' in content_start:
+                            if f'name: {name}' in f.read(512):
                                 target_dir = skill_path
                                 break
                     except: continue
@@ -231,50 +231,30 @@ MANDATORY AUDIT RULES:
 7. Work through your plan turn-by-turn. Provide a final summary of your findings when complete.
 """
 
-def compress_history(messages):
-    from fish_ai.engine import get_chat_response
-    if len(messages) <= 10: return messages
-    system_msg = messages[0]
-    initial_context = messages[1:3] if len(messages) > 3 else []
-    recent_msgs = messages[-4:]
-    to_summarize = messages[3:-4] if len(messages) > 7 else []
-    if not to_summarize: return messages
-    sys.stdout.write("STATUS: Compressing history...\n")
-    sys.stdout.flush()
-    summary_prompt = [
-        {'role': 'system', 'content': 'Summarize the following shell actions and findings into a concise list of "Achievements so far".'},
-        {'role': 'user', 'content': json.dumps(to_summarize)}
-    ]
-    try:
-        response = get_chat_response(summary_prompt)
-        summary_text = response.get('content', 'History compressed.')
-        compressed_msg = {'role': 'user', 'content': f"[SYSTEM: History Compressed]\nSummary:\n{summary_text}"}
-        ack_msg = {'role': 'assistant', 'content': "Understood. Resuming with previous context."}
-        return [system_msg] + initial_context + [compressed_msg, ack_msg] + recent_msgs
-    except: return messages
-
 def main():
+    # Parse arguments first so we can use them in error handling
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--state', required=True)
+    parser.add_argument('--action-file', required=True)
+    parser.add_argument('--goal')
+    parser.add_argument('--external-history')
+    parser.add_argument('--cwd')
+    parser.add_argument('--last-output')
+    parser.add_argument('--last-status', type=int)
+    parser.add_argument('--rejected', action='store_true')
+    parser.add_argument('--compress', action='store_true')
+    parser.add_argument('--json', action='store_true')
+    
     try:
+        args = parser.parse_args()
+    except:
+        sys.exit(1)
+
+    try:
+        # Now do the risky imports and logic
         from fish_ai.engine import get_chat_response, get_os, get_logger
         
-        parser = argparse.ArgumentParser()
-        parser.add_argument('--state', required=True)
-        parser.add_argument('--action-file', required=True)
-        parser.add_argument('--goal')
-        parser.add_argument('--external-history')
-        parser.add_argument('--cwd')
-        parser.add_argument('--last-output')
-        parser.add_argument('--last-status', type=int)
-        parser.add_argument('--rejected', action='store_true')
-        parser.add_argument('--compress', action='store_true')
-        parser.add_argument('--json', action='store_true')
-        args = parser.parse_args()
-        
-        try:
-            skill_manager = SkillManager()
-        except Exception as e:
-            debug_log(f"SkillManager initialization failed: {e}")
-            skill_manager = None
+        skill_manager = SkillManager()
             
         messages = []
         if os.path.exists(args.state) and os.path.getsize(args.state) > 0:
@@ -291,29 +271,29 @@ def main():
             if args.cwd or args.external_history:
                 messages.append({'role': 'user', 'content': context_msg})
                 messages.append({'role': 'assistant', 'content': "Understood."})
+        
         if args.goal: messages.append({'role': 'user', 'content': args.goal})
-        elif not messages or len(messages) <= 1: messages.append({'role': 'user', 'content': 'Hello, how can I help you today?'})
-        if args.rejected: messages.append({'role': 'user', 'content': 'I rejected that command.'})
+        elif not messages or len(messages) <= 1: messages.append({'role': 'user', 'content': 'Ready.'})
+
+        if args.rejected:
+            messages.append({'role': 'user', 'content': 'I rejected that command.'})
         elif args.last_output is not None:
             content = args.last_output
             if args.last_status is not None: content = f"Exit status: {args.last_status}\n\nOutput:\n{content}"
-            last_id = None
-            for msg in reversed(messages):
-                if msg.get('role') == 'assistant' and msg.get('tool_calls'):
-                    last_id = msg['tool_calls'][0]['id']
-                    break
+            last_id = next((m['tool_calls'][0]['id'] for m in reversed(messages) if m.get('role') == 'assistant' and m.get('tool_calls')), None)
             if last_id: messages.append({'role': 'tool', 'tool_call_id': last_id, 'content': content})
             else: messages.append({'role': 'user', 'content': content})
-        if args.compress or len(messages) > 20:
-            messages = compress_history(messages)
-            with open(args.state, 'w') as f: json.dump(messages, f)
+
         response = get_chat_response(messages, tools=TOOLS)
         if not response: raise Exception("AI returned empty response.")
+        
         if args.json:
             print(json.dumps(response, indent=2))
             sys.exit(0)
+
         messages.append(response)
         with open(args.state, 'w') as f: json.dump(messages, f)
+
         full_content = response.get('content', '')
         remaining_content, thought = full_content, ""
         if '<think>' in full_content:
@@ -324,6 +304,7 @@ def main():
         elif response.get('tool_calls'):
             thought = full_content.strip()
             remaining_content = ""
+
         if thought: sys.stdout.write(f"THOUGHT\n{thought}\nEND_THOUGHT\n")
         if response.get('tool_calls'):
             tool_call = response['tool_calls'][0]
@@ -363,9 +344,13 @@ def main():
     except KeyboardInterrupt: sys.exit(130)
     except Exception as e:
         import traceback
-        error_msg = f"{e}\n{traceback.format_exc()}"
-        debug_log(error_msg)
-        with open(args.action_file, 'w') as f: f.write(error_msg)
+        error_msg = f"Agent Error: {e}\n{traceback.format_exc()}"
+        # Print to stderr for capture by fish wrapper
+        sys.stderr.write(error_msg + "\n")
+        # Also write to action file for redundancy
+        try:
+            with open(args.action_file, 'w') as f: f.write(error_msg)
+        except: pass
         sys.stdout.write("ERROR\n")
         sys.stdout.flush()
         sys.exit(1)
