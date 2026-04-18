@@ -35,7 +35,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
     set -l signal_file (mktemp -t fish-ai-signal.XXXXXX)
     
     if test -z "$goal"; and not test -f "$state_file"
-        echo "No goal provided and no active session to resume."
+        echo "No goal provided and no active session to resume." >&2
         rm "$action_file" "$signal_file"
         return
     end
@@ -64,11 +64,11 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
     end
 
     if test -n "$goal"
-        echo ""
-        echo "🤖 "$bold"Agent received goal:"$normal" $goal"
+        echo "" >&2
+        echo "🤖 "$bold"Agent received goal:"$normal" $goal" >&2
     else
-        echo ""
-        echo "🤖 Resuming agent session..."
+        echo "" >&2
+        echo "🤖 Resuming agent session..." >&2
     end
 
     set -l last_output ""
@@ -106,13 +106,13 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
         set -l agent_status $status
         if test $agent_status -ne 0
             if test $agent_status -eq 130
-                echo "👋 "$red"Agent session interrupted."$normal
+                echo "👋 "$red"Agent session interrupted."$normal >&2
             else
-                echo "❌ "$red"Agent crashed with status $agent_status."$normal
-                echo "Error details:"
-                cat "$agent_out"
-                echo ""
-                echo "Press any key to return to shell..."
+                echo "❌ "$red"Agent crashed with status $agent_status."$normal >&2
+                echo "Error details:" >&2
+                cat "$agent_out" >&2
+                echo "" >&2
+                echo "Press any key to return to shell..." >&2
                 read -n 1
             end
             rm "$agent_out" "$action_file" "$signal_file"
@@ -125,10 +125,10 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
             switch "$line"
                 case 'STATUS:*'
                     set -l status_msg (string replace "STATUS: " "" "$line")
-                    echo "⏳ $status_msg"
+                    echo "⏳ $status_msg" >&2
                 case THOUGHT
-                    echo "$blue---$normal"
-                    echo "💭 "$blue$bold"Thought:"$normal
+                    echo "$blue---$normal" >&2
+                    echo "💭 "$blue$bold"Thought:"$normal >&2
                     set -l thought_content ""
                     while read -l thought_line
                         if test "$thought_line" = "END_THOUGHT"
@@ -136,15 +136,15 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                         end
                         set thought_content "$thought_content$thought_line\n"
                     end
-                    echo -e "$thought_content" | "$_fish_ai_install_dir/bin/render"
+                    echo -e "$thought_content" | "$_fish_ai_install_dir/bin/render" >&2
                 case 'TOOL_CALL:*'
                     set -l call (string replace "TOOL_CALL: " "" "$line")
-                    echo "🛠️  "$yellow$bold"Action: $call"$normal
+                    echo "🛠️  "$yellow$bold"Action: $call"$normal >&2
                 case 'SKILL_ACTIVATE:*'
                     set -l skill (string replace "SKILL_ACTIVATE: " "" "$line")
-                    echo "🔌 "$magenta$bold"Activating Skill: $skill"$normal
+                    echo "🔌 "$magenta$bold"Activating Skill: $skill"$normal >&2
                 case TOOL_RESULT
-                    echo "📋 "$cyan$bold"Result:"$normal" "
+                    echo "📋 "$cyan$bold"Result:"$normal" " >&2
                     set -l result_content ""
                     while read -l result_line
                         if test "$result_line" = "END_RESULT"
@@ -153,12 +153,12 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                         set result_content "$result_content$result_line\n"
                     end
                     if test (string length "$result_content") -gt 0
-                        echo -e "$result_content" | head -n 4
+                        echo -e "$result_content" | head -n 4 >&2
                         if test (echo -e "$result_content" | wc -l) -gt 4
-                            echo "$cyan... [Output Truncated]$normal"
+                            echo "$cyan... [Output Truncated]$normal" >&2
                         end
                     end
-                    echo ""
+                    echo "" >&2
                 case EXECUTE CONTINUE CHAT DONE ERROR
                     echo "$line" > "$signal_file"
                 case 'DEBUG:*' 'USAGE:*'
@@ -171,7 +171,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
         set -l action_content (cat "$action_file")
 
         if test -z "$response_type"
-            echo "❌ "$red"Agent failed to respond."$normal
+            echo "❌ "$red"Agent failed to respond."$normal >&2
             break
         end
 
@@ -186,20 +186,21 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 end
 
                 if test "$confirm_mode" = "ask" -a $is_whitelisted -eq 0
-                    echo "👉 "$yellow$bold"Agent wants to execute:"$normal" "$bold"$action_content"$normal
-                    echo "   ["$green$bold"y"$normal"] Allow once"
-                    echo "   ["$blue$bold"t"$normal"] Allow for this task (automatic until goal/chat)"
-                    echo "   ["$cyan$bold"a"$normal"] Always allow for this session"
-                    echo "   ["$red$bold"n"$normal"] Deny this command"
+                    echo "👉 "$yellow$bold"Agent wants to execute:"$normal" "$bold"$action_content"$normal >&2
+                    echo "   ["$green$bold"y"$normal"] Allow once" >&2
+                    echo "   ["$blue$bold"t"$normal"] Allow for this task (automatic until goal/chat)" >&2
+                    echo "   ["$cyan$bold"a"$normal"] Always allow for this session" >&2
+                    echo "   ["$red$bold"n"$normal"] Deny this command" >&2
                     
                     if not read -l -P (set_color green)"Allow? [y/t/a/n]: "(set_color normal) user_choice
                         rm "$action_file" "$signal_file"
-                        echo "👋 "$red"Agent session interrupted."$normal
+                        echo "👋 "$red"Agent session interrupted."$normal >&2
                         commandline -f repaint
                         return
                     end
                     
-                    printf "\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K"
+                    # Clear the prompt from stderr
+                    printf "\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K\033[1A\033[2K" >&2
                     
                     switch "$user_choice"
                         case t Turn turn
@@ -208,23 +209,23 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                             set confirm_mode "always"
                         case n No no
                             set rejected 1
-                            echo "❌ "$red"Command denied."$normal
+                            echo "❌ "$red"Command denied."$normal >&2
                             continue
                         case y Yes yes ""
                             # Proceed
                         case '*'
                             set rejected 1
-                            echo "❌ "$red"Invalid choice."$normal
+                            echo "❌ "$red"Invalid choice."$normal >&2
                             continue
                     end
                 end
                 
                 if test $is_whitelisted -eq 1
-                    echo "🛠️  "$yellow$bold"Agent executed (whitelisted):"$normal" "$bold"$action_content"$normal
+                    echo "🛠️  "$yellow$bold"Agent executed (whitelisted):"$normal" "$bold"$action_content"$normal >&2
                 else if test "$confirm_mode" = "turn"; or test "$confirm_mode" = "always"
-                    echo "🛠️  "$yellow$bold"Agent executed (authorized):"$normal" "$bold"$action_content"$normal
+                    echo "🛠️  "$yellow$bold"Agent executed (authorized):"$normal" "$bold"$action_content"$normal >&2
                 else
-                    echo "🛠️  "$yellow$bold"Agent executed:"$normal" "$bold"$action_content"$normal
+                    echo "🛠️  "$yellow$bold"Agent executed:"$normal" "$bold"$action_content"$normal >&2
                 end
                 
                 set last_output (eval $action_content 2>&1 | string collect)
@@ -232,19 +233,19 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 
                 if test $last_status -eq 130
                     rm "$action_file" "$signal_file"
-                    echo "👋 "$red"Agent session interrupted."$normal
+                    echo "👋 "$red"Agent session interrupted."$normal >&2
                     commandline -f repaint
                     return
                 end
 
                 if test -n "$last_output"
-                    echo "✅ "$green$bold"Output:"$normal
-                    echo "$last_output" | head -n 4
+                    echo "✅ "$green$bold"Output:"$normal >&2
+                    echo "$last_output" | head -n 4 >&2
                     if test (echo "$last_output" | wc -l) -gt 4
-                        echo "$green... [Output Truncated]$normal"
+                        echo "$green... [Output Truncated]$normal" >&2
                     end
                 end
-                echo ""
+                echo "" >&2
             
             case CONTINUE
                 continue
@@ -253,24 +254,32 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 if test "$confirm_mode" = "turn"
                     set confirm_mode "ask"
                 end
-                echo "💬 "$blue$bold"Agent Report:"$normal
-                cat "$action_file" | "$_fish_ai_install_dir/bin/render"
+                if isatty stdout
+                    echo "💬 "$blue$bold"Agent Report:"$normal
+                    cat "$action_file" | "$_fish_ai_install_dir/bin/render"
+                else
+                    cat "$action_file"
+                end
                 break
 
             case DONE
                 if test "$confirm_mode" = "turn"
                     set confirm_mode "ask"
                 end
-                echo "✅ "$green$bold"Final Achievement:"$normal" "
-                cat "$action_file" | "$_fish_ai_install_dir/bin/render"
+                if isatty stdout
+                    echo "✅ "$green$bold"Final Achievement:"$normal" "
+                    cat "$action_file" | "$_fish_ai_install_dir/bin/render"
+                else
+                    cat "$action_file"
+                end
                 break
             
             case ERROR
-                echo "❌ "$red$bold"Agent error:"$normal" $action_content"
+                echo "❌ "$red$bold"Agent error:"$normal" $action_content" >&2
                 break
             
             case '*'
-                echo "❓ "$red"Unknown response:"$normal" $response_type"
+                echo "❓ "$red"Unknown response:"$normal" $response_type" >&2
                 break
         end
     end
