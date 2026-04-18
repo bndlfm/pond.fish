@@ -192,7 +192,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                     echo "   ["$cyan$bold"a"$normal"] Always allow for this session" >&2
                     echo "   ["$red$bold"n"$normal"] Deny this command" >&2
                     
-                    if not read -l -P (set_color green)"Allow? [y/t/a/n]: "(set_color normal) user_choice
+                    if not read -l -P (set_color green)"Allow? [y/t/a/n]: "(set_color normal) user_choice </dev/tty
                         rm "$action_file" "$signal_file"
                         echo "👋 "$red"Agent session interrupted."$normal >&2
                         commandline -f repaint
