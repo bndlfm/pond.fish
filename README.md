@@ -10,12 +10,13 @@
 
 1.  **Autonomous AI Agent (`Ctrl+X`)**: A multi-turn expert that can read files, list directories, search the web, and execute shell commands to achieve complex goals.
 2.  **Unified `pond` Command**: A master utility for piping data to an LLM, managing the agent, or asking quick questions.
-3.  **Codify / Explain (`Ctrl+A`)**: Instantly turn natural language into shell commands or get clear explanations of what a command does.
-4.  **Autocomplete / Fix (`Ctrl+Space`)**: Intelligent, context-aware command completions and instant fixes for your last failed command.
-5.  **Brave Search Integration**: Real-time web access for troubleshooting, documentation, and research.
-6.  **Advanced Audit UI**: Color-coded streaming of agent thoughts, tool calls, and truncated results directly in your terminal.
-7.  **Surgical Permissions**: A 4-tier permission system (`[y/t/a/n]`) that puts you in full control of every system-modifying action.
-8.  **Session Persistence**: Maintains conversation state between loops, allowing for long-running, multi-step collaborations.
+3.  **SKILL.md Support**: Fully compatible with the `skills.sh` / `agentskills.io` standard. "Teach" the agent new expertise by dropping Markdown folders into `~/.config/fish-ai/skills/`.
+4.  **Codify / Explain (`Ctrl+A`)**: Instantly turn natural language into shell commands or get clear explanations of what a command does.
+5.  **Autocomplete / Fix (`Ctrl+Space`)**: Intelligent, context-aware command completions and instant fixes for your last failed command.
+6.  **Brave Search Integration**: Real-time web access for troubleshooting, documentation, and research.
+7.  **Advanced Audit UI**: Color-coded streaming of agent thoughts, tool calls, and truncated results directly in your terminal.
+8.  **Surgical Permissions**: A 4-tier permission system (`[y/t/a/n]`) that puts you in full control of every system-modifying action.
+9.  **Session Persistence**: Maintains conversation state between loops, allowing for long-running, multi-step collaborations.
 
 ## 📦 Installation
 
@@ -46,6 +47,7 @@ The agent will work turn-by-turn. When it needs to execute a command, it will pr
 - `pond agent forget`: Wipes the agent's memory to start a fresh session.
 - `pond agent compress`: Manually trigger a summarization of long histories.
 - `pond agent status`: View current session statistics.
+- `pond skills list`: List all available specialized skills.
 
 You can also trigger the agent directly from the CLI:
 ```shell
@@ -64,7 +66,7 @@ cat README.md | pond "summarize this"
 pond "find python entrypoints" --json
 ```
 
-Aliases like `pond ai`, `pond q`, or `pond ask` can also be used. It does not include shell history or previous agent state, making it ideal for scripting and data processing.
+It does not include shell history or previous agent state, making it ideal for scripting and data processing.
 
 ### 🛡️ Command Whitelist
 
@@ -84,6 +86,15 @@ To enable web research, add your [Brave Search API key](https://api.search.brave
 ```ini
 [fish-ai]
 brave_search_api_key = <your_key>
+```
+
+### 🔌 Specialized Skills
+
+`pond` supports the **agentskills.io** open standard. To add an expert, drop a skill folder from [skills.sh](https://skills.sh) into your skills directory:
+
+```shell
+# Location: ~/.config/fish-ai/skills/
+pond skills list
 ```
 
 ### 📝 Codify & Explain
