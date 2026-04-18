@@ -77,16 +77,56 @@ function pond --description "The master command for the pond AI suite."
 
     # 6. Handle Subcommands
     switch "$subcommand"
-        case skill
+        case skill skills
             set -l action "$remaining_args[1]"
             if test "$action" = "list" -o -z "$action"
                 set -l state_file "$_fish_ai_install_dir/agent_session.json"
                 set -l action_file (mktemp -t fish-ai-action.XXXXXX)
                 "$_fish_ai_install_dir/bin/agent" --state "$state_file" --action-file "$action_file" --list-skills
                 rm "$action_file"
+            else if test "$action" = "install"
+                set -l skill_id "$remaining_args[2]"
+                if test -z "$skill_id"
+                    echo "❌ "$red"Error: No skill ID provided."$normal
+                    echo "Usage: pond skill install <owner>/<repo>"
+                    return 1
+                end
+                
+                set -l skills_dir (dirname "$_fish_ai_config_path")/skills
+                mkdir -p "$skills_dir"
+                
+                # Extract repo name from owner/repo
+                set -l skill_name (string split "/" "$skill_id")[-1]
+
+                echo "📥 "$cyan"Downloading skill '$skill_id' from skills.sh..."$normal
+                
+                # Check for curl and tar
+                if not type -q curl; or not type -q tar
+                    echo "❌ "$red"Error: 'curl' and 'tar' are required to install skills."$normal
+                    return 1
+                end
+
+                # Download and extract the skill
+                set -l tmp_file (mktemp -t skill-$skill_name.XXXXXX.tar.gz)
+                if curl -L -s "https://skills.sh/$skill_id.tar.gz" -o "$tmp_file"
+                    # Try to extract it. We expect it to be a gzipped tarball.
+                    if tar -xzf "$tmp_file" -C "$skills_dir"
+                        echo "✅ "$green"Skill '$skill_id' installed successfully."$normal
+                        echo "   Location: $skills_dir/$skill_name"
+                    else
+                        echo "❌ "$red"Failed to extract skill '$skill_id'."$normal
+                        rm -f "$tmp_file"
+                        return 1
+                    end
+                else
+                    echo "❌ "$red"Failed to download skill '$skill_id' from skills.sh."$normal
+                    rm -f "$tmp_file"
+                    return 1
+                end
+                rm -f "$tmp_file"
             else
                 echo "❓ Unknown skill action: $action"
-                echo "Try 'pond skill list'."
+                echo "Try 'pond skill list' or 'pond skill install <name>'."
             end
 
         case forget
@@ -159,6 +199,7 @@ function pond --description "The master command for the pond AI suite."
             echo ""
             echo "$bold""General Commands:""$normal"
             echo "  skill list          List all available specialized skills"
+            echo "  skill install <id>  Install a skill (e.g., owner/repo) from skills.sh"
             echo "  version, -v         Display version information"
             echo "  help, -h            Show this help message"
             echo ""

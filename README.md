@@ -94,11 +94,17 @@ brave_search_api_key = <your_key>
 
 ### 🔌 Specialized Skills
 
-`pond` supports the **agentskills.io** open standard. To add an expert, drop a skill folder from [skills.sh](https://skills.sh) into your skills directory:
+`pond` supports the **agentskills.io** open standard. To add an expert, use the `install` command:
+
+```shell
+pond skill install vercel-labs/google-workspace
+```
+
+Or manually drop a skill folder from [skills.sh](https://skills.sh) into your skills directory:
 
 ```shell
 # Location: ~/.config/fish-ai/skills/
-pond skills list
+pond skill list
 ```
 
 ### 📝 Codify & Explain
