@@ -16,7 +16,7 @@ def get_config_path():
         try: os.makedirs(config_dir, exist_ok=True)
         except: pass
         
-    return path.join(config_dir, 'fish-ai.ini')
+    return path.join(config_dir, 'config.ini')
 
 
 def lookup_setting():

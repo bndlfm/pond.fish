@@ -107,11 +107,11 @@ function _fish_ai_update --on-event fish_ai_update
         echo "👷 Moving installation directory to '$_fish_ai_install_dir'."
         mv "$HOME/.fish-ai" "$_fish_ai_install_dir"
     end
-    if test -f "$HOME/.config/config.ini"
-        if test "$_fish_ai_config_path" != "$HOME/.config/config.ini"
+    if test -f "$HOME/.config/fish-ai.ini"
+        if test "$_fish_ai_config_path" != "$HOME/.config/fish-ai.ini"
             echo "👷 Moving configuration file to '$_fish_ai_config_path'."
             mkdir -p (dirname "$_fish_ai_config_path")
-            mv "$HOME/.config/config.ini" "$_fish_ai_config_path"
+            mv "$HOME/.config/fish-ai.ini" "$_fish_ai_config_path"
         end
     end
     # Upgrade to fish-ai 2.0.0
