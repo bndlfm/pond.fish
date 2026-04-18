@@ -72,7 +72,7 @@ class SkillManager:
             return text + "No skills found. To add a skill, create a folder with a SKILL.md file in that directory."
         text += "Available skills:\n"
         for name, desc in self.catalog.items():
-            text += f"- {name}: {desc}\n"
+            text += f"- **{name}**: {desc}\n"
         return text
 
     def get_catalog_prompt(self):

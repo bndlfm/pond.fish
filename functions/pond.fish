@@ -82,7 +82,7 @@ function pond --description "The master command for the pond AI suite."
             if test "$action" = "list" -o -z "$action"
                 set -l state_file "$_fish_ai_install_dir/agent_session.json"
                 set -l action_file (mktemp -t fish-ai-action.XXXXXX)
-                "$_fish_ai_install_dir/bin/agent" --state "$state_file" --action-file "$action_file" --list-skills
+                "$_fish_ai_install_dir/bin/agent" --state "$state_file" --action-file "$action_file" --list-skills | "$_fish_ai_install_dir/bin/render"
                 rm "$action_file"
             else if test "$action" = "install"
                 set -l skill_id "$remaining_args[2]"
