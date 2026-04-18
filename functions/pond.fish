@@ -77,7 +77,7 @@ function pond --description "The master command for the pond AI suite."
 
     # 6. Handle Subcommands
     switch "$subcommand"
-        case skill skills
+        case skill
             set -l action "$remaining_args[1]"
             if test "$action" = "list" -o -z "$action"
                 set -l state_file "$_fish_ai_install_dir/agent_session.json"
