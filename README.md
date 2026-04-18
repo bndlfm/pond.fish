@@ -44,7 +44,7 @@ The agent will work turn-by-turn. When it needs to execute a command, it will pr
 - **`[n]` Deny**: Prevent the command from running and let the agent rethink.
 
 **Manage Session State:**
-- `pond -a <goal>`: Shorthand to trigger the autonomous agent.
+- `pond -a <goal>`: Trigger the autonomous agent.
 - `pond forget`: Wipes the agent's memory to start a fresh session.
 - `pond compress`: Manually trigger a summarization of long histories.
 - `pond status`: View current session statistics.

@@ -6,10 +6,9 @@ complete -c pond -f
 # Options
 complete -c pond -l json -d "Output raw JSON response"
 complete -c pond -s q -d "Run a stateless AI query (supports piping)"
-complete -c pond -s a -d "Trigger the autonomous agent (shorthand for 'agent')"
+complete -c pond -s a -d "Trigger the autonomous agent"
 
 # Main subcommands
-complete -c pond -n "__fish_use_subcommand" -a agent -d "Autonomous AI Agent"
 complete -c pond -n "__fish_use_subcommand" -a skill -d "List available skills"
 complete -c pond -n "__fish_use_subcommand" -a forget -d "Clear agent memory"
 complete -c pond -n "__fish_use_subcommand" -a compress -d "Summarize agent history"

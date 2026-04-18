@@ -57,28 +57,26 @@ function pond --description "The master command for the pond AI suite."
         return
     end
 
-    # 5. Handle Subcommands / Shorthands
+    # 5. Handle Agent via -a
     if test $agent_flag -eq 1
-        set subcommand agent
-        set remaining_args $clean_args
+        set -l state_file "$_fish_ai_install_dir/agent_session.json"
+        
+        if test -n "$clean_args"
+            commandline -r "$clean_args"
+        end
+        
+        if test $json_flag -eq 1
+            set -l action_file (mktemp -t fish-ai-action.XXXXXX)
+            "$_fish_ai_install_dir/bin/agent" --state "$state_file" --action-file "$action_file" --goal "$clean_args" --json
+            rm "$action_file"
+        else
+            _fish_ai_agent
+        end
+        return
     end
 
+    # 6. Handle Subcommands
     switch "$subcommand"
-        case agent
-            set -l state_file "$_fish_ai_install_dir/agent_session.json"
-            
-            if test -n "$remaining_args"
-                commandline -r "$remaining_args"
-            end
-            
-            if test $json_flag -eq 1
-                set -l action_file (mktemp -t fish-ai-action.XXXXXX)
-                "$_fish_ai_install_dir/bin/agent" --state "$state_file" --action-file "$action_file" --goal "$remaining_args" --json
-                rm "$action_file"
-            else
-                _fish_ai_agent
-            end
-
         case skill
             set -l action "$remaining_args[1]"
             if test "$action" = "list" -o -z "$action"
@@ -150,11 +148,10 @@ function pond --description "The master command for the pond AI suite."
             echo ""
             echo "$bold""Options:""$normal"
             echo "  -q <prompt>         Run a stateless AI query (supports piping)"
-            echo "  -a <goal>           Trigger the autonomous agent (shorthand for 'agent')"
+            echo "  -a <goal>           Trigger the autonomous agent"
             echo "  --json              Output raw JSON response"
             echo ""
-            echo "$bold""Agent Commands:""$normal"
-            echo "  agent <goal>        Trigger the autonomous agent"
+            echo "$bold""Session Commands:""$normal"
             echo "  forget              Clear the agent's session memory"
             echo "  compress            Summarize long conversation history"
             echo "  status              Show current session statistics"
