@@ -6,6 +6,7 @@ complete -c pond -f
 # Main subcommands
 complete -c pond -n "__fish_use_subcommand" -a agent -d "Autonomous AI Agent"
 complete -c pond -n "__fish_use_subcommand" -a ai -d "Stateless query (supports piping)"
+complete -c pond -n "__fish_use_subcommand" -a skills -d "List available skills"
 complete -c pond -n "__fish_use_subcommand" -a forget -d "Clear agent memory"
 complete -c pond -n "__fish_use_subcommand" -a compress -d "Summarize agent history"
 complete -c pond -n "__fish_use_subcommand" -a status -d "Show session stats"
@@ -21,7 +22,5 @@ complete -c pond -n "__fish_seen_subcommand_from agent" -a forget -d "Clear agen
 complete -c pond -n "__fish_seen_subcommand_from agent" -a compress -d "Summarize agent history"
 complete -c pond -n "__fish_seen_subcommand_from agent" -a status -d "Show session stats"
 
-# Tab completion for goals (completes from history)
-# This allows you to Tab through previous AI instructions
-complete -c pond -n "__fish_seen_subcommand_from agent" -a "(history | head -n 50)"
-complete -c pond -n "__fish_use_subcommand" -a "(history | grep -v '^pond' | head -n 20)"
+# Subcommands for 'skills'
+complete -c pond -n "__fish_seen_subcommand_from skills" -a list -d "List available skills"
