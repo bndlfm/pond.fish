@@ -138,7 +138,7 @@ function pond --description "The master command for the pond AI suite."
                     echo "❌ "$red"Error: Failed to clone repository 'https://github.com/$owner/$repo.git'."$normal
                 end
                 rm -rf "$tmp_clone_dir"
-            else if test "$action" = "remove" -o "$action" = "rm"
+            else if test "$action" = "remove"
                 set -l skill_name "$remaining_args[2]"
                 if test -z "$skill_name"
                     echo "❌ "$red"Error: No skill name provided."$normal

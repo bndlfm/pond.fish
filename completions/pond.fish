@@ -20,4 +20,5 @@ complete -c pond -n "__fish_use_subcommand" -a help -d "Show help"
 # Subcommands for 'skill'
 complete -c pond -n "__fish_seen_subcommand_from skill" -a list -d "List available skills"
 complete -c pond -n "__fish_seen_subcommand_from skill" -a install -d "Install a skill from GitHub"
-complete -c pond -n "__fish_seen_subcommand_from skill; and __fish_seen_subcommand_from remove rm" -a "(ls (test -z \"$XDG_CONFIG_HOME\"; and echo \"$HOME/.config/fish-ai/skills\"; or echo \"$XDG_CONFIG_HOME/fish-ai/skills\") 2>/dev/null)" -d "Installed skill"
+complete -c pond -n "__fish_seen_subcommand_from skill" -a remove -d "Remove an installed skill"
+complete -c pond -n "__fish_seen_subcommand_from skill; and __fish_seen_subcommand_from remove" -a "(ls (test -z \"$XDG_CONFIG_HOME\"; and echo \"$HOME/.config/fish-ai/skills\"; or echo \"$XDG_CONFIG_HOME/fish-ai/skills\") 2>/dev/null)" -d "Installed skill"
