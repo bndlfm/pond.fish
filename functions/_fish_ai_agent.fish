@@ -228,8 +228,13 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                     echo "🛠️  "$yellow$bold"Agent executed:"$normal" "$bold"$action_content"$normal >&2
                 end
                 
-                set last_output (eval $action_content 2>&1 | string collect)
+                set -l out_file (mktemp -t fish-ai-eval-out.XXXXXX)
+                begin
+                    eval $action_content
+                end > "$out_file" 2>&1
                 set last_status $status
+                set last_output (cat "$out_file" | string collect)
+                rm "$out_file"
                 
                 if test $last_status -eq 130
                     rm "$action_file" "$signal_file"
