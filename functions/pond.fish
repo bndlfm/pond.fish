@@ -11,7 +11,7 @@ function pond --description "The master command for the pond AI suite."
     if contains -- --json $argv
         set json_flag 1
     end
-    if contains -- -q $argv; or contains -- -ask $argv
+    if contains -- -q $argv
         set query_flag 1
     end
     if contains -- -a $argv
@@ -21,7 +21,7 @@ function pond --description "The master command for the pond AI suite."
     # 2. Argument Cleaning
     set -l clean_args
     for arg in $argv
-        if test "$arg" != "--json" -a "$arg" != "-q" -a "$arg" != "-ask" -a "$arg" != "-a"
+        if test "$arg" != "--json" -a "$arg" != "-q" -a "$arg" != "-a"
             set clean_args $clean_args "$arg"
         end
     end
