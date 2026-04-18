@@ -45,9 +45,9 @@ The agent will work turn-by-turn. When it needs to execute a command, it will pr
 
 **Manage Session State:**
 - `pond -a <goal>`: Shorthand to trigger the autonomous agent.
-- `pond agent forget`: Wipes the agent's memory to start a fresh session.
-- `pond agent compress`: Manually trigger a summarization of long histories.
-- `pond agent status`: View current session statistics.
+- `pond forget`: Wipes the agent's memory to start a fresh session.
+- `pond compress`: Manually trigger a summarization of long histories.
+- `pond status`: View current session statistics.
 - `pond skill list`: List all available specialized skills.
 
 You can also trigger the agent directly from the CLI:

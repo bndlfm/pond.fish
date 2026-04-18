@@ -19,10 +19,5 @@ complete -c pond -n "__fish_use_subcommand" -a edit -d "Edit session history in 
 complete -c pond -n "__fish_use_subcommand" -a version -d "Show version"
 complete -c pond -n "__fish_use_subcommand" -a help -d "Show help"
 
-# Subcommands for 'agent'
-complete -c pond -n "__fish_seen_subcommand_from agent" -a forget -d "Clear agent memory"
-complete -c pond -n "__fish_seen_subcommand_from agent" -a compress -d "Summarize agent history"
-complete -c pond -n "__fish_seen_subcommand_from agent" -a status -d "Show session stats"
-
 # Subcommands for 'skill'
 complete -c pond -n "__fish_seen_subcommand_from skill" -a list -d "List available skills"

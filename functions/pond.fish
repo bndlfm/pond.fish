@@ -65,53 +65,18 @@ function pond --description "The master command for the pond AI suite."
 
     switch "$subcommand"
         case agent
-            set -l action "$remaining_args[1]"
             set -l state_file "$_fish_ai_install_dir/agent_session.json"
-
-            switch "$action"
-                case forget
-                    if test -f "$state_file"
-                        rm "$state_file"
-                        echo "🧹 "$green"Agent session cleared."$normal
-                    else
-                        echo "ℹ️  No active agent session found."
-                    end
-
-                case compress
-                    if not test -f "$state_file"
-                        echo "ℹ️  No active agent session to compress."
-                        return
-                    end
-                    set -l action_file (mktemp -t fish-ai-action.XXXXXX)
-                    echo "🗜️  "$cyan"Compressing session history..."$normal
-                    "$_fish_ai_install_dir/bin/agent" --state "$state_file" --action-file "$action_file" --compress > /dev/null
-                    rm "$action_file"
-                    echo "✅ "$green"Compression complete."$normal
-
-                case status
-                    if test -f "$state_file"
-                        set -l size (du -h "$state_file" | cut -f1)
-                        set -l turns (grep -c '"role":' "$state_file")
-                        echo "🤖 "$bold"Agent Session Status:"$normal
-                        echo "  - File: $state_file"
-                        echo "  - Size: $size"
-                        echo "  - Message turns: $turns"
-                    else
-                        echo "ℹ️  "$yellow"No active agent session."$normal
-                    end
-
-                case '*'
-                    if test -n "$remaining_args"
-                        commandline -r "$remaining_args"
-                    end
-                    
-                    if test $json_flag -eq 1
-                        set -l action_file (mktemp -t fish-ai-action.XXXXXX)
-                        "$_fish_ai_install_dir/bin/agent" --state "$state_file" --action-file "$action_file" --goal "$remaining_args" --json
-                        rm "$action_file"
-                    else
-                        _fish_ai_agent
-                    end
+            
+            if test -n "$remaining_args"
+                commandline -r "$remaining_args"
+            end
+            
+            if test $json_flag -eq 1
+                set -l action_file (mktemp -t fish-ai-action.XXXXXX)
+                "$_fish_ai_install_dir/bin/agent" --state "$state_file" --action-file "$action_file" --goal "$remaining_args" --json
+                rm "$action_file"
+            else
+                _fish_ai_agent
             end
 
         case skill
@@ -127,11 +92,38 @@ function pond --description "The master command for the pond AI suite."
             end
 
         case forget
-            pond agent forget
+            set -l state_file "$_fish_ai_install_dir/agent_session.json"
+            if test -f "$state_file"
+                rm "$state_file"
+                echo "🧹 "$green"Agent session cleared."$normal
+            else
+                echo "ℹ️  No active agent session found."
+            end
+
         case compress
-            pond agent compress
+            set -l state_file "$_fish_ai_install_dir/agent_session.json"
+            if not test -f "$state_file"
+                echo "ℹ️  No active agent session to compress."
+                return
+            end
+            set -l action_file (mktemp -t fish-ai-action.XXXXXX)
+            echo "🗜️  "$cyan"Compressing session history..."$normal
+            "$_fish_ai_install_dir/bin/agent" --state "$state_file" --action-file "$action_file" --compress > /dev/null
+            rm "$action_file"
+            echo "✅ "$green"Compression complete."$normal
+
         case status
-            pond agent status
+            set -l state_file "$_fish_ai_install_dir/agent_session.json"
+            if test -f "$state_file"
+                set -l size (du -h "$state_file" | cut -f1)
+                set -l turns (grep -c '"role":' "$state_file")
+                echo "🤖 "$bold"Agent Session Status:"$normal
+                echo "  - File: $state_file"
+                echo "  - Size: $size"
+                echo "  - Message turns: $turns"
+            else
+                echo "ℹ️  "$yellow"No active agent session."$normal
+            end
 
         case edit
             set -l state_file "$_fish_ai_install_dir/agent_session.json"
@@ -163,9 +155,9 @@ function pond --description "The master command for the pond AI suite."
             echo ""
             echo "$bold""Agent Commands:""$normal"
             echo "  agent <goal>        Trigger the autonomous agent"
-            echo "  agent forget        Clear the agent's session memory"
-            echo "  agent compress      Summarize long conversation history"
-            echo "  agent status        Show current session statistics"
+            echo "  forget              Clear the agent's session memory"
+            echo "  compress            Summarize long conversation history"
+            echo "  status              Show current session statistics"
             echo "  edit                Open session history in your editor"
             echo ""
             echo "$bold""General Commands:""$normal"
