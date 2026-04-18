@@ -253,7 +253,16 @@ def main():
     try:
         # Now do the risky imports and logic
         from fish_ai.engine import get_chat_response, get_os, get_logger
+        from fish_ai.config import get_config, get_config_path
         
+        # Validate configuration
+        config_path = get_config_path()
+        if not os.path.exists(config_path):
+            raise Exception(f"Configuration file not found at {config_path}. Please create it or check the path.")
+        
+        if not get_config('configuration'):
+            raise Exception(f"Configuration error: '[fish-ai] configuration = ...' is missing in {config_path}")
+            
         skill_manager = SkillManager()
             
         messages = []

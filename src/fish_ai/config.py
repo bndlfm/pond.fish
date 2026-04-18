@@ -16,7 +16,7 @@ def get_config_path():
         try: os.makedirs(config_dir, exist_ok=True)
         except: pass
         
-    return path.join(config_dir, 'config.ini')
+    return path.join(config_dir, 'fish-ai.ini')
 
 
 def lookup_setting():
@@ -37,22 +37,26 @@ def put_setting():
 
 def get_config(key):
     if not config.has_section('fish-ai'):
-        # There is no configuration file or the user made a mistake.
-        # Just return 'None' here to simplify testing.
         return None
 
-    active_section = config.get(section='fish-ai', option='configuration')
+    try:
+        active_section = config.get(section='fish-ai', option='configuration')
+    except:
+        return None
 
-    if config.has_option(section=active_section, option=key):
+    if config.has_section(active_section) and config.has_option(section=active_section, option=key):
         return path.expandvars(config.get(section=active_section, option=key))
 
     if config.has_option(section='fish-ai', option=key):
         return path.expandvars(config.get(section='fish-ai', option=key))
 
-    if key == 'api_key':
+    if key == 'api_key' and active_section:
         # If not specified in the configuration, try to load from keyring
-        import keyring
-        return keyring.get_password('fish-ai', active_section)
+        try:
+            import keyring
+            return keyring.get_password('fish-ai', active_section)
+        except:
+            return None
 
     return None
 
