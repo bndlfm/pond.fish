@@ -131,16 +131,34 @@ function pond --description "The master command for the pond AI suite."
                             echo "❌ "$red"Error: Skill path '$skill_path' not found in repository."$normal
                         end
                     else
-                        echo "❌ "$red"Error: Failed to perform sparse checkout for '$skill_path'."$normal
+                        echo "❌ "$red"Failed to perform sparse checkout for '$skill_path'."$normal
                     end
                     popd
                 else
                     echo "❌ "$red"Error: Failed to clone repository 'https://github.com/$owner/$repo.git'."$normal
                 end
                 rm -rf "$tmp_clone_dir"
+            else if test "$action" = "remove" -o "$action" = "rm"
+                set -l skill_name "$remaining_args[2]"
+                if test -z "$skill_name"
+                    echo "❌ "$red"Error: No skill name provided."$normal
+                    echo "Usage: pond skill remove <skill-name>"
+                    return 1
+                end
+
+                set -l skills_dir (dirname "$_fish_ai_config_path")/skills
+                set -l target_dir "$skills_dir/$skill_name"
+
+                if test -d "$target_dir"
+                    rm -rf "$target_dir"
+                    echo "🗑️  "$green"Skill '$skill_name' removed successfully."$normal
+                else
+                    echo "❌ "$red"Error: Skill '$skill_name' not found in $skills_dir."$normal
+                    return 1
+                end
             else
                 echo "❓ Unknown skill action: $action"
-                echo "Try 'pond skill list' or 'pond skill install <owner/repo/path>'."
+                echo "Try 'pond skill list', 'pond skill install <owner/repo/path>' or 'pond skill remove <name>'."
             end
 
         case forget
@@ -214,6 +232,7 @@ function pond --description "The master command for the pond AI suite."
             echo "$bold""General Commands:""$normal"
             echo "  skill list          List all available specialized skills"
             echo "  skill install <id>  Install a skill from GitHub (e.g., anthropics/skills/skills/pdf)"
+            echo "  skill remove <name> Remove an installed skill"
             echo "  version, -v         Display version information"
             echo "  help, -h            Show this help message"
             echo ""
