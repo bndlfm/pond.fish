@@ -56,17 +56,20 @@ pond agent "find all large files"
 
 ### 🐚 Unified `pond` Command (Piping & Query)
 
-The `pond` command provides a stateless interface for quick LLM queries, supporting piping:
+The `pond` command provides a master interface for AI tasks. To run a quick, stateless query, use the `-q` flag:
 
 ```shell
 # Pipe context in
-cat README.md | pond "summarize this"
+cat README.md | pond -q "summarize this"
+
+# Run a direct query
+pond -q "what is the capital of Spain?"
 
 # Output raw JSON
-pond "find python entrypoints" --json
+pond -q "find python entrypoints" --json
 ```
 
-It does not include shell history or previous agent state, making it ideal for scripting and data processing.
+Implicit queries (unflagged strings) are disabled for safety. It does not include shell history or previous agent state, making it ideal for scripting and data processing.
 
 ### 🛡️ Command Whitelist
 
