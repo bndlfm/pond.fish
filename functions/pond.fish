@@ -150,13 +150,19 @@ function pond --description "The master command for the pond AI suite."
         case '*'
             if test -z "$subcommand"
                 pond help
+            else if test (count $remaining_args) -gt 0
+                echo "❌ "$red"Unknown subcommand: $subcommand"$normal
+                echo "To use implicit AI inference, wrap your prompt in quotation marks:"
+                echo "  pond \"$subcommand $remaining_args\""
+                echo ""
+                echo "Or use the explicit 'ai' command:"
+                echo "  pond ai $subcommand $remaining_args"
             else
-                # IMPORTANT: If the subcommand is not 'skills', it falls through to the LLM.
-                # If the user typed 'pond skills list' and got a resume, it means 'skills' didn't match.
+                # Single argument (likely quoted or a single word)
                 if test $json_flag -eq 1
-                    "$_fish_ai_install_dir/bin/ai" $argv --json
+                    "$_fish_ai_install_dir/bin/ai" $subcommand --json
                 else
-                    "$_fish_ai_install_dir/bin/ai" $argv
+                    "$_fish_ai_install_dir/bin/ai" $subcommand
                 end
             end
     end
