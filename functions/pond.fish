@@ -87,18 +87,6 @@ function pond --description "The master command for the pond AI suite."
                 "$_fish_ai_install_dir/bin/ai" $remaining_args
             end
 
-        case skill skills
-            set -l action "$remaining_args[1]"
-            if test "$action" = "list" -o -z "$action"
-                set -l state_file "$_fish_ai_install_dir/agent_session.json"
-                set -l action_file (mktemp -t fish-ai-action.XXXXXX)
-                "$_fish_ai_install_dir/bin/agent" --state "$state_file" --action-file "$action_file" --list-skills
-                rm "$action_file"
-            else
-                echo "❓ Unknown skill action: $action"
-                echo "Try 'pond skill list'."
-            end
-
         case forget
             pond agent forget
         case compress
@@ -144,7 +132,6 @@ function pond --description "The master command for the pond AI suite."
             echo "  --json              Output raw JSON response (ai/agent only)"
             echo ""
             echo "$bold""General Commands:""$normal"
-            echo "  skills list         List all available specialized skills"
             echo "  version, -v         Display version information"
             echo "  help, -h            Show this help message"
             echo ""
