@@ -47,7 +47,7 @@ The agent will work turn-by-turn. When it needs to execute a command, it will pr
 - `pond agent forget`: Wipes the agent's memory to start a fresh session.
 - `pond agent compress`: Manually trigger a summarization of long histories.
 - `pond agent status`: View current session statistics.
-- `pond skills list`: List all available specialized skills.
+- `pond skill list`: List all available specialized skills.
 
 You can also trigger the agent directly from the CLI:
 ```shell

@@ -196,7 +196,7 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "list_skills",
-            "description": "List all available specialized skills (experts) in the local skills directory.",
+            "description": "List all available specialized skills (experts) in the local skill directory.",
             "parameters": {
                 "type": "object",
                 "properties": {}
