@@ -19,5 +19,8 @@ complete -c pond -n "__fish_use_subcommand" -a edit -d "Edit session history in 
 complete -c pond -n "__fish_use_subcommand" -a version -d "Show version"
 complete -c pond -n "__fish_use_subcommand" -a help -d "Show help"
 
+# Subcommands for 'agent'
+# (No subcommands for agent anymore, only goals)
+
 # Subcommands for 'skill'
 complete -c pond -n "__fish_seen_subcommand_from skill" -a list -d "List available skills"
