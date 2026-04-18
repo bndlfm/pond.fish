@@ -5,6 +5,7 @@ function pond --description "The master command for the pond AI suite."
     set -l remaining_args $argv[2..-1]
     set -l json_flag 0
     set -l query_flag 0
+    set -l agent_flag 0
     
     # 1. Flag Detection
     if contains -- --json $argv
@@ -13,16 +14,19 @@ function pond --description "The master command for the pond AI suite."
     if contains -- -q $argv; or contains -- -ask $argv
         set query_flag 1
     end
+    if contains -- -a $argv
+        set agent_flag 1
+    end
 
     # 2. Argument Cleaning
     set -l clean_args
     for arg in $argv
-        if test "$arg" != "--json" -a "$arg" != "-q" -a "$arg" != "-ask"
+        if test "$arg" != "--json" -a "$arg" != "-q" -a "$arg" != "-ask" -a "$arg" != "-a"
             set clean_args $clean_args "$arg"
         end
     end
     
-    # 3. Subcommand Extraction
+    # 3. Subcommand/Goal Extraction
     if test (count $clean_args) -gt 0
         set subcommand "$clean_args[1]"
         set remaining_args $clean_args[2..-1]
@@ -44,7 +48,6 @@ function pond --description "The master command for the pond AI suite."
             return 1
         end
         
-        # Combine all non-flag arguments into the prompt
         set -l full_prompt "$clean_args"
         if test $json_flag -eq 1
             "$_fish_ai_install_dir/bin/ai" $full_prompt --json
@@ -54,7 +57,12 @@ function pond --description "The master command for the pond AI suite."
         return
     end
 
-    # 5. Handle Subcommands
+    # 5. Handle Subcommands / Shorthands
+    if test $agent_flag -eq 1
+        set subcommand agent
+        set remaining_args $clean_args
+    end
+
     switch "$subcommand"
         case agent
             set -l action "$remaining_args[1]"
@@ -148,8 +156,10 @@ function pond --description "The master command for the pond AI suite."
             echo ""
             echo "Usage: pond [options] <command> [arguments]"
             echo ""
-            echo "$bold""Inference:""$normal"
+            echo "$bold""Options:""$normal"
             echo "  -q <prompt>         Run a stateless AI query (supports piping)"
+            echo "  -a <goal>           Trigger the autonomous agent (shorthand for 'agent')"
+            echo "  --json              Output raw JSON response"
             echo ""
             echo "$bold""Agent Commands:""$normal"
             echo "  agent <goal>        Trigger the autonomous agent"
@@ -163,12 +173,9 @@ function pond --description "The master command for the pond AI suite."
             echo "  version, -v         Display version information"
             echo "  help, -h            Show this help message"
             echo ""
-            echo "$bold""Options:""$normal"
-            echo "  --json              Output raw JSON response"
-            echo ""
             echo "$bold""Examples:""$normal"
             echo "  cat logs.txt | pond -q \"find errors\""
-            echo "  pond agent \"fix the tests\""
+            echo "  pond -a \"fix the tests\""
 
         case '*'
             if test -z "$subcommand"

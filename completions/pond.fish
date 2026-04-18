@@ -7,6 +7,7 @@ complete -c pond -f
 complete -c pond -l json -d "Output raw JSON response"
 complete -c pond -s q -d "Run a stateless AI query (supports piping)"
 complete -c pond -o ask -d "Run a stateless AI query (supports piping)"
+complete -c pond -s a -d "Trigger the autonomous agent (shorthand for 'agent')"
 
 # Main subcommands
 complete -c pond -n "__fish_use_subcommand" -a agent -d "Autonomous AI Agent"

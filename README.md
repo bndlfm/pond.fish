@@ -44,6 +44,7 @@ The agent will work turn-by-turn. When it needs to execute a command, it will pr
 - **`[n]` Deny**: Prevent the command from running and let the agent rethink.
 
 **Manage Session State:**
+- `pond -a <goal>`: Shorthand to trigger the autonomous agent.
 - `pond agent forget`: Wipes the agent's memory to start a fresh session.
 - `pond agent compress`: Manually trigger a summarization of long histories.
 - `pond agent status`: View current session statistics.
@@ -51,7 +52,7 @@ The agent will work turn-by-turn. When it needs to execute a command, it will pr
 
 You can also trigger the agent directly from the CLI:
 ```shell
-pond agent "find all large files"
+pond -a "find all large files"
 ```
 
 ### 🐚 Unified `pond` Command (Piping & Query)
