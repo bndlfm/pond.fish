@@ -13,8 +13,10 @@ function pond --description "The master command for the pond AI suite."
                 set clean_args $clean_args "$arg"
             end
         end
-        set subcommand "$clean_args[1]"
-        set remaining_args $clean_args[2..-1]
+        if test (count $clean_args) -gt 0
+            set subcommand "$clean_args[1]"
+            set remaining_args $clean_args[2..-1]
+        end
     end
 
     # Helper for colored output
@@ -52,20 +54,18 @@ function pond --description "The master command for the pond AI suite."
                     echo "✅ "$green"Compression complete."$normal
 
                 case status
-                    if not test -f "$state_file"
+                    if test -f "$state_file"
+                        set -l size (du -h "$state_file" | cut -f1)
+                        set -l turns (grep -c '"role":' "$state_file")
+                        echo "🤖 "$bold"Agent Session Status:"$normal
+                        echo "  - File: $state_file"
+                        echo "  - Size: $size"
+                        echo "  - Message turns: $turns"
+                    else
                         echo "ℹ️  "$yellow"No active agent session."$normal
-                        return
                     end
-                    set -l size (du -h "$state_file" | cut -f1)
-                    set -l turns (grep -c '"role":' "$state_file")
-                    echo "🤖 "$bold"Agent Session Status:"$normal
-                    echo "  - File: $state_file"
-                    echo "  - Size: $size"
-                    echo "  - Message turns: $turns"
 
                 case '*'
-                    # If remaining_args is empty, just trigger agent (resumes)
-                    # If not empty, it's a new goal
                     if test -n "$remaining_args"
                         commandline -r "$remaining_args"
                     end
@@ -79,8 +79,19 @@ function pond --description "The master command for the pond AI suite."
                     end
             end
 
+        case skills
+            set -l action "$remaining_args[1]"
+            if test "$action" = "list" -o -z "$action"
+                set -l state_file "$_fish_ai_install_dir/agent_session.json"
+                set -l action_file (mktemp -t fish-ai-action.XXXXXX)
+                "$_fish_ai_install_dir/bin/agent" --state "$state_file" --action-file "$action_file" --list-skills
+                rm "$action_file"
+            else
+                echo "❓ Unknown skills action: $action"
+                echo "Try 'pond skills list'."
+            end
+
         case ai
-            # General stateless query (supports piping)
             if test $json_flag -eq 1
                 "$_fish_ai_install_dir/bin/ai" $remaining_args --json
             else
@@ -109,7 +120,7 @@ function pond --description "The master command for the pond AI suite."
             end
 
         case version -v --version
-            set -l version "2.11.1" # Hardcoded for speed, matches pyproject.toml
+            set -l version "2.11.1" 
             echo "🐟 "$bold"pond"$normal" v$version"
 
         case help -h --help
@@ -132,19 +143,16 @@ function pond --description "The master command for the pond AI suite."
             echo "  --json              Output raw JSON response (ai/agent only)"
             echo ""
             echo "$bold""General Commands:""$normal"
+            echo "  skills list         List all available specialized skills"
             echo "  version, -v         Display version information"
             echo "  help, -h            Show this help message"
-            echo ""
-            echo "$bold""Examples:""$normal"
-            echo "  cat logs.txt | pond ai \"find errors\" --json"
-            echo "  pond agent \"fix the tests\" --json"
-            echo "  pond \"how do I use the 'find' command?\""
 
         case '*'
             if test -z "$subcommand"
                 pond help
             else
-                # Default to stateless query if subcommand is unknown
+                # IMPORTANT: If the subcommand is not 'skills', it falls through to the LLM.
+                # If the user typed 'pond skills list' and got a resume, it means 'skills' didn't match.
                 if test $json_flag -eq 1
                     "$_fish_ai_install_dir/bin/ai" $argv --json
                 else
