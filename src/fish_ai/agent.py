@@ -195,17 +195,6 @@ TOOLS = [
     {
         "type": "function",
         "function": {
-            "name": "list_skills",
-            "description": "List all available specialized skills (experts) in the local skill directory.",
-            "parameters": {
-                "type": "object",
-                "properties": {}
-            }
-        }
-    },
-    {
-        "type": "function",
-        "function": {
             "name": "activate_skill",
             "description": "Activate a specific skill to load its detailed instructions and tool manifest.",
             "parameters": {
@@ -226,9 +215,8 @@ MANDATORY AUDIT RULES:
 2. Use `shell_execute` for all shell commands. They will run in the user's ACTIVE session.
 3. Use `read_path` for direct file system access.
 4. Use `web_search` for any information you don't have locally.
-5. If the user asks about your abilities or expertise, USE `list_skills` to see what experts are installed.
-6. To load the rules or scripts for a specific expert, USE `activate_skill(name)`.
-7. Work through your plan turn-by-turn. Provide a final summary of your findings when complete.
+5. To load the rules or scripts for a specific expert, USE `activate_skill(name)`.
+6. Work through your plan turn-by-turn. Provide a final summary of your findings when complete.
 """
 
 def main():
@@ -336,9 +324,6 @@ def main():
                 elif func_name == 'web_search':
                     sys.stdout.write(f"TOOL_CALL: web_search({func_args.get('query')})\n")
                     result = web_search(func_args['query'])
-                elif func_name == 'list_skills':
-                    sys.stdout.write(f"TOOL_CALL: list_skills()\n")
-                    result = skill_manager.get_catalog_text() if skill_manager else "Skill manager unavailable."
                 elif func_name == 'activate_skill':
                     skill_name = func_args.get('name')
                     sys.stdout.write(f"SKILL_ACTIVATE: {skill_name}\n")
