@@ -7,12 +7,12 @@ def test_tools_definition():
     assert len(TOOLS) == 4
     tool_names = [t['function']['name'] for t in TOOLS]
     assert 'shell_execute' in tool_names
-    assert 'read_file' in tool_names
-    assert 'list_directory' in tool_names
-    assert 'write_file' in tool_names
+    assert 'read_path' in tool_names
+    assert 'web_search' in tool_names
+    assert 'activate_skill' in tool_names
 
 def test_system_prompt():
-    assert "autonomous shell assistant" in SYSTEM_PROMPT
+    assert "expert coding assistant" in SYSTEM_PROMPT
     assert "fish shell" in SYSTEM_PROMPT
 
 def test_message_formatting():
@@ -31,7 +31,7 @@ def test_message_formatting():
                 'id': 'tc-1',
                 'type': 'function',
                 'function': {
-                    'name': 'list_directory',
+                    'name': 'read_path',
                     'arguments': json.dumps({'path': '.'})
                 }
             }
@@ -48,5 +48,5 @@ def test_message_formatting():
     messages.append(tool_msg)
     
     assert len(messages) == 4
-    assert messages[2]['tool_calls'][0]['function']['name'] == 'list_directory'
+    assert messages[2]['tool_calls'][0]['function']['name'] == 'read_path'
     assert messages[3]['role'] == 'tool'
