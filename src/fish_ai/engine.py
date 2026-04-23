@@ -170,7 +170,6 @@ def get_custom_headers():
 
 def get_openai_client():
     custom_headers = get_custom_headers()
-    from openai import OpenAI
 
     if (get_config('provider') == 'azure'):
         from openai import AzureOpenAI
@@ -182,12 +181,14 @@ def get_openai_client():
             default_headers=custom_headers,
         )
     elif (get_config('provider') == 'self-hosted'):
+        from openai import OpenAI
         return OpenAI(
             base_url=get_config('server'),
             api_key=get_config('api_key') or 'dummy',
             default_headers=custom_headers,
         )
     elif (get_config('provider') == 'openai'):
+        from openai import OpenAI
         return OpenAI(
             api_key=get_config('api_key'),
             organization=get_config('organization'),
@@ -195,12 +196,14 @@ def get_openai_client():
         )
     elif (get_config('provider') == 'deepseek'):
         # DeepSeek is compatible with OpenAI Python SDK
+        from openai import OpenAI
         return OpenAI(
             api_key=get_config('api_key'),
             base_url='https://api.deepseek.com',
             default_headers=custom_headers,
         )
     elif (get_config('provider') == 'bedrock'):
+        from openai import OpenAI
         aws_region = get_config('aws_region') or 'us-east-1'
         api_key = get_config('api_key')
         if not api_key:
@@ -219,6 +222,7 @@ def get_openai_client():
         )
     elif (get_config('provider') == 'cohere'):
         # https://docs.cohere.com/docs/compatibility-api
+        from openai import OpenAI
         return OpenAI(
             api_key=get_config('api_key'),
             base_url='https://api.cohere.ai/compatibility/v1',
@@ -427,6 +431,7 @@ def get_chat_response(messages, tools=None):
                 })
     elif get_config('provider') == 'google':
         from google import genai
+        from google.genai import types
         google_kwargs = {'api_key': get_config('api_key')}
         if custom_headers:
             from google.genai.types import HttpOptions

@@ -53,6 +53,17 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
     set -l normal (set_color normal)
     set -l bold (set_color --bold)
 
+    # Load whitelist
+    set -l whitelist_raw ("$_fish_ai_install_dir/bin/lookup_setting" whitelist)
+    if test -z "$whitelist_raw"
+        set whitelist_raw "ls,grep,find,cat,pwd,date,eza,fd,rg,ripgrep"
+    end
+    set -l whitelist (string split "," "$whitelist_raw")
+    set -l trimmed_whitelist
+    for cmd in $whitelist
+        set trimmed_whitelist $trimmed_whitelist (string trim $cmd)
+    end
+
     set -l end_time (date +%s%3N)
     set -l duration (math "($end_time - $start_time) / 1000.0")
     if test -n "$goal"
@@ -67,14 +78,6 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
     set -l last_status 0
     set -l rejected 0
     set -l confirm_mode "ask" # ask, always, turn, deny
-
-    # Pre-cache configuration
-    set -l config_whitelist (_fish_ai_get_config whitelist "ls,grep,find,cat,pwd,date,eza,fd,rg,ripgrep")
-    set -l whitelist (string split "," "$config_whitelist")
-    set -l trimmed_whitelist
-    for cmd in $whitelist
-        set trimmed_whitelist $trimmed_whitelist (string trim $cmd)
-    end
 
     while true
         set -l agent_args --state "$state_file" --action-file "$action_file"

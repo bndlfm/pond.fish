@@ -4,98 +4,68 @@
 ##
 set -g _fish_ai_supported_versions 3.10 3.11 3.12 3.13 3.14
 
-set -g _fish_ai_install_dir (test -n "$FISH_AI_INSTALL_DIR"; and echo "$FISH_AI_INSTALL_DIR"; or test -z "$XDG_DATA_HOME"; and echo "$HOME/.local/share/fish-ai"; or echo "$XDG_DATA_HOME/fish-ai")
-set -g _fish_ai_config_path (test -n "$FISH_AI_CONFIG_PATH"; and echo "$FISH_AI_CONFIG_PATH"; or test -z "$XDG_CONFIG_HOME"; and echo "$HOME/.config/fish-ai/config.ini"; or echo "$XDG_CONFIG_HOME/fish-ai/config.ini")
+set -g _fish_ai_install_dir (test -z "$XDG_DATA_HOME"; and echo "$HOME/.local/share/fish-ai"; or echo "$XDG_DATA_HOME/fish-ai")
+set -g _fish_ai_config_path (test -z "$XDG_CONFIG_HOME"; and echo "$HOME/.config/fish-ai/config.ini"; or echo "$XDG_CONFIG_HOME/fish-ai/config.ini")
 
 ##
 ## This section creates the keybindings for fish-ai. Modify your `config.ini`
 ## and restart the terminal emulator to change the keybindings from their defaults.
 ##
-function _fish_ai_get_config --description "Get a configuration value quickly using Fish."
-    set -l key $argv[1]
-    set -l default $argv[2]
-
-    # 1. Environment variables (highest priority)
-    set -l env_key "FISH_AI_"(string upper "$key")
-    if set -q $env_key
-        echo $$env_key
-        return 0
-    end
-
-    # 2. Config file
-    if test -f "$_fish_ai_config_path"
-        # Find active configuration section
-        set -l active_section (grep -m 1 "^configuration\s*=" "$_fish_ai_config_path" | cut -d'=' -f2 | string trim)
-        
-        if test -n "$active_section"
-            # Try to find key in the active section
-            set -l value (sed -n "/^\[$active_section\]/,/^\[/p" "$_fish_ai_config_path" | grep -m 1 "^$key\s*=" | cut -d'=' -f2 | string trim)
-            if test -n "$value"
-                echo $value
-                return 0
-            end
-        end
-
-        # Fallback to [fish-ai] section or global
-        set -l value (grep -m 1 "^$key\s*=" "$_fish_ai_config_path" | cut -d'=' -f2 | string trim)
-        if test -n "$value"
-            echo $value
-            return 0
-        end
-    end
-
-    # 3. Default value
-    if test -n "$default"
-        echo "$default"
-        return 0
-    end
-
-    return 1
-end
-
 function _fish_ai_bind --description "Create keybindings for fish-ai."
     # Support environment variables for keybindings (useful for Nix/Home Manager)
-    set -g _fish_ai_keymap_1 (_fish_ai_get_config keymap_1 \ca | string unescape)
-    set -g _fish_ai_keymap_2 (_fish_ai_get_config keymap_2 ctrl-space | string unescape)
-    set -g _fish_ai_keymap_3 (_fish_ai_get_config keymap_3 ctrl-x | string unescape)
-
-    # Special handling for ctrl-space which might be NULL
-    if test "$_fish_ai_keymap_2" = "ctrl-space" -a (string match -r '^[0-3]\.' "$FISH_VERSION")
-        set -g _fish_ai_keymap_2 -k nul
+    if set -q FISH_AI_KEYMAP_1
+        set -g _fish_ai_keymap_1 (echo -n "$FISH_AI_KEYMAP_1" | string unescape)
+    else if test -n ("$_fish_ai_install_dir/bin/lookup_setting" keymap_1)
+        "$_fish_ai_install_dir/bin/lookup_setting" keymap_1 | string unescape | read -g -a _fish_ai_keymap_1
+    else
+        # prefer fish key names above fish 4.x
+        if string match -r '^[0-3]\.' "$FISH_VERSION" &>/dev/null
+            set -g _fish_ai_keymap_1 \ca
+        else
+            set -g _fish_ai_keymap_1 ctrl-a
+        end
     end
 
-    # Remove existing bindings to prevent duplicates or conflicts
-    _fish_ai_unbind
+    if set -q FISH_AI_KEYMAP_2
+        set -g _fish_ai_keymap_2 (echo -n "$FISH_AI_KEYMAP_2" | string unescape)
+    else if test -n ("$_fish_ai_install_dir/bin/lookup_setting" keymap_2)
+        "$_fish_ai_install_dir/bin/lookup_setting" keymap_2 | string unescape | read -g -a _fish_ai_keymap_2
+    else
+        # prefer fish key names above fish 4.x
+        if string match -r '^[0-3]\.' "$FISH_VERSION" &>/dev/null
+            set -g _fish_ai_keymap_2 -k nul
+        else
+            set -g _fish_ai_keymap_2 ctrl-space
+        end
+    end
 
+    if set -q FISH_AI_KEYMAP_3
+        set -g _fish_ai_keymap_3 (echo -n "$FISH_AI_KEYMAP_3" | string unescape)
+    else if test -n ("$_fish_ai_install_dir/bin/lookup_setting" keymap_3)
+        "$_fish_ai_install_dir/bin/lookup_setting" keymap_3 | string unescape | read -g -a _fish_ai_keymap_3
+    else
+        # prefer fish key names above fish 4.x
+        if string match -r '^[0-3]\.' "$FISH_VERSION" &>/dev/null
+            set -g _fish_ai_keymap_3 \cx
+        else
+            set -g _fish_ai_keymap_3 ctrl-x
+        end
+    end
     if test "$fish_key_bindings" = fish_vi_key_bindings
         set -g _fish_ai_bind_command bind -M insert
     else
         set -g _fish_ai_bind_command bind
     end
-
-    # Apply bindings
-    $_fish_ai_bind_command $_fish_ai_keymap_1 _fish_ai_codify_or_explain
+    bind -M insert $_fish_ai_keymap_1 _fish_ai_codify_or_explain
     bind $_fish_ai_keymap_1 _fish_ai_codify_or_explain
-    $_fish_ai_bind_command $_fish_ai_keymap_2 _fish_ai_autocomplete_or_fix
+    bind -M insert $_fish_ai_keymap_2 _fish_ai_autocomplete_or_fix
     bind $_fish_ai_keymap_2 _fish_ai_autocomplete_or_fix
-    $_fish_ai_bind_command $_fish_ai_keymap_3 _fish_ai_agent
+    bind -M insert $_fish_ai_keymap_3 _fish_ai_agent
     bind $_fish_ai_keymap_3 _fish_ai_agent
 end
 
-if status is-interactive
-    # If the install dir doesn't exist, try to find it relative to the script
-    if not test -d "$_fish_ai_install_dir"
-        set -l script_dir (dirname (status filename))
-        # If we are in the source tree, the install dir might be .venv
-        if test -d "$script_dir/../.venv"
-            set -g _fish_ai_install_dir "$script_dir/../.venv"
-        end
-    end
-
-    # Bind if the install dir exists or if we have the binaries in PATH
-    if test -d "$_fish_ai_install_dir"; or type -q pond
-        _fish_ai_bind
-    end
+if status is-interactive && test -d "$_fish_ai_install_dir"
+    _fish_ai_bind
 end
 
 ##
@@ -145,7 +115,7 @@ function _fish_ai_update --on-event fish_ai_update
         end
     end
     # Upgrade to fish-ai 2.0.0
-    set -l provider (_fish_ai_get_config provider)
+    set -l provider ("$_fish_ai_install_dir/bin/lookup_setting" provider)
     if test "$provider" = huggingface
         echo "🌇 The provider for Hugging Face has been removed. Switch to a different provider."
     end
@@ -158,7 +128,7 @@ function _fish_ai_update --on-event fish_ai_update
     end
     # Upgrade to fish-ai 2.10.6
     if test "$provider" = cohere
-        set -l model (_fish_ai_get_config model)
+        set -l model ("$_fish_ai_install_dir/bin/lookup_setting" model)
         if test -z "$model"
             echo "👋 Please specify the Cohere model you want to use in '$_fish_ai_config_path'."
         end
@@ -325,7 +295,7 @@ function _fish_ai_show_progress_indicator --description "Show a progress indicat
         set -f rplen 0
     end
     # Get the progress indicator from the configuration, use hourglass emoji if not set
-    set -f progress_indicator (_fish_ai_get_config progress_indicator '⏳')
+    set -f progress_indicator ("$_fish_ai_install_dir/bin/lookup_setting" progress_indicator '⏳')
     set -f pilen (string length "$progress_indicator")
     # Move the cursor to the end of the line and insert progress indicator
     tput hpa (math $COLUMNS - $rplen - 1 - $pilen)
