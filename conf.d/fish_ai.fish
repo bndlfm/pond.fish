@@ -119,17 +119,6 @@ function _fish_ai_update --on-event fish_ai_update
     if test "$provider" = huggingface
         echo "🌇 The provider for Hugging Face has been removed. Switch to a different provider."
     end
-    # Upgrade to fish-ai 2.3.0
-    if test -n "$FISH_AI_KEYMAP_1"
-        echo "👷 Migrating custom keybinding FISH_AI_KEYMAP_1 to '$_fish_ai_config_path'."
-        "$_fish_ai_install_dir/bin/put_setting" fish-ai keymap_1 (echo -n "$FISH_AI_KEYMAP_1" | string escape)
-        set -e -Ug FISH_AI_KEYMAP_1
-    end
-    if test -n "$FISH_AI_KEYMAP_2"
-        echo "👷 Migrating custom keybinding FISH_AI_KEYMAP_2 to '$_fish_ai_config_path'."
-        "$_fish_ai_install_dir/bin/put_setting" fish-ai keymap_2 (echo -n "$FISH_AI_KEYMAP_2" | string escape)
-        set -e -Ug FISH_AI_KEYMAP_2
-    end
     # Upgrade to fish-ai 2.8.0
     if test -f "$_fish_ai_config_path"
         if grep -q '^temperature\s*=' "$_fish_ai_config_path"

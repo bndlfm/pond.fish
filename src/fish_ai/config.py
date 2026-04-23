@@ -36,6 +36,11 @@ def put_setting():
 
 
 def get_config(key):
+    # Support environment variables for all settings
+    env_key = f"FISH_AI_{key.upper()}"
+    if env_key in os.environ:
+        return os.environ[env_key]
+
     if not config.has_section('fish-ai'):
         return None
 
