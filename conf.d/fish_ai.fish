@@ -55,26 +55,17 @@ end
 
 function _fish_ai_bind --description "Create keybindings for fish-ai."
     # Support environment variables for keybindings (useful for Nix/Home Manager)
-    set -l key1 (_fish_ai_get_config keymap_1 \ca | string unescape)
-    set -l key2 (_fish_ai_get_config keymap_2 ctrl-space | string unescape)
-    set -l key3 (_fish_ai_get_config keymap_3 ctrl-x | string unescape)
+    set -g _fish_ai_keymap_1 (_fish_ai_get_config keymap_1 \ca | string unescape)
+    set -g _fish_ai_keymap_2 (_fish_ai_get_config keymap_2 ctrl-space | string unescape)
+    set -g _fish_ai_keymap_3 (_fish_ai_get_config keymap_3 ctrl-x | string unescape)
 
-    # Special handling for ctrl-space which might be NULL or nul
-    if test "$key2" = "ctrl-space"
-        if string match -r '^[0-3]\.' "$FISH_VERSION" &>/dev/null
-            set key2 -k nul
-        else
-            set key2 nul
-        end
+    # Special handling for ctrl-space which might be NULL
+    if test "$_fish_ai_keymap_2" = "ctrl-space" -a (string match -r '^[0-3]\.' "$FISH_VERSION")
+        set -g _fish_ai_keymap_2 -k nul
     end
 
     # Remove existing bindings to prevent duplicates or conflicts
     _fish_ai_unbind
-
-    # Update global tracking variables for unbind to use next time
-    set -g _fish_ai_keymap_1 $key1
-    set -g _fish_ai_keymap_2 $key2
-    set -g _fish_ai_keymap_3 $key3
 
     if test "$fish_key_bindings" = fish_vi_key_bindings
         set -g _fish_ai_bind_command bind -M insert
@@ -82,13 +73,13 @@ function _fish_ai_bind --description "Create keybindings for fish-ai."
         set -g _fish_ai_bind_command bind
     end
 
-    # Apply bindings using -- to prevent key names starting with - from being parsed as options
-    $_fish_ai_bind_command -- $_fish_ai_keymap_1 _fish_ai_codify_or_explain
-    bind -- $_fish_ai_keymap_1 _fish_ai_codify_or_explain
-    $_fish_ai_bind_command -- $_fish_ai_keymap_2 _fish_ai_autocomplete_or_fix
-    bind -- $_fish_ai_keymap_2 _fish_ai_autocomplete_or_fix
-    $_fish_ai_bind_command -- $_fish_ai_keymap_3 _fish_ai_agent
-    bind -- $_fish_ai_keymap_3 _fish_ai_agent
+    # Apply bindings
+    $_fish_ai_bind_command $_fish_ai_keymap_1 _fish_ai_codify_or_explain
+    bind $_fish_ai_keymap_1 _fish_ai_codify_or_explain
+    $_fish_ai_bind_command $_fish_ai_keymap_2 _fish_ai_autocomplete_or_fix
+    bind $_fish_ai_keymap_2 _fish_ai_autocomplete_or_fix
+    $_fish_ai_bind_command $_fish_ai_keymap_3 _fish_ai_agent
+    bind $_fish_ai_keymap_3 _fish_ai_agent
 end
 
 if status is-interactive
@@ -198,20 +189,20 @@ end
 
 function _fish_ai_unbind --description "Remove keybindings for fish-ai."
     if set -q _fish_ai_keymap_1
-        bind -e -- $_fish_ai_keymap_1
-        bind -M insert -e -- $_fish_ai_keymap_1 2>/dev/null
+        bind -e $_fish_ai_keymap_1
+        bind -M insert -e $_fish_ai_keymap_1 2>/dev/null
     end
     if set -q _fish_ai_keymap_2
-        bind -e -- $_fish_ai_keymap_2
-        bind -M insert -e -- $_fish_ai_keymap_2 2>/dev/null
+        bind -e $_fish_ai_keymap_2
+        bind -M insert -e $_fish_ai_keymap_2 2>/dev/null
     end
     if set -q _fish_ai_keymap_3
-        bind -e -- $_fish_ai_keymap_3
-        bind -M insert -e -- $_fish_ai_keymap_3 2>/dev/null
+        bind -e $_fish_ai_keymap_3
+        bind -M insert -e $_fish_ai_keymap_3 2>/dev/null
     end
     # Also explicitly unbind the old default Ctrl+P just in case
-    bind -e -- \cp 2>/dev/null
-    bind -M insert -e -- \cp 2>/dev/null
+    bind -e \cp 2>/dev/null
+    bind -M insert -e \cp 2>/dev/null
 end
 
 function _fish_ai_uninstall --on-event fish_ai_uninstall
