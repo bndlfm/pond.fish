@@ -27,7 +27,6 @@ function fish_ai_agent_compress --description "Compress the current agentic loop
 end
 
 function _fish_ai_agent --description "Run an autonomous agent to achieve a goal."
-    set -l start_time (date +%s%3N)
     set -l goal (commandline --current-buffer | string collect | string trim)
     set goal (string replace -r '^#\s*' '' "$goal")
     
@@ -64,14 +63,12 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
         set trimmed_whitelist $trimmed_whitelist (string trim $cmd)
     end
 
-    set -l end_time (date +%s%3N)
-    set -l duration (math "($end_time - $start_time) / 1000.0")
     if test -n "$goal"
         echo "" >&2
-        echo "🤖 "$bold"Agent received goal ($duration""s):"$normal" $goal" >&2
+        echo "🤖 "$bold"Agent received goal:"$normal" $goal" >&2
     else
         echo "" >&2
-        echo "🤖 Resuming agent session ($duration""s)..." >&2
+        echo "🤖 Resuming agent session..." >&2
     end
 
     set -l last_output ""
