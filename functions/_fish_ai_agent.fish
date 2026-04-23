@@ -40,10 +40,11 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
     set -l state_file "$_fish_ai_install_dir/agent_session.json"
     set -l action_file (mktemp -t fish-ai-action.XXXXXX)
     set -l signal_file (mktemp -t fish-ai-signal.XXXXXX)
+    set -l history_file (mktemp -t fish-ai-history.XXXXXX)
     
     if test -z "$goal"; and not test -f "$state_file"
         echo "No goal provided and no active session to resume." >&2
-        rm "$action_file" "$signal_file"
+        rm "$action_file" "$signal_file" "$history_file"
         return
     end
 
@@ -93,9 +94,9 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
             set agent_args $agent_args --goal "$goal"
             set goal ""
             set agent_args $agent_args --cwd (pwd)
-            set -l ext_history (history | head -n 20 | string collect)
-            if test -n "$ext_history"
-                set agent_args $agent_args --external-history "$ext_history"
+            history | head -n 20 > "$history_file"
+            if test -s "$history_file"
+                set agent_args $agent_args --history-file "$history_file"
             end
         else
             set agent_args $agent_args --last-output "$last_output" --last-status "$last_status"
@@ -302,6 +303,6 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
 
     functions -e __fish_ai_agent_cleanup
     set -e _fish_ai_agent_interrupted
-    rm "$action_file" "$signal_file"
+    rm "$action_file" "$signal_file" "$history_file"
     commandline -f repaint
 end

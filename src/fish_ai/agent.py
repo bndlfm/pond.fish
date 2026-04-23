@@ -226,6 +226,7 @@ def main():
     parser.add_argument('--action-file', required=True)
     parser.add_argument('--goal')
     parser.add_argument('--external-history')
+    parser.add_argument('--history-file')
     parser.add_argument('--cwd')
     parser.add_argument('--last-output')
     parser.add_argument('--last-status', type=int)
@@ -269,8 +270,14 @@ def main():
             messages = [{'role': 'system', 'content': full_prompt}]
             context_msg = "Context:\n"
             if args.cwd: context_msg += f"- Current directory: {args.cwd}\n"
-            if args.external_history: context_msg += f"- Recent shell history:\n{args.external_history}\n"
-            if args.cwd or args.external_history:
+            
+            history = args.external_history or ""
+            if args.history_file and os.path.exists(args.history_file):
+                with open(args.history_file, 'r') as f:
+                    history = f.read()
+            
+            if history: context_msg += f"- Recent shell history:\n{history}\n"
+            if args.cwd or history:
                 messages.append({'role': 'user', 'content': context_msg})
                 messages.append({'role': 'assistant', 'content': "Understood."})
         
