@@ -61,11 +61,7 @@ function _fish_ai_bind --description "Create keybindings for fish-ai."
 
     # Special handling for ctrl-space which might be NULL or nul
     if test "$key2" = "ctrl-space"
-        if string match -r '^[0-3]\.' "$FISH_VERSION" &>/dev/null
-            set key2 -k nul
-        else
-            set key2 nul
-        end
+        set key2 nul
     end
 
     # Remove existing bindings to prevent duplicates or conflicts
