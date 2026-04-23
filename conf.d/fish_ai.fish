@@ -53,24 +53,6 @@ function _fish_ai_get_config --description "Get a configuration value quickly us
     return 1
 end
 
-function _fish_ai_unbind --description "Remove keybindings for fish-ai."
-    if test -n "$_fish_ai_keymap_1"
-        bind -e -- $_fish_ai_keymap_1
-        bind -M insert -e -- $_fish_ai_keymap_1 2>/dev/null
-    end
-    if test -n "$_fish_ai_keymap_2"
-        bind -e -- $_fish_ai_keymap_2
-        bind -M insert -e -- $_fish_ai_keymap_2 2>/dev/null
-    end
-    if test -n "$_fish_ai_keymap_3"
-        bind -e -- $_fish_ai_keymap_3
-        bind -M insert -e -- $_fish_ai_keymap_3 2>/dev/null
-    end
-    # Also explicitly unbind the old default Ctrl+P just in case
-    bind -e -- \cp 2>/dev/null
-    bind -M insert -e -- \cp 2>/dev/null
-end
-
 function _fish_ai_bind --description "Create keybindings for fish-ai."
     # Support environment variables for keybindings (useful for Nix/Home Manager)
     set -l key1 (_fish_ai_get_config keymap_1 \ca | string unescape)
@@ -214,6 +196,24 @@ function _fish_ai_update --on-event fish_ai_update
     _fish_ai_python_version_check
     _fish_ai_symlink_truststore
     _fish_ai_warn_plaintext_api_keys
+end
+
+function _fish_ai_unbind --description "Remove keybindings for fish-ai."
+    if test -n "$_fish_ai_keymap_1"
+        bind -e -- $_fish_ai_keymap_1
+        bind -M insert -e -- $_fish_ai_keymap_1 2>/dev/null
+    end
+    if test -n "$_fish_ai_keymap_2"
+        bind -e -- $_fish_ai_keymap_2
+        bind -M insert -e -- $_fish_ai_keymap_2 2>/dev/null
+    end
+    if test -n "$_fish_ai_keymap_3"
+        bind -e -- $_fish_ai_keymap_3
+        bind -M insert -e -- $_fish_ai_keymap_3 2>/dev/null
+    end
+    # Also explicitly unbind the old default Ctrl+P just in case
+    bind -e -- \cp 2>/dev/null
+    bind -M insert -e -- \cp 2>/dev/null
 end
 
 function _fish_ai_uninstall --on-event fish_ai_uninstall
