@@ -27,13 +27,6 @@ function fish_ai_agent_compress --description "Compress the current agentic loop
 end
 
 function _fish_ai_agent --description "Run an autonomous agent to achieve a goal."
-    # 1. Immediate UI Nudge: Clear the command line visually and internally
-    commandline --replace ""
-    if isatty stderr
-        tput cr >&2
-        tput ed >&2
-    end
-
     function __fish_ai_agent_cleanup --on-event fish_cancel
         # This function is triggered when ctrl-c is pressed in fish
         set -g _fish_ai_agent_interrupted 1
@@ -53,6 +46,14 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
         echo "No goal provided and no active session to resume." >&2
         rm "$action_file" "$signal_file" "$history_file"
         return
+    end
+
+    # Clear current commandline internally and visually
+    commandline --replace ""
+    if isatty stderr
+        # Move cursor to start of line and clear to end of screen
+        tput cr >&2
+        tput ed >&2
     end
 
     set -l cyan (set_color cyan)
@@ -114,8 +115,30 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
         set -l response_type ""
         echo -n "" > "$signal_file"
 
-        # 2. Streaming Execution: Pipe output line-by-line for instant feedback
-        "$_fish_ai_install_dir/bin/agent" $agent_args 2>&1 | while read -l line
+        # Execute agent and capture its output reliably
+        set -l agent_out (mktemp -t fish-ai-agent-out.XXXXXX)
+        "$_fish_ai_install_dir/bin/agent" $agent_args > "$agent_out" 2>&1
+        
+        # Check if the agent crashed or was interrupted
+        set -l agent_status $status
+        if test $agent_status -ne 0
+            if test $agent_status -eq 130
+                echo "👋 "$red"Agent session interrupted."$normal >&2
+            else
+                echo "❌ "$red"Agent crashed with status $agent_status."$normal >&2
+                echo "Error details:" >&2
+                cat "$agent_out" >&2
+                echo "" >&2
+                echo "Press any key to return to shell..." >&2
+                read -n 1
+            end
+            rm "$agent_out" "$action_file" "$signal_file"
+            commandline -f repaint
+            return
+        end
+
+        # Process the captured output
+        cat "$agent_out" | while read -l line
             switch "$line"
                 case 'STATUS:*'
                     set -l status_msg (string replace "STATUS: " "" "$line")
@@ -155,19 +178,11 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                     echo "" >&2
                 case EXECUTE CONTINUE CHAT DONE ERROR
                     echo "$line" > "$signal_file"
-                case '*'
-                    # Check for crash/status if not one of our protocols
-                    if string match -rq 'Agent Error:' "$line"
-                        echo "$line" >&2
-                    end
+                case 'DEBUG:*' 'USAGE:*'
+                    # Silence but potentially log if needed
             end
         end
-        
-        # Check if the agent command itself failed (e.g. command not found)
-        if test $pipestatus[1] -ne 0 -a $pipestatus[1] -ne 130
-            echo "❌ "$red"Agent failed with exit status $pipestatus[1]"$normal >&2
-            break
-        end
+        rm "$agent_out"
 
         set -l response_type (cat "$signal_file" | string trim)
         set -l action_content (cat "$action_file")
@@ -195,7 +210,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                     echo "   ["$red$bold"n"$normal"] Deny this command" >&2
                     
                     if not read -l -P (set_color green)"Allow? [y/t/a/n]: "(set_color normal) user_choice </dev/tty
-                        rm "$action_file" "$signal_file" "$history_file"
+                        rm "$action_file" "$signal_file"
                         echo "👋 "$red"Agent session interrupted."$normal >&2
                         commandline -f repaint
                         return
@@ -239,7 +254,7 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
                 rm "$out_file"
                 
                 if test $last_status -eq 130
-                    rm "$action_file" "$signal_file" "$history_file"
+                    rm "$action_file" "$signal_file"
                     echo "👋 "$red"Agent session interrupted."$normal >&2
                     commandline -f repaint
                     return
