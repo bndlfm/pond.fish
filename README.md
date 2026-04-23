@@ -94,18 +94,20 @@ brave_search_api_key = <your_key>
 
 ### 🔌 Specialized Skills
 
-`pond` supports the **agentskills.io** open standard. To add an expert, use the `install` command to pull directly from a GitHub repository:
+`pond` supports the **agentskills.io** open standard. You can manage expertise using the `skill` command:
 
 ```shell
+# Install from a GitHub repository
 pond skill install anthropics/skills/skills/pdf
-```
 
-Or manually drop a skill folder into your skills directory:
+# Remove an installed skill
+pond skill remove pdf
 
-```shell
-# Location: ~/.config/fish-ai/skills/
+# List all available specialized skills
 pond skill list
 ```
+
+Manual installation is also supported by dropping a skill folder into `~/.config/fish-ai/skills/`.
 
 ### 📝 Codify & Explain
 
@@ -120,7 +122,7 @@ Press **Ctrl + A** to swap between natural language and shell commands:
 
 ## 🤸 Configuration
 
-Edit `~/.config/fish-ai/config.ini` or use environment variables (ideal for **Nix/Home Manager**):
+Edit `~/.config/fish-ai/config.ini` or use environment variables. **Environment variables take priority over the config file**, which is ideal for **NixOS** and **Home Manager** setups:
 
 ```ini
 [fish-ai]
@@ -133,11 +135,13 @@ api_key = <your_key>
 model = gemini-3.1-pro-preview
 ```
 
-### Runtime Keybindings (Nix/Home Manager)
-You can customize keybindings via environment variables in your shell config:
-- `FISH_AI_KEYMAP_1`: Defaults to `ctrl-a` (Codify)
-- `FISH_AI_KEYMAP_2`: Defaults to `ctrl-space` (Autocomplete)
-- `FISH_AI_KEYMAP_3`: Defaults to `ctrl-x` (Agent)
+### Environment Variables
+Any setting can be set via an environment variable with the `FISH_AI_` prefix:
+- `FISH_AI_CONFIGURATION`: Set the active provider section.
+- `FISH_AI_WHITELIST`: Comma-separated list of safe commands.
+- `FISH_AI_KEYMAP_1`: Defaults to `ctrl-a` (Codify).
+- `FISH_AI_KEYMAP_2`: Defaults to `ctrl-space` (Autocomplete).
+- `FISH_AI_KEYMAP_3`: Defaults to `ctrl-x` (Agent).
 
 ## 🛠️ Development
 
