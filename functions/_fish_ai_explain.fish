@@ -1,7 +1,7 @@
 #!/usr/bin/env fish
 
 function _fish_ai_explain --description "Explain a command using AI." --argument-names command
-    if test "(_fish_ai_get_config debug)" = True
+    if test (_fish_ai_get_config debug) = True
 
         set -f output ("$_fish_ai_install_dir/bin/explain" "$command" | \
             string collect)
