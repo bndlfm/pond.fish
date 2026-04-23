@@ -27,12 +27,6 @@ function fish_ai_agent_compress --description "Compress the current agentic loop
 end
 
 function _fish_ai_agent --description "Run an autonomous agent to achieve a goal."
-    function __fish_ai_agent_cleanup --on-event fish_cancel
-        # This function is triggered when ctrl-c is pressed in fish
-        set -g _fish_ai_agent_interrupted 1
-    end
-    set -g _fish_ai_agent_interrupted 0
-
     set -l start_time (date +%s%3N)
     set -l goal (commandline --current-buffer | string collect | string trim)
     set goal (string replace -r '^#\s*' '' "$goal")
@@ -83,11 +77,6 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
     end
 
     while true
-        if test $_fish_ai_agent_interrupted -eq 1
-            echo "👋 "$red"Agent session interrupted."$normal >&2
-            break
-        end
-
         set -l agent_args --state "$state_file" --action-file "$action_file"
         if test -n "$goal"
             set agent_args $agent_args --goal "$goal"
@@ -300,8 +289,6 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
         end
     end
 
-    functions -e __fish_ai_agent_cleanup
-    set -e _fish_ai_agent_interrupted
     rm "$action_file" "$signal_file"
     commandline -f repaint
 end
