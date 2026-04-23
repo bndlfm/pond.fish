@@ -252,8 +252,6 @@ def main():
         if not get_config('configuration'):
             raise Exception(f"Configuration error: '[fish-ai] configuration = ...' is missing in {config_path}")
             
-        sys.stdout.write("STATUS: Initializing skills...\n")
-        sys.stdout.flush()
         skill_manager = SkillManager()
         
         if args.list_skills:
@@ -288,8 +286,6 @@ def main():
             if last_id: messages.append({'role': 'tool', 'tool_call_id': last_id, 'content': content})
             else: messages.append({'role': 'user', 'content': content})
 
-        sys.stdout.write("STATUS: Communicating with AI backend...\n")
-        sys.stdout.flush()
         response = get_chat_response(messages, tools=TOOLS)
         if not response: raise Exception("AI returned empty response.")
         
