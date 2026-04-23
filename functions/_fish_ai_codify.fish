@@ -1,7 +1,7 @@
 #!/usr/bin/env fish
 
 function _fish_ai_codify --description "Turn a comment into a command using AI." --argument-names comment
-    if test (_fish_ai_get_config debug) = True
+    if test "(_fish_ai_get_config debug)" = True
         set -f output ("$_fish_ai_install_dir/bin/codify" "$comment" | \
             fish_indent | \
             string collect)
