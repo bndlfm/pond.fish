@@ -162,7 +162,7 @@ function print_logs
         return
     end
     print_last_section "$log_file"
-    if not string match -q True (_fish_ai_get_config debug)
+    if test "(_fish_ai_get_config debug)" != True
         echo ""
         echo "🙏 Consider enabling debug mode to get more log output."
     end

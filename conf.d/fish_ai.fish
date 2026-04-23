@@ -82,34 +82,32 @@ function _fish_ai_bind --description "Create keybindings for fish-ai."
         set key2 nul
     end
 
-    # Only unbind and re-bind if the keys have changed, or if this is the first run
-    if test "$key1" != "$_fish_ai_keymap_1" -o "$key2" != "$_fish_ai_keymap_2" -o "$key3" != "$_fish_ai_keymap_3" -o -z "$_fish_ai_keymap_1"
-        _fish_ai_unbind
+    # Remove existing bindings to prevent duplicates or conflicts
+    _fish_ai_unbind
 
-        # Update global tracking variables for unbind to use next time
-        set -g _fish_ai_keymap_1 $key1
-        set -g _fish_ai_keymap_2 $key2
-        set -g _fish_ai_keymap_3 $key3
+    # Update global tracking variables for unbind to use next time
+    set -g _fish_ai_keymap_1 $key1
+    set -g _fish_ai_keymap_2 $key2
+    set -g _fish_ai_keymap_3 $key3
 
-        if test "$fish_key_bindings" = fish_vi_key_bindings
-            set -g _fish_ai_bind_command bind -M insert
-        else
-            set -g _fish_ai_bind_command bind
-        end
+    if test "$fish_key_bindings" = fish_vi_key_bindings
+        set -g _fish_ai_bind_command bind -M insert
+    else
+        set -g _fish_ai_bind_command bind
+    end
 
-        # Apply bindings using -- to prevent key names starting with - from being parsed as options
-        if test -n "$key1"
-            $_fish_ai_bind_command -- $key1 _fish_ai_codify_or_explain
-            bind -- $key1 _fish_ai_codify_or_explain
-        end
-        if test -n "$key2"
-            $_fish_ai_bind_command -- $key2 _fish_ai_autocomplete_or_fix
-            bind -- $key2 _fish_ai_autocomplete_or_fix
-        end
-        if test -n "$key3"
-            $_fish_ai_bind_command -- $key3 _fish_ai_agent
-            bind -- $key3 _fish_ai_agent
-        end
+    # Apply bindings using -- to prevent key names starting with - from being parsed as options
+    if test -n "$_fish_ai_keymap_1"
+        $_fish_ai_bind_command -- $_fish_ai_keymap_1 _fish_ai_codify_or_explain
+        bind -- $_fish_ai_keymap_1 _fish_ai_codify_or_explain
+    end
+    if test -n "$_fish_ai_keymap_2"
+        $_fish_ai_bind_command -- $_fish_ai_keymap_2 _fish_ai_autocomplete_or_fix
+        bind -- $_fish_ai_keymap_2 _fish_ai_autocomplete_or_fix
+    end
+    if test -n "$_fish_ai_keymap_3"
+        $_fish_ai_bind_command -- $_fish_ai_keymap_3 _fish_ai_agent
+        bind -- $_fish_ai_keymap_3 _fish_ai_agent
     end
 end
 
