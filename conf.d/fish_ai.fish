@@ -20,9 +20,9 @@ function _fish_ai_bind --description "Create keybindings for fish-ai."
     else
         # prefer fish key names above fish 4.x
         if string match -r '^[0-3]\.' "$FISH_VERSION" &>/dev/null
-            set -g _fish_ai_keymap_1 \ca
+            set -g _fish_ai_keymap_1 \cq
         else
-            set -g _fish_ai_keymap_1 ctrl-a
+            set -g _fish_ai_keymap_1 ctrl-q
         end
     end
 
@@ -46,9 +46,9 @@ function _fish_ai_bind --description "Create keybindings for fish-ai."
     else
         # prefer fish key names above fish 4.x
         if string match -r '^[0-3]\.' "$FISH_VERSION" &>/dev/null
-            set -g _fish_ai_keymap_3 \cx
+            set -g _fish_ai_keymap_3 \ca
         else
-            set -g _fish_ai_keymap_3 ctrl-x
+            set -g _fish_ai_keymap_3 ctrl-a
         end
     end
     if test "$fish_key_bindings" = fish_vi_key_bindings

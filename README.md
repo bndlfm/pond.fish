@@ -8,10 +8,10 @@
 
 ## 🚀 Key Features
 
-1.  **Autonomous AI Agent (`Ctrl+X`)**: A multi-turn expert that can read files, list directories, search the web, and execute shell commands to achieve complex goals.
+1.  **Autonomous AI Agent (`Ctrl+A`)**: A multi-turn expert that can read files, list directories, search the web, and execute shell commands to achieve complex goals.
 2.  **Unified `pond` Command**: A master utility for piping data to an LLM, managing the agent, or asking quick questions.
 3.  **SKILL.md Support**: Fully compatible with the `skills.sh` / `agentskills.io` standard. "Teach" the agent new expertise by dropping Markdown folders into `~/.config/fish-ai/skills/`.
-4.  **Codify / Explain (`Ctrl+A`)**: Instantly turn natural language into shell commands or get clear explanations of what a command does.
+4.  **Codify / Explain (`Ctrl+Q`)**: Instantly turn natural language into shell commands or get clear explanations of what a command does.
 5.  **Autocomplete / Fix (`Ctrl+Space`)**: Intelligent, context-aware command completions and instant fixes for your last failed command.
 6.  **Brave Search Integration**: Real-time web access for troubleshooting, documentation, and research.
 7.  **Advanced Audit UI**: Color-coded streaming of agent thoughts, tool calls, and truncated results directly in your terminal.
@@ -30,11 +30,11 @@ fisher install bndlfm/pond
 
 ### 🦾 The AI Agent
 
-Type a goal in plain text or as a comment and press **Ctrl + X**:
+Type a goal in plain text or as a comment and press **Ctrl + A**:
 
 ```shell
 # find all python files and search for TODOs
-(press Ctrl+X)
+(press Ctrl+A)
 ```
 
 The agent will work turn-by-turn. When it needs to execute a command, it will prompt you:
@@ -109,7 +109,7 @@ pond skill list
 
 ### 📝 Codify & Explain
 
-Press **Ctrl + A** to swap between natural language and shell commands:
+Press **Ctrl + Q** to swap between natural language and shell commands:
 - `list files larger than 1gb` &rarr; `find . -size +1G`
 - `tar -xvzf archive.tar.gz` &rarr; Explains the command and flags.
 
@@ -135,9 +135,9 @@ model = gemini-3.1-pro-preview
 
 ### Runtime Keybindings (Nix/Home Manager)
 You can customize keybindings via environment variables in your shell config:
-- `FISH_AI_KEYMAP_1`: Defaults to `ctrl-a` (Codify)
+- `FISH_AI_KEYMAP_1`: Defaults to `ctrl-q` (Codify)
 - `FISH_AI_KEYMAP_2`: Defaults to `ctrl-space` (Autocomplete)
-- `FISH_AI_KEYMAP_3`: Defaults to `ctrl-x` (Agent)
+- `FISH_AI_KEYMAP_3`: Defaults to `ctrl-a` (Agent)
 
 ## 🛠️ Development
 
