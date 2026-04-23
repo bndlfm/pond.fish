@@ -156,13 +156,13 @@ function perform_compatibility_check
 end
 
 function print_logs
-    set -f log_file ("$_fish_ai_install_dir/bin/python3" -c "import os; print(os.path.expanduser('$($_fish_ai_install_dir/bin/lookup_setting log)'))")
+    set -f log_file ("$_fish_ai_install_dir/bin/python3" -c "import os; print(os.path.expanduser('$(_fish_ai_get_config log)'))")
     if ! test -f "$log_file"
         echo "😴 No log file available."
         return
     end
     print_last_section "$log_file"
-    if test ("$_fish_ai_install_dir/bin/lookup_setting" debug) != True
+    if test (_fish_ai_get_config debug) != True
         echo ""
         echo "🙏 Consider enabling debug mode to get more log output."
     end
