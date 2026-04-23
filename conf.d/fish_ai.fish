@@ -79,12 +79,18 @@ function _fish_ai_bind --description "Create keybindings for fish-ai."
     end
 
     # Apply bindings using -- to prevent key names starting with - from being parsed as options
-    $_fish_ai_bind_command -- $_fish_ai_keymap_1 _fish_ai_codify_or_explain
-    bind -- $_fish_ai_keymap_1 _fish_ai_codify_or_explain
-    $_fish_ai_bind_command -- $_fish_ai_keymap_2 _fish_ai_autocomplete_or_fix
-    bind -- $_fish_ai_keymap_2 _fish_ai_autocomplete_or_fix
-    $_fish_ai_bind_command -- $_fish_ai_keymap_3 _fish_ai_agent
-    bind -- $_fish_ai_keymap_3 _fish_ai_agent
+    if test -n "$_fish_ai_keymap_1"
+        $_fish_ai_bind_command -- $_fish_ai_keymap_1 _fish_ai_codify_or_explain
+        bind -- $_fish_ai_keymap_1 _fish_ai_codify_or_explain
+    end
+    if test -n "$_fish_ai_keymap_2"
+        $_fish_ai_bind_command -- $_fish_ai_keymap_2 _fish_ai_autocomplete_or_fix
+        bind -- $_fish_ai_keymap_2 _fish_ai_autocomplete_or_fix
+    end
+    if test -n "$_fish_ai_keymap_3"
+        $_fish_ai_bind_command -- $_fish_ai_keymap_3 _fish_ai_agent
+        bind -- $_fish_ai_keymap_3 _fish_ai_agent
+    end
 end
 
 if status is-interactive
@@ -193,15 +199,15 @@ function _fish_ai_update --on-event fish_ai_update
 end
 
 function _fish_ai_unbind --description "Remove keybindings for fish-ai."
-    if set -q _fish_ai_keymap_1
+    if test -n "$_fish_ai_keymap_1"
         bind -e -- $_fish_ai_keymap_1
         bind -M insert -e -- $_fish_ai_keymap_1 2>/dev/null
     end
-    if set -q _fish_ai_keymap_2
+    if test -n "$_fish_ai_keymap_2"
         bind -e -- $_fish_ai_keymap_2
         bind -M insert -e -- $_fish_ai_keymap_2 2>/dev/null
     end
-    if set -q _fish_ai_keymap_3
+    if test -n "$_fish_ai_keymap_3"
         bind -e -- $_fish_ai_keymap_3
         bind -M insert -e -- $_fish_ai_keymap_3 2>/dev/null
     end
