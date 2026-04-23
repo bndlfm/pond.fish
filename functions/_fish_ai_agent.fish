@@ -48,8 +48,9 @@ function _fish_ai_agent --description "Run an autonomous agent to achieve a goal
         return
     end
 
-    # Clear current commandline but don't repaint yet
+    # Clear current commandline and repaint immediately to show the agent is starting
     commandline --replace ""
+    commandline -f repaint
 
     set -l cyan (set_color cyan)
     set -l yellow (set_color yellow)
