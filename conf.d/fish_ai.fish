@@ -73,10 +73,14 @@ end
 
 function _fish_ai_bind --description "Create keybindings for fish-ai."
     # Support environment variables for keybindings (useful for Nix/Home Manager)
-    # Default to \ca (Ctrl+A), \cnul (Ctrl+Space), and \cx (Ctrl+X)
-    set -l key1 (_fish_ai_get_config keymap_1 \ca)
-    set -l key2 (_fish_ai_get_config keymap_2 nul)
-    set -l key3 (_fish_ai_get_config keymap_3 \cx)
+    set -l key1 (_fish_ai_get_config keymap_1 \ca | string unescape)
+    set -l key2 (_fish_ai_get_config keymap_2 ctrl-space | string unescape)
+    set -l key3 (_fish_ai_get_config keymap_3 ctrl-x | string unescape)
+
+    # Special handling for ctrl-space which might be NULL or nul
+    if test "$key2" = "ctrl-space"
+        set key2 nul
+    end
 
     # Always unbind old keys if they were tracked
     _fish_ai_unbind
@@ -86,31 +90,35 @@ function _fish_ai_bind --description "Create keybindings for fish-ai."
     set -g _fish_ai_keymap_2 $key2
     set -g _fish_ai_keymap_3 $key3
 
-    # To ensure the keys work INSTANTLY without waiting for a second key,
-    # we must unbind any existing multi-key sequences that start with these keys.
-    # For Ctrl+X, this commonly includes \cx\ce (edit-command-buffer).
-    for mode in default insert emacs
-        if test "$key3" = "\cx" -o "$key3" = "ctrl-x"
-            bind -M $mode -e -- \cx\ce 2>/dev/null
-            bind -M $mode -e -- \cx\cv 2>/dev/null
-        end
-        
-        # Apply our bindings
-        if test -n "$key1"
-            bind -M $mode -- $key1 _fish_ai_codify_or_explain 2>/dev/null
-        end
-        if test -n "$key2"
-            bind -M $mode -- $key2 _fish_ai_autocomplete_or_fix 2>/dev/null
-        end
-        if test -n "$key3"
-            bind -M $mode -- $key3 _fish_ai_agent 2>/dev/null
-        end
+    if test "$fish_key_bindings" = fish_vi_key_bindings
+        set -g _fish_ai_bind_command bind -M insert
+    else
+        set -g _fish_ai_bind_command bind
     end
 
-    # Also apply to the global/default mode (necessary for some terminal/shell configs)
-    if test -n "$key1"; bind -- $key1 _fish_ai_codify_or_explain 2>/dev/null; end
-    if test -n "$key2"; bind -- $key2 _fish_ai_autocomplete_or_fix 2>/dev/null; end
-    if test -n "$key3"; bind -- $key3 _fish_ai_agent 2>/dev/null; end
+    # Apply bindings to the primary mode (insert in VI, default in Emacs)
+    if test -n "$_fish_ai_keymap_1"
+        $_fish_ai_bind_command -- $_fish_ai_keymap_1 _fish_ai_codify_or_explain
+    end
+    if test -n "$_fish_ai_keymap_2"
+        $_fish_ai_bind_command -- $_fish_ai_keymap_2 _fish_ai_autocomplete_or_fix
+    end
+    if test -n "$_fish_ai_keymap_3"
+        $_fish_ai_bind_command -- $_fish_ai_keymap_3 _fish_ai_agent
+    end
+
+    # For VI users, also bind in default mode for convenience
+    if test "$fish_key_bindings" = fish_vi_key_bindings
+        if test -n "$_fish_ai_keymap_1"
+            bind -M default -- $_fish_ai_keymap_1 _fish_ai_codify_or_explain
+        end
+        if test -n "$_fish_ai_keymap_2"
+            bind -M default -- $_fish_ai_keymap_2 _fish_ai_autocomplete_or_fix
+        end
+        if test -n "$_fish_ai_keymap_3"
+            bind -M default -- $_fish_ai_keymap_3 _fish_ai_agent
+        end
+    end
 end
 
 if status is-interactive
