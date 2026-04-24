@@ -80,10 +80,26 @@ function pond --description "The master command for the pond AI suite."
         case skill
             set -l action "$remaining_args[1]"
             if test "$action" = "list" -o -z "$action"
-                set -l state_file "$_fish_ai_install_dir/agent_session.json"
-                set -l action_file (mktemp -t fish-ai-action.XXXXXX)
-                "$_fish_ai_install_dir/bin/agent" --state "$state_file" --action-file "$action_file" --list-skills | "$_fish_ai_install_dir/bin/render"
-                rm "$action_file"
+                set -l skills_dir (dirname "$_fish_ai_config_path")/skills
+                if not test -d "$skills_dir"
+                    echo "ℹ️  No skills directory found at $skills_dir"
+                    return
+                end
+                
+                echo "🔌 "$blue$bold"Available Specialized Skills:"$normal
+                set -l found 0
+                for skill in $skills_dir/*/SKILL.md
+                    set -l name (grep "^name:" "$skill" | cut -d':' -f2- | string trim)
+                    set -l desc (grep "^description:" "$skill" | cut -d':' -f2- | string trim)
+                    if test -n "$name"
+                        set found 1
+                        echo "- "$bold"$name"$normal": $desc"
+                    end
+                end
+                
+                if test $found -eq 0
+                    echo "No skills found in $skills_dir."
+                end
             else if test "$action" = "install"
                 set -l skill_id "$remaining_args[2]"
                 if test -z "$skill_id"

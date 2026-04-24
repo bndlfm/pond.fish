@@ -66,15 +66,6 @@ class SkillManager:
                                 self.catalog[name] = desc
                 except Exception as e: debug_log(f"Error parsing skill {item}: {e}")
 
-    def get_catalog_text(self):
-        text = f"Searching for skills in {self.skills_dir}...\n"
-        if not self.catalog:
-            return text + "No skills found. To add a skill, create a folder with a SKILL.md file in that directory."
-        text += "Available skills:\n"
-        for name, desc in self.catalog.items():
-            text += f"- **{name}**: {desc}\n"
-        return text
-
     def get_catalog_prompt(self):
         if not self.catalog: return ""
         prompt = "\nAVAILABLE SKILLS:\n"
@@ -232,7 +223,6 @@ def main():
     parser.add_argument('--rejected', action='store_true')
     parser.add_argument('--compress', action='store_true')
     parser.add_argument('--json', action='store_true')
-    parser.add_argument('--list-skills', action='store_true', help='List all available skills and exit')
     
     try:
         args = parser.parse_args()
@@ -254,10 +244,6 @@ def main():
             
         skill_manager = SkillManager()
         
-        if args.list_skills:
-            print(skill_manager.get_catalog_text())
-            sys.exit(0)
-            
         messages = []
         if os.path.exists(args.state) and os.path.getsize(args.state) > 0:
             with open(args.state, 'r') as f:
