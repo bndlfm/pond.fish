@@ -4,14 +4,16 @@
 
 # 🐟 pond: AI for Fish shell
 
-`pond` is a powerful fork of `fish-ai` designed for developers who want a minimalist yet capable autonomous AI agent living directly in their Fish shell. It prioritizes **auditability**, **security**, and **seamless shell integration**.
+*A powerful fork of the original [fish-ai](https://github.com/Realiserad/fish-ai) by Bastian Fredriksson.*
+
+`pond` is a minimalist yet capable autonomous AI agent living directly in your Fish shell. It prioritizes **auditability**, **security**, and **seamless shell integration**.
 
 ## 🚀 Key Features
 
 1.  **Autonomous AI Agent (`Ctrl+A`)**: A multi-turn expert that can read files, list directories, search the web, and execute shell commands to achieve complex goals.
 2.  **Unified `pond` Command**: A master utility for piping data to an LLM, managing the agent, or asking quick questions.
 3.  **SKILL.md Support**: Fully compatible with the `skills.sh` / `agentskills.io` standard. "Teach" the agent new expertise by dropping Markdown folders into `~/.config/fish-ai/skills/`.
-4.  **Codify / Explain (`Ctrl+Q`)**: Instantly turn natural language into shell commands or get clear explanations of what a command does.
+4.  **Question / Explain (`Ctrl+Q`)**: Instantly turn natural language into shell commands or get clear explanations of what a command does. **Q is for Question.**
 5.  **Autocomplete / Fix (`Ctrl+Space`)**: Intelligent, context-aware command completions and instant fixes for your last failed command.
 6.  **Brave Search Integration**: Real-time web access for troubleshooting, documentation, and research.
 7.  **Advanced Audit UI**: Color-coded streaming of agent thoughts, tool calls, and truncated results directly in your terminal.
@@ -55,15 +57,15 @@ You can also trigger the agent directly from the CLI:
 pond -a "find all large files"
 ```
 
-### 🐚 Unified `pond` Command (Piping & Query)
+### 🐚 Unified `pond` Command (Piping & Question)
 
-The `pond` command provides a master interface for AI tasks. To run a quick, stateless query, use the `-q` flag:
+The `pond` command provides a master interface for AI tasks. To ask a quick, stateless **Question**, use the `-q` flag:
 
 ```shell
 # Pipe context in
 cat README.md | pond -q "summarize this"
 
-# Run a direct query
+# Ask a direct question
 pond -q "what is the capital of Spain?"
 
 # Output raw JSON
@@ -107,9 +109,9 @@ Or manually drop a skill folder into your skills directory:
 pond skill list
 ```
 
-### 📝 Codify & Explain
+### 📝 Question & Explain
 
-Press **Ctrl + Q** to swap between natural language and shell commands:
+Press **Ctrl + Q** to swap between natural language and shell commands (**Q is for Question**):
 - `list files larger than 1gb` &rarr; `find . -size +1G`
 - `tar -xvzf archive.tar.gz` &rarr; Explains the command and flags.
 
@@ -135,7 +137,7 @@ model = gemini-3.1-pro-preview
 
 ### Runtime Keybindings (Nix/Home Manager)
 You can customize keybindings via environment variables in your shell config:
-- `FISH_AI_KEYMAP_1`: Defaults to `ctrl-q` (Codify)
+- `FISH_AI_KEYMAP_1`: Defaults to `ctrl-q` (Question)
 - `FISH_AI_KEYMAP_2`: Defaults to `ctrl-space` (Autocomplete)
 - `FISH_AI_KEYMAP_3`: Defaults to `ctrl-a` (Agent)
 
@@ -145,6 +147,3 @@ You can customize keybindings via environment variables in your shell config:
 Run `nix develop` to enter a shell with all dependencies configured.
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for more details.
-
----
-*Based on the original [fish-ai](https://github.com/Realiserad/fish-ai) by Bastian Fredriksson.*
