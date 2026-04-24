@@ -13,7 +13,7 @@
 1.  **Autonomous AI Agent (`Ctrl+A`)**: A multi-turn expert that can read files, list directories, search the web, and execute shell commands to achieve complex goals.
 2.  **Unified `pond` Command**: A master utility for piping data to an LLM, managing the agent, or asking quick questions.
 3.  **SKILL.md Support**: Fully compatible with the `skills.sh` / `agentskills.io` standard. "Teach" the agent new expertise by dropping Markdown folders into `~/.config/fish-ai/skills/`.
-4.  **Question / Explain (`Ctrl+Q`)**: Instantly turn natural language into shell commands or get clear explanations of what a command does. **Q is for Question.**
+4.  **Question / Explain (`Ctrl+Q`)**: Instantly turn natural language into shell commands or get clear explanations of what a command does. **Q is for Quick / Query / Question.**
 5.  **Autocomplete / Fix (`Ctrl+Space`)**: Intelligent, context-aware command completions and instant fixes for your last failed command.
 6.  **Brave Search Integration**: Real-time web access for troubleshooting, documentation, and research.
 7.  **Advanced Audit UI**: Color-coded streaming of agent thoughts, tool calls, and truncated results directly in your terminal.
@@ -57,9 +57,9 @@ You can also trigger the agent directly from the CLI:
 pond -a "find all large files"
 ```
 
-### 🐚 Unified `pond` Command (Piping & Question)
+### 🐚 Unified `pond` Command (Piping & Quick/Query/Question)
 
-The `pond` command provides a master interface for AI tasks. To ask a quick, stateless **Question**, use the `-q` flag:
+The `pond` command provides a master interface for AI tasks. To ask a quick, stateless **Question**, or run a **Query**, use the `-q` flag:
 
 ```shell
 # Pipe context in
@@ -109,9 +109,9 @@ Or manually drop a skill folder into your skills directory:
 pond skill list
 ```
 
-### 📝 Question & Explain
+### 📝 Quick / Query / Question
 
-Press **Ctrl + Q** to swap between natural language and shell commands (**Q is for Question**):
+Press **Ctrl + Q** to swap between natural language and shell commands (**Q is for Quick / Query / Question**):
 - `list files larger than 1gb` &rarr; `find . -size +1G`
 - `tar -xvzf archive.tar.gz` &rarr; Explains the command and flags.
 
