@@ -94,10 +94,10 @@ brave_search_api_key = <your_key>
 
 ### 🔌 Specialized Skills
 
-`pond` supports the **agentskills.io** open standard. To add an expert, use the `install` command to pull directly from a GitHub repository:
+`pond` supports the **agentskills.io** open standard. To add an expert, use the `add` command to pull directly from a GitHub repository:
 
 ```shell
-pond skill install anthropics/skills/skills/pdf
+pond skill add anthropics/skills/skills/pdf
 ```
 
 Or manually drop a skill folder into your skills directory:

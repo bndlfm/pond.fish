@@ -100,11 +100,11 @@ function pond --description "The master command for the pond AI suite."
                 if test $found -eq 0
                     echo "No skills found in $skills_dir."
                 end
-            else if test "$action" = "install"
+            else if test "$action" = "add"
                 set -l skill_id "$remaining_args[2]"
                 if test -z "$skill_id"
                     echo "❌ "$red"Error: No skill ID provided."$normal
-                    echo "Usage: pond skill install <owner>/<repo>/skills/<name>"
+                    echo "Usage: pond skill add <owner>/<repo>/skills/<name>"
                     return 1
                 end
                 
@@ -113,7 +113,7 @@ function pond --description "The master command for the pond AI suite."
                 set -l parts (string split "/" "$skill_id")
                 if test (count $parts) -lt 3
                     echo "❌ "$red"Error: Invalid skill ID format."$normal
-                    echo "Usage: pond skill install <owner>/<repo>/[path/to/skill]"
+                    echo "Usage: pond skill add <owner>/<repo>/[path/to/skill]"
                     return 1
                 end
 
@@ -247,7 +247,7 @@ function pond --description "The master command for the pond AI suite."
             echo ""
             echo "$bold""General Commands:""$normal"
             echo "  skill list          List all available specialized skills"
-            echo "  skill install <id>  Install a skill from GitHub (e.g., anthropics/skills/skills/pdf)"
+            echo "  skill add <id>      Install a skill from GitHub (e.g., anthropics/skills/skills/pdf)"
             echo "  skill remove <name> Remove an installed skill"
             echo "  version, -v         Display version information"
             echo "  help, -h            Show this help message"
