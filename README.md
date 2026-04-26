@@ -48,11 +48,6 @@ The agent will work turn-by-turn. When it needs to execute a command, it will pr
 - `pond status`: View current session statistics.
 - `pond skill list`: List all available specialized skills.
 
-You can also trigger the agent directly from the CLI:
-```shell
-pond -a "find all large files"
-```
-
 ### 🐚 Unified `pond` Command (Piping & Quick/Query/Question)
 
 The `pond` command provides a master interface for AI tasks. To ask a quick, stateless **Question**, or run a **Query**, use the `-q` flag:
