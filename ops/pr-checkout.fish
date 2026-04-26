@@ -12,7 +12,7 @@ argparse 'n/pr=' -- $argv
 or return
 
 if not set -q _flag_pr
-    echo "Error: You must specify the PR number using '--pr'. List open PRs using 'gh pr list --repo bndlfm/pond --json number,title'."
+    echo "Error: You must specify the PR number using '--pr'. List open PRs using 'gh pr list --repo bndlfm/pond.fish --json number,title'."
     return 1
 end
 
@@ -28,7 +28,7 @@ echo "Checking out PR #$_flag_pr ($(gh pr view $_flag_pr --json title -q .title)
 git fetch origin pull/$_flag_pr/head:pr/$_flag_pr
 git checkout pr/$_flag_pr
 
-set -l forked_repo (gh api repos/bndlfm/pond/pulls/$_flag_pr --jq '.head.repo.full_name')
+set -l forked_repo (gh api repos/bndlfm/pond.fish/pulls/$_flag_pr --jq '.head.repo.full_name')
 set -l remote_branch (gh pr view $_flag_pr --json headRefName -q '.headRefName')
 echo "You are all set! Make your changes and push them to the forked repo using:"
 echo_code "git push --force git@github.com:$forked_repo pr/$_flag_pr:$remote_branch"

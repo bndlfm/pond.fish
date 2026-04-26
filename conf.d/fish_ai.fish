@@ -205,7 +205,7 @@ function _fish_ai_get_installation_url
             echo -n (pwd)
         else
             # Fallback to the original repository as a last resort
-            echo -n "fish-ai@git+https://github.com/bndlfm/pond"
+            echo -n "fish-ai@git+https://github.com/bndlfm/pond.fish"
         end
     else if test (string sub --start 1 --length 1 "$plugin") = /
         # Install from a local folder
@@ -224,9 +224,9 @@ function _fish_ai_python_version_check
         echo "Consider setting the environment variable 'FISH_AI_PYTHON_VERSION' to a supported version and reinstalling the plugin. For example:"
         set_color --italics blue
         echo ""
-        echo "  fisher remove bndlfm/pond"
+        echo "  fisher remove bndlfm/pond.fish"
         echo "  set -U FISH_AI_PYTHON_VERSION $_fish_ai_supported_versions[-1]"
-        echo "  fisher install bndlfm/pond"
+        echo "  fisher install bndlfm/pond.fish"
         echo ""
         set_color normal
     end

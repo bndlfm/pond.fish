@@ -25,7 +25,7 @@
 Install using [fisher](https://github.com/jorgebucaran/fisher):
 
 ```shell
-fisher install bndlfm/pond
+fisher install bndlfm/pond.fish
 ```
 
 ## 🤖 Usage Guide

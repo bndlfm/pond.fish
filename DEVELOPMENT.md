@@ -1,6 +1,6 @@
 # Development
 
-If you want to contribute, I recommend to read [`ARCHITECTURE.md`](https://github.com/bndlfm/pond/blob/main/ARCHITECTURE.md)
+If you want to contribute, I recommend to read [`ARCHITECTURE.md`](https://github.com/bndlfm/pond.fish/blob/main/ARCHITECTURE.md)
 first.
 
 This repository ships with a `devcontainer.json` which can be used with
@@ -40,7 +40,7 @@ log = /home/neko/.config/fish-ai/fish-ai.log
 
 ## Run the tests
 
-[The installation tests](https://github.com/bndlfm/pond/actions/workflows/installation-tests.yaml)
+[The installation tests](https://github.com/bndlfm/pond.fish/actions/workflows/installation-tests.yaml)
 are currently running with GitHub Actions on macOS, Fedora, Ubuntu and Arch Linux.
 
 The Python modules containing most of the business logic can be tested using `pytest`.
