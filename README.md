@@ -1,6 +1,6 @@
 # 🐟 pond: AI for Fish shell
 
-*A powerful fork of the original [fish-ai](https://github.com/Realiserad/fish-ai) by Bastian Fredriksson.*
+*Agentic fork of the original [fish-ai](https://github.com/Realiserad/fish-ai) by Bastian Fredriksson.*
 
 `pond` is a minimalist yet capable autonomous AI agent living directly in your Fish shell. It prioritizes **auditability**, **security**, and **seamless shell integration**.
 
