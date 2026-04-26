@@ -1,5 +1,3 @@
-[![Donate XMR to realiserad/fish-ai](https://img.shields.io/badge/Donate_XMR-grey?style=for-the-badge&logo=monero)](https://github.com/user-attachments/assets/07a29402-4029-4ccb-86bc-539077977467)
-
 # 🐟 pond: AI for Fish shell
 
 *A powerful fork of the original [fish-ai](https://github.com/Realiserad/fish-ai) by Bastian Fredriksson.*
@@ -11,7 +9,7 @@
 1.  **Autonomous AI Agent (`Ctrl+A`)**: A multi-turn expert that can read files, list directories, search the web, and execute shell commands to achieve complex goals.
 2.  **Unified `pond` Command**: A master utility for piping data to an LLM, managing the agent, or asking quick questions.
 3.  **SKILL.md Support**: Fully compatible with the `skills.sh` / `agentskills.io` standard. "Teach" the agent new expertise by dropping Markdown folders into `~/.config/fish-ai/skills/`.
-4.  **Question / Explain (`Ctrl+Q`)**: Instantly turn natural language into shell commands or get clear explanations of what a command does. **Q is for Quick / Query / Question.**
+4.  **Question / Explain (`Ctrl+Q`)**: Instantly turn natural language into shell commands or get clear explanations of what a command does. **Query / Question.**
 5.  **Autocomplete / Fix (`Ctrl+Space`)**: Intelligent, context-aware command completions and instant fixes for your last failed command.
 6.  **Brave Search Integration**: Real-time web access for troubleshooting, documentation, and research.
 7.  **Advanced Audit UI**: Color-coded streaming of agent thoughts, tool calls, and truncated results directly in your terminal.
