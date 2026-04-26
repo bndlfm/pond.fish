@@ -102,7 +102,7 @@ pond skill list
 
 ### 📝 Quick / Query / Question
 
-Press **Ctrl + Q** to swap between natural language and shell commands (**Q is for Quick / Query / Question**):
+Press **Ctrl + Q** to swap between natural language and shell commands:
 - `list files larger than 1gb` &rarr; `find . -size +1G`
 - `tar -xvzf archive.tar.gz` &rarr; Explains the command and flags.
 
