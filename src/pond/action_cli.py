@@ -115,7 +115,7 @@ def main() -> None:
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=["command-draft", "explain"])
+    parser.add_argument("action", choices=["command-draft", "agent"])
     parser.add_argument("text")
     parser.add_argument("--cwd", default=os.getcwd())
     parser.add_argument("--profile", default="default")

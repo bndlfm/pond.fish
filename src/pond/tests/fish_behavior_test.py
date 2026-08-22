@@ -207,21 +207,6 @@ printf 'replacement=<%s>\n' "$__replacement"
     assert result.stdout == "replacement=<stateful:command-draft:# list files>\n"
 
 
-def test_pond_explain_launcher_submits_stateful_explain():
-    script = commandline_mock("printf hello") + r'''
-function pond-action
-    printf 'stateful:%s:%s' "$argv[1]" "$argv[2]"
-end
-source functions/_pond_codify_or_explain.fish
-_pond_codify_or_explain
-printf 'replacement=<%s>\n' "$__replacement"
-'''
-    result = run_fish(script)
-
-    assert result.returncode == 0, result.stderr
-    assert result.stdout == "replacement=<stateful:explain:printf hello>\n"
-
-
 def test_pond_agent_launcher_submits_stateful_goal():
     script = commandline_mock("inspect this repository") + r'''
 function pond-action
