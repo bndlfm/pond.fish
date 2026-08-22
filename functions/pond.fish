@@ -41,20 +41,10 @@ function pond --description "The master command for the pond AI suite."
     set -l bold (set_color --bold)
     set -l normal (set_color normal)
 
-    # 4. Handle Inference via -q
+    # 4. Stateless query mode was deliberately removed for Pond 3.
     if test $query_flag -eq 1
-        if test -z "$subcommand"
-            echo "❌ "$red"Error: No prompt provided for -q."$normal
-            return 1
-        end
-        
-        set -l full_prompt "$clean_args"
-        if test $json_flag -eq 1
-            "$_fish_ai_install_dir/bin/ai" $full_prompt --json
-        else
-            "$_fish_ai_install_dir/bin/ai" $full_prompt
-        end
-        return
+        echo "pond -q was removed; use an explicit stateful Pond action instead." >&2
+        return 2
     end
 
     # 5. Handle Agent via -a
@@ -254,7 +244,6 @@ function pond --description "The master command for the pond AI suite."
             echo "Usage: pond [options] <command> [arguments]"
             echo ""
             echo "$bold""Options:""$normal"
-            echo "  -q <prompt>         Run a stateless AI query (supports piping)"
             echo "  -a <goal>           Trigger the autonomous agent"
             echo "  --json              Output raw JSON response"
             echo ""
@@ -272,7 +261,6 @@ function pond --description "The master command for the pond AI suite."
             echo "  help, -h            Show this help message"
             echo ""
             echo "$bold""Examples:""$normal"
-            echo "  cat logs.txt | pond -q \"find errors\""
             echo "  pond -a \"fix the tests\""
 
         case '*'
@@ -280,7 +268,7 @@ function pond --description "The master command for the pond AI suite."
                 pond help
             else
                 echo "❌ "$red"Unknown subcommand: $subcommand"$normal
-                echo "To run a query, use: pond -q \"$argv\""
+                echo "Use 'pond help' to see supported stateful actions."
             end
     end
 end

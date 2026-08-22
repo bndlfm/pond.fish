@@ -57,22 +57,9 @@ You can also trigger the agent directly from the CLI:
 pond -a "find all large files"
 ```
 
-### 🐚 Unified `pond` Command (Piping & Quick/Query/Question)
+### 🐚 Unified `pond` Command
 
-The `pond` command provides a master interface for AI tasks. To ask a quick, stateless **Question**, or run a **Query**, use the `-q` flag:
-
-```shell
-# Pipe context in
-cat README.md | pond -q "summarize this"
-
-# Ask a direct question
-pond -q "what is the capital of Spain?"
-
-# Output raw JSON
-pond -q "find python entrypoints" --json
-```
-
-Implicit queries (unflagged strings) are disabled for safety. It does not include shell history or previous agent state, making it ideal for scripting and data processing.
+Pond 3 does not provide a stateless `pond -q` query mode. Explicit stateful ACP actions are the only AI interaction path; terminal activity remains passive until the user starts an action.
 
 ### 🛡️ Command Whitelist
 

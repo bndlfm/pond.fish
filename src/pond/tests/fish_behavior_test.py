@@ -109,30 +109,11 @@ bind ctrl-j
     ]
 
 
-def test_pond_query_forwards_one_prompt_argument(tmp_path):
-    install_dir = make_fake_ai(tmp_path)
-    result = run_fish(
-        f"set -g _fish_ai_install_dir {install_dir}; "
-        "source functions/pond.fish; pond -q hello world"
-    )
+def test_pond_stateless_query_mode_is_removed():
+    result = run_fish("source functions/pond.fish; pond -q hello")
 
-    assert result.returncode == 0
-    assert result.stdout == "argc=1<hello world>\n"
-    assert result.stderr == ""
-
-
-def test_pond_json_query_forwards_json_after_prompt(tmp_path):
-    install_dir = make_fake_ai(tmp_path)
-    result = run_fish(
-        f"set -g _fish_ai_install_dir {install_dir}; "
-        "source functions/pond.fish; pond --json -q hello world"
-    )
-
-    assert result.returncode == 0
-    assert result.stdout == "argc=2<hello world><--json>\n"
-    assert result.stderr == ""
-
-
+    assert result.returncode == 2
+    assert "pond -q was removed" in result.stderr
 @pytest.mark.xfail(
     strict=True,
     reason="Pond 2.x collides with Fish's special $version variable",
@@ -165,7 +146,7 @@ def test_pond_unknown_subcommand_does_not_execute_it():
 
     assert result.returncode == 0
     assert "Unknown subcommand: definitely-not-a-command" in result.stdout
-    assert "pond -q" in result.stdout
+    assert "Use 'pond help'" in result.stdout
 
 
 def commandline_mock(buffer, cursor=0):
@@ -320,18 +301,3 @@ _fish_ai_agent
     assert result.returncode == 0
     assert not marker.exists()
     assert "Agent session interrupted" in result.stderr
-
-
-@pytest.mark.xfail(
-    strict=True,
-    reason="Pond 2.x mistakes -q for a prompt when no prompt is supplied",
-)
-def test_pond_query_without_prompt_is_rejected(tmp_path):
-    install_dir = make_fake_ai(tmp_path)
-    result = run_fish(
-        f"set -g _fish_ai_install_dir {install_dir}; "
-        "source functions/pond.fish; pond -q"
-    )
-
-    assert result.returncode == 1
-    assert "No prompt provided" in result.stdout

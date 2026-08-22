@@ -104,15 +104,6 @@ When `POND_REWRITE=1`, Pond registers only the keymap variables that are explici
 - Ctrl+C cooperatively cancels the active ACP turn and does not leave child processes.
 - Final textual output remains pipeable separately from progress rendering.
 
-### `pond -q`
-
-- Accept prompt arguments and optional stdin context.
-- Plain mode emits final content to stdout.
-- Diagnostics go to stderr.
-- Failure returns nonzero.
-- `--json` uses a Pond-owned, versioned envelope rather than exposing a provider SDK object.
-- Missing prompt and missing stdin must return nonzero; the Pond 2.x behavior is a known defect.
-
 ## Permission contract
 
 The selected ACP agent classifies commands and issues ACP permission requests. Pond renders available server options and returns structured responses; it does not maintain a competing command whitelist.
