@@ -30,6 +30,10 @@ Pond remains a Fish-native frontend. A compatible ACP agent becomes the stateful
 
 Pond's core must not import Hermes internal Python modules. The stateful boundary is standard ACP over stdio. The default command is `hermes acp`; other ACP agent commands are supported when they negotiate the required capabilities.
 
+### Pond backend protocol
+
+Feature modules exchange only Pond-owned values from `fish_ai.backend.protocol`: `AgentRequest`, `AgentEvent`, `AgentResult`, and the `EventKind` enum. They report failures through `fish_ai.backend.errors` (`AgentCommandError`, `AcpProtocolError`, `AgentTimeoutError`, and `UnsupportedCapabilityError`). ACP SDK objects and all agent-vendor objects stay inside the eventual transport adapter.
+
 ## Binding configuration
 
 Pond 3 defines no default key sequences. Binding choice belongs to the user or their declarative shell configuration:
