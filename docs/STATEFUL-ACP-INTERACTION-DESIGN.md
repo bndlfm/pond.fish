@@ -56,7 +56,7 @@ If an ACP agent executes a tool during an already-active turn, ACP tool results 
 
 ## Permissions
 
-Pond forwards standard ACP permission requests from the selected agent. It renders only options actually offered by that agent and fails closed on EOF, timeout, malformed input, cancellation, or bridge failure.
+Pond forwards standard ACP permission requests from the selected agent. It renders only options actually offered by that agent through `/dev/tty`, returns structured ACP outcomes, and fails closed on EOF, timeout, malformed input, cancellation, or bridge failure.
 
 Pond's temporary “allow for this turn” choice is client-side bookkeeping: it responds with ACP `allow_once` only to matching later permission requests while the same explicit prompt remains active. It resets when that prompt ends.
 

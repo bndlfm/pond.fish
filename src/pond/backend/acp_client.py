@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from acp import PROTOCOL_VERSION, spawn_agent_process, text_block
 from acp.interfaces import Client
+from acp.schema import AllowedOutcome, RequestPermissionResponse
 
 from .command import AgentCommand
 from .context import context_pressure_from_acp_update
 from .errors import AcpProtocolError
 from .history import ConversationTimeline
 from .intents import build_action_request
+from .permission_ui import TerminalPermissionPrompter
 from .protocol import AgentRequest, AgentResult
 
 
@@ -17,6 +19,7 @@ class _TurnClient(Client):
     def __init__(self) -> None:
         self.text_parts: list[str] = []
         self.context_pressure = None
+        self.permission_prompter = TerminalPermissionPrompter()
 
     async def session_update(self, session_id, update, **kwargs) -> None:
         del session_id, kwargs
@@ -30,8 +33,17 @@ class _TurnClient(Client):
             self.text_parts.append(text)
 
     async def request_permission(self, options, session_id, tool_call, **kwargs):
-        del options, session_id, tool_call, kwargs
-        raise AcpProtocolError("permission requested before Pond permission UI is implemented")
+        del session_id, kwargs
+        payload = tool_call.model_dump(by_alias=True)
+        raw_input = payload.get("rawInput") or {}
+        command = raw_input.get("command", "") if isinstance(raw_input, dict) else ""
+        choice = self.permission_prompter.prompt(command, payload.get("title", ""), options)
+        if choice is None:
+            from acp.schema import DeniedOutcome
+            return RequestPermissionResponse(outcome=DeniedOutcome(outcome="cancelled"))
+        return RequestPermissionResponse(
+            outcome=AllowedOutcome(option_id=choice.option_id, outcome="selected")
+        )
 
 
 def build_user_prompt(timeline: ConversationTimeline, user_text: str) -> str:
