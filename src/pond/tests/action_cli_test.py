@@ -86,3 +86,24 @@ def test_status_reports_exact_workspace_session_without_contacting_agent(tmp_pat
     run_status(str(tmp_path), profile="default")
 
     assert capsys.readouterr().out == "ACP session: acp-1\n"
+
+
+def test_context_submits_acp_slash_command_to_exact_workspace_session(tmp_path, monkeypatch):
+    from pond.action_cli import run_context
+    from pond.backend.sessions import SessionStore
+
+    monkeypatch.setenv("POND_ACP_COMMAND_JSON", '["fixture-agent"]')
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
+    SessionStore(tmp_path / "state" / "pond" / "acp-sessions.json").set(
+        "default", tmp_path, "acp-1"
+    )
+    seen = []
+
+    async def fake_turn(command, request, *, session_id=None, timeline=None):
+        seen.append((request.prompt, session_id))
+        return AgentResult("acp-1", "Context: 80%", "end_turn")
+
+    with patch("pond.action_cli.run_acp_turn", fake_turn):
+        run_context(str(tmp_path), profile="default")
+
+    assert seen == [("/context", "acp-1")]
