@@ -46,6 +46,7 @@ refine = "pond.autocomplete:refine_completions"
 agent = "pond.agent:main"
 ai = "pond.ai:main"
 render = "pond.agent:render_markdown"
+pond-action = "pond.action_cli:main"
 
 [tool.pytest.ini_options]
 minversion = "6.0"

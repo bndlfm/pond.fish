@@ -18,7 +18,7 @@ The user explicitly starts every turn through a Pond command or a configured bin
 
 ## Explicit turn envelope
 
-Every user-started Pond action is encoded as ordinary text in a single ACP prompt. The action is declared explicitly so the agent does not need to infer intent from a key sequence.
+Every user-started Pond action is encoded as ordinary text in a single ACP prompt. The `pond-action` CLI bridge resolves the workspace's exact session handle, submits the turn, then persists the returned handle for the next explicit action. The action is declared explicitly so the agent does not need to infer intent from a key sequence.
 
 ```text
 [Pond action: command-draft]
