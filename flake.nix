@@ -22,7 +22,7 @@
           ];
 
           shellHook = ''
-            echo "🐠 Welcome to the fish-ai development environment (Nix Edition)!"
+            echo "🐠 Welcome to the Pond development environment (Nix Edition)!"
             
             # Recreate a stale/garbage-collected Nix venv as well as an absent one.
             # Checking only the directory leaves broken console-script shebangs behind.
