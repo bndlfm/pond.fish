@@ -1,98 +1,27 @@
-# Architecture
+# Pond Architecture
 
-This document describes the architecture of the `fish-ai` plugin.
+Pond is a Fish-shell client for a **stateful ACP agent**.
 
-The primary audience is any developer who wants to contribute to the
-project.
+## Boundaries
 
-## Overview
+- `functions/pond.fish` exposes stateful user actions: agent goal, status, context, compression, and session detach.
+- `functions/_pond_codify_or_explain.fish` submits explicit command-draft actions; it does not provide legacy query/explain mode.
+- `functions/_pond_agent.fish` submits explicit stateful agent goals.
+- `conf.d/pond.fish` sets XDG paths and only registers user-configured bindings. It performs no installation, network work, or default binding setup.
+- `src/pond/backend/` contains the generic ACP protocol client, session pointers, permissions, context pressure, and chronological history.
+- `src/pond/render.py` uses Rich for Markdown and tool lifecycle rendering.
 
-Even though this is a plugin for fish, most of the business logic
-lives in a Python module. Many AI vendors provide Python packages
-for interacting with their services and I wanted to dive deeper
-into the Python ecosystem, so it felt like a natural fit.
+## Session and terminal model
 
-This is a list of the most important files and directories in the
-repository:
+One normalized workspace maps to one exact ACP session handle per profile. Pond stores only that local pointer; the ACP agent owns transcript persistence and compaction.
 
-- `conf.d/fish_ai.fish`: Registers the key bindings and contains hooks
-invoked by the fisher package manager.
-- `functions/_fish_ai_autocomplete_or_fix.fish`: Entrypoint when pressing
-`Ctrl + Space`.
-- `functions/_fish_ai_codify_or_explain.fish`: Entrypoint when pressing
-`Ctrl + A`.
-- `src/pond`: Directory containing the `pond` Python package with most
-of the business logic.
+Terminal activity is passive. Command/output events are preserved in the timeline, but Pond sends them to the agent only when the user starts a later explicit action.
 
-## How the plugin is installed
+## Safety
 
-The plugin is intended to be installed using the fisher package manager.
-As explained [here](https://github.com/jorgebucaran/fisher/blob/main/README.md#creating-a-plugin),
-when a user runs `fisher install`, fisher will copy
-the `functions` and `conf.d` directories to the user's home directory and
-invoke the `_fish_ai_install` hook in `conf.d/fish_ai.fish`.
+- Pond never auto-executes returned commands.
+- ACP permission requests are rendered through `/dev/tty` and fail closed.
+- `pond compress` and `pond context` are explicit wrappers around the active ACP session’s `/compress` and `/context` commands.
+- Pond does not contain a provider engine, API-key storage, custom tool loop, stateless query mode, or agent-harness autocomplete/repair mode.
 
-The install hook will then create a virtual environment using `uv`or `venv`
-and run `pip` to install the `fish_ai` module directly from the git repository
-here on GitHub.
-
-The virtual environment is created in the `$XDG_DATA_HOME/fish-ai` directory. It
-contains the `fish_ai` module along with its dependencies.
-
-The configuration file `$XDG_CONFIG_HOME/fish-ai/config.ini` is the only file that lives
-outside this virtual environment, so the user can remove the plugin without
-their configuration disappearing.
-
-## How the Python module is structured
-
-The Python module is located in the `src/pond` directory. It contains
-the backend code for constructing the prompt, reading configuration values
-and making API calls. It also bundles `fzf` for showing autocompletions.
-
-Here are the most important files and directories:
-
-- `src/pond/tests`: Contains the unit tests which can be executed
-using `pytest`.
-- `src/pond/engine.py`: Contains the core logic of the plugin, such as
-constructing the system prompt and making API calls.
-- `src/pond/autocomplete.py`: Constructs the prompt for creating
-completions and displays the fuzzy finder window.
-- `src/pond/fix.py`: Constructs the prompt for fixing the commandline.
-- `src/pond/codify.py`: Constructs the prompt for codifying the commandline.
-- `src/pond/explain.py`: Constructs the prompt for explaining the current
-commandline.
-- `src/pond/redact.py`: Contains the logic for redacting sensitive information
-from the prompt.
-- `src/pond/config.py`: Contains logic for parsing the contents of `config.ini`.
-
-## How the key bindings work
-
-The key bindings are registered using `bind` when the shell starts. When
-pressing `Ctrl + Space` or `Ctrl + A`, the corresponding function in
-the `functions` directory is called. This function will grab the contents
-of the commandline buffer and pass it to the `fish_ai` module which is
-doing the actual API call.
-
-Here is what it looks like:
-
-```mermaid
-flowchart TD
-    KeyPress((fa:fa-user Key press)) -->|Ctrl+A| CodifyOrExplain(fa:fa-fish _fish_ai_codify_or_explain)
-    KeyPress -->|Ctrl+Space| AutocompleteOrFix(fa:fa-fish _fish_ai_autocomplete_or_fix)
-    CodifyOrExplain --> Comment?{"Comment?"}
-    Comment? -->|Yes| Codify(fa:fa-fish _fish_ai_codify)
-    Comment? -->|No| Explain(fa:fa-fish _fish_ai_explain)
-    Codify -->|Comment| PythonCodify(fa:fa-python codify)
-    Explain -->|Command| PythonExplain(fa:fa-python explain)
-    AutocompleteOrFix --> Empty?{"Empty commandline buffer?"}
-    Empty? -->|Yes| Fix(fa:fa-fish _fish_ai_fix)
-    Empty? -->|No| Autocomplete(fa:fa-fish _fish_ai_autocomplete)
-    Fix -->|Command + Error message| PythonFix(fa:fa-python fix)
-    Autocomplete -->|Command + Cursor position| PythonAutocomplete(fa:fa-python autocomplete)
-    PythonFix -->|Messages| Engine(fa:fa-python engine)
-    PythonAutocomplete -->|Messages| Engine(fa:fa-python engine)
-    PythonCodify -->|Messages| Engine(fa:fa-fish engine)
-    PythonExplain -->|Messages| Engine(fa:fa-python engine)
-    Engine --> Api[/API/]
-    Engine -->|Read config| Config("config.ini")
-```
+See [the interaction design](docs/STATEFUL-ACP-INTERACTION-DESIGN.md) and [the rewrite contract](docs/HERMES-REWRITE-CONTRACT.md).

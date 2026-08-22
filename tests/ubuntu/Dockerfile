@@ -22,7 +22,6 @@ RUN curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/function
 
 RUN fisher install $SOURCE
 
-RUN fish_ai_bug_report
 
 FROM ubuntu:24.04 AS install-with-uv
 
@@ -48,5 +47,3 @@ RUN curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/function
     fisher install jorgebucaran/fisher
 
 RUN fisher install $SOURCE
-
-RUN fish_ai_bug_report

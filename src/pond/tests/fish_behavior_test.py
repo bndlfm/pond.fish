@@ -89,14 +89,11 @@ def test_pond_conf_is_silent_idempotent_and_xdg_scoped(tmp_path):
 
 def test_pond_bind_uses_only_explicitly_configured_keys():
     script = r'''
-set -gx POND_REWRITE 1
 set -gx POND_KEYMAP_CODIFY ctrl-g
-set -gx POND_KEYMAP_COMPLETE ctrl-h
 set -gx POND_KEYMAP_AGENT ctrl-j
 source conf.d/pond.fish
 _pond_bind
 bind ctrl-g
-bind ctrl-h
 bind ctrl-j
 '''
     result = run_fish(script)
@@ -104,7 +101,6 @@ bind ctrl-j
     assert result.returncode == 0, result.stderr
     assert result.stdout.splitlines() == [
         "bind ctrl-g _pond_codify_or_explain",
-        "bind ctrl-h _pond_autocomplete_or_fix",
         "bind ctrl-j _pond_agent",
     ]
 
@@ -124,7 +120,6 @@ def test_pond_version_reports_the_project_version_without_stderr():
 
 def test_pond_compress_uses_exact_acp_command_when_rewrite_is_enabled():
     script = r'''
-set -gx POND_REWRITE 1
 function pond-compress
     printf 'compressed:<%s>' "$argv[2]"
 end

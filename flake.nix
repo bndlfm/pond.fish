@@ -1,5 +1,5 @@
 {
-  description = "fish-ai: AI functionality for Fish shell";
+  description = "Pond: stateful ACP functionality for Fish shell";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";

@@ -15,7 +15,6 @@ RUN curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/function
 
 RUN fisher install $SOURCE
 
-RUN fish_ai_bug_report
 
 FROM fedora:43 AS install-with-uv
 
@@ -36,5 +35,3 @@ RUN curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/function
     fisher install jorgebucaran/fisher
 
 RUN fisher install $SOURCE
-
-RUN fish_ai_bug_report

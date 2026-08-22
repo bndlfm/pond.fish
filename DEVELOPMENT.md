@@ -1,64 +1,28 @@
 # Development
 
-If you want to contribute, I recommend to read [`ARCHITECTURE.md`](https://github.com/bndlfm/pond.fish/blob/main/ARCHITECTURE.md)
-first.
+Pond is a Fish-shell interface for a stateful ACP agent. Read [the stateful interaction design](docs/STATEFUL-ACP-INTERACTION-DESIGN.md) and [the rewrite contract](docs/HERMES-REWRITE-CONTRACT.md) before changing runtime behavior.
 
-This repository ships with a `devcontainer.json` which can be used with
-GitHub Codespaces or Visual Studio Code with
-[the Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
+## Local development
 
-To install `pond` from a local copy, use `fisher`:
-
-```shell
-fisher install .
-```
-
-## Development with Nix
-
-If you have [Nix](https://nixos.org) installed with flakes enabled, you can
-quickly set up a development environment:
-
-```shell
+```fish
 nix develop
+.venv/bin/python -m pytest
+fish -n conf.d/*.fish functions/*.fish completions/*.fish
 ```
 
-This will provide a shell with Python, Fish, and all required tools. It
-automatically creates a `.venv` using `uv` and installs the project in
-editable mode.
+The Nix shell creates a project-local virtual environment when needed and installs Pond in editable mode.
 
-## Enable debug logging
+## Local Fisher smoke test
 
-Enable debug logging by putting `debug = True` in your `config.ini`.
-Logging is done to syslog by default (if available). You can also enable
-logging to file using `log = <path to file>`, for example:
-
-```ini
-[fish-ai]
-debug = True
-log = /home/neko/.config/fish-ai/fish-ai.log
+```fish
+fisher install .
+pond help
 ```
 
-## Run the tests
+## Commit messages
 
-[The installation tests](https://github.com/bndlfm/pond.fish/actions/workflows/installation-tests.yaml)
-are currently running with GitHub Actions on macOS, Fedora, Ubuntu and Arch Linux.
+Use conventional commits. Keep every completed sprint as one local commit with its tests and docs; do not push unless Neko explicitly asks.
 
-The Python modules containing most of the business logic can be tested using `pytest`.
+## Release
 
-## Write commit messages
-
-Use [conventional commits](https://www.conventionalcommits.org) when writing
-commit messages. This repository uses tooling which relies on the conventional
-commits specification for incrementing the version number and compute changelogs.
-
-## Create a release
-
-A release is created by GitHub Actions when a new tag is pushed.
-
-```shell
-set tag (grep '^version =' pyproject.toml | \
-    cut -d '=' -f2- | \
-    string replace -ra '[ "]' '')
-git tag -a "v$tag" -m "🚀 v$tag"
-git push origin "v$tag"
-```
+A release tag is created only after the final acceptance evidence is reviewed. The current package version lives in `pyproject.toml`.
