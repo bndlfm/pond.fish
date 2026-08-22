@@ -7,6 +7,7 @@ from acp.interfaces import Client
 
 from .command import AgentCommand
 from .errors import AcpProtocolError
+from .history import ConversationTimeline
 from .protocol import AgentRequest, AgentResult
 
 
@@ -26,7 +27,28 @@ class _TurnClient(Client):
         raise AcpProtocolError("permission requested before Pond permission UI is implemented")
 
 
-async def run_acp_turn(command: AgentCommand, request: AgentRequest) -> AgentResult:
+def build_user_prompt(timeline: ConversationTimeline, user_text: str) -> str:
+    """Batch passive terminal events only at an explicit user-turn boundary."""
+    context = timeline.context_for_user_turn(user_text)
+    lines = ["[Pond explicit user turn]"]
+    if context:
+        lines.append("Terminal activity observed since the prior user turn:")
+        for entry in context:
+            if entry.kind == "terminal_command":
+                lines.append(f"$ {entry.text}")
+            else:
+                lines.append(entry.text.rstrip("\n"))
+        lines.append("")
+    lines.append(f"User request: {user_text}")
+    timeline.append_message("user", user_text)
+    return "\n".join(lines)
+
+
+async def run_acp_turn(
+    command: AgentCommand,
+    request: AgentRequest,
+    timeline: ConversationTimeline | None = None,
+) -> AgentResult:
     """Run exactly one explicit user prompt through a generic ACP subprocess."""
     client = _TurnClient()
     try:
@@ -38,9 +60,10 @@ async def run_acp_turn(command: AgentCommand, request: AgentRequest) -> AgentRes
         ) as (connection, _process):
             await connection.initialize(protocol_version=PROTOCOL_VERSION)
             session = await connection.new_session(cwd=request.cwd, mcp_servers=[])
+            prompt = build_user_prompt(timeline, request.prompt) if timeline else request.prompt
             response = await connection.prompt(
                 session_id=session.session_id,
-                prompt=[text_block(request.prompt)],
+                prompt=[text_block(prompt)],
             )
     except AcpProtocolError:
         raise

@@ -22,3 +22,30 @@ def test_explicit_acp_turn_returns_streamed_agent_text_and_session_handle(tmp_pa
     assert result.session_id == "fixture-1"
     assert result.text == "Inspecting the workspace."
     assert result.stop_reason == "end_turn"
+
+
+def test_user_turn_batches_passive_terminal_entries_only_when_submitted():
+    from pond.backend.acp_client import build_user_prompt
+    from pond.backend.history import ConversationTimeline
+    from pond.backend.protocol import EventKind
+
+    timeline = ConversationTimeline()
+    timeline.append_message("assistant", "Waiting.")
+    timeline.append_event(EventKind.TERMINAL_COMMAND, "git status --short", tool_id="term-1")
+    timeline.append_event(EventKind.TERMINAL_OUTPUT, " M README.md\n", tool_id="term-1")
+
+    prompt = build_user_prompt(timeline, "Why is README modified?")
+
+    assert prompt == (
+        "[Pond explicit user turn]\n"
+        "Terminal activity observed since the prior user turn:\n"
+        "$ git status --short\n"
+        " M README.md\n\n"
+        "User request: Why is README modified?"
+    )
+    assert [(entry.kind, entry.text) for entry in timeline.entries] == [
+        ("message", "Waiting."),
+        ("terminal_command", "git status --short"),
+        ("terminal_output", " M README.md\n"),
+        ("message", "Why is README modified?"),
+    ]
