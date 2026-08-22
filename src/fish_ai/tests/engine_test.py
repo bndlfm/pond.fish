@@ -4,6 +4,56 @@ from unittest.mock import patch, MagicMock
 from fish_ai.engine import get_commandline_history, get_response
 
 
+def _openai_completion(content='ok'):
+    completion = MagicMock()
+    completion.choices = [MagicMock(message=MagicMock(
+        content=content,
+        tool_calls=None,
+    ))]
+    client = MagicMock()
+    client.chat.completions.create.return_value = completion
+    return client
+
+
+@patch('fish_ai.engine.get_config')
+@patch('fish_ai.engine.get_openai_client')
+def test_get_chat_response_redacts_before_provider_call(mock_client, mock_config):
+    from fish_ai.engine import get_chat_response
+
+    mock_config.side_effect = lambda key: {
+        'provider': 'self-hosted',
+        'model': 'baseline-model',
+    }.get(key)
+    mock_client.return_value = _openai_completion()
+    messages = [{'role': 'user', 'content': 'login --password swordfish'}]
+
+    get_chat_response(messages)
+
+    sent = mock_client.return_value.chat.completions.create.call_args.kwargs
+    assert sent['messages'] == [
+        {'role': 'user', 'content': 'login --password <REDACTED>'},
+    ]
+
+
+@patch('fish_ai.engine.get_config')
+@patch('fish_ai.engine.get_openai_client')
+def test_get_chat_response_can_explicitly_disable_redaction(mock_client, mock_config):
+    from fish_ai.engine import get_chat_response
+
+    mock_config.side_effect = lambda key: {
+        'redact': 'False',
+        'provider': 'self-hosted',
+        'model': 'baseline-model',
+    }.get(key)
+    mock_client.return_value = _openai_completion()
+    messages = [{'role': 'user', 'content': 'login --password swordfish'}]
+
+    get_chat_response(messages)
+
+    sent = mock_client.return_value.chat.completions.create.call_args.kwargs
+    assert sent['messages'] == messages
+
+
 @patch('fish_ai.engine.get_config')
 @patch('fish_ai.engine.get_logger')
 def test_get_commandline_history_disabled(mock_get_logger, mock_get_config):
