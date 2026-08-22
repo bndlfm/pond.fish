@@ -26,7 +26,7 @@ jobs:
         pip install -r .devcontainer/requirements-dev.txt
     - name: Run tests
       run: |
-        coverage run --branch --include="src/pond/*.py" -m pytest
+        coverage run --branch --include="src/fish_ai/*.py" -m pytest
         coverage xml
         coverage report
     - name: Report code coverage
