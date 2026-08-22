@@ -34,6 +34,16 @@ Pond's core must not import Hermes internal Python modules. The stateful boundar
 
 The temporary pre-rename boundary lives at `fish_ai.backend`, but S10 renames the package to `pond` before further ACP work lands. The post-S10 feature boundary is `pond.backend.protocol` (`AgentRequest`, `AgentEvent`, `AgentResult`, and `EventKind`) plus `pond.backend.errors` (`AgentCommandError`, `AcpProtocolError`, `AgentTimeoutError`, and `UnsupportedCapabilityError`). ACP SDK objects and all agent-vendor objects stay inside the eventual transport adapter.
 
+### ACP agent command
+
+Pond resolves the stateful agent from `POND_ACP_COMMAND_JSON`, which must be a JSON argv array and is spawned without a shell. For example:
+
+```fish
+set -gx POND_ACP_COMMAND_JSON '["/opt/acp-agent/bin/agent", "--safe"]'
+```
+
+Unset means Pond uses its default Hermes preset `["hermes", "acp"]`. Shell executables, shell strings, empty arrays, empty entries, and non-string entries are rejected. This is a command-selection preset only; it does not make the transport Hermes-specific.
+
 ## Binding configuration
 
 Pond 3 defines no default key sequences. Binding choice belongs to the user or their declarative shell configuration:
