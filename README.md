@@ -135,11 +135,24 @@ api_key = <your_key>
 model = gemini-3.1-pro-preview
 ```
 
-### Runtime Keybindings (Nix/Home Manager)
-You can customize keybindings via environment variables in your shell config:
+### Legacy 2.x Runtime Keybindings (Nix/Home Manager)
+The legacy Fish-AI layer has these current defaults, which remain configurable via environment variables:
 - `FISH_AI_KEYMAP_1`: Defaults to `ctrl-q` (Question)
 - `FISH_AI_KEYMAP_2`: Defaults to `ctrl-space` (Autocomplete)
 - `FISH_AI_KEYMAP_3`: Defaults to `ctrl-a` (Agent)
+
+### Pond 3 Migration Bindings
+
+The opt-in Pond migration layer intentionally defines **no default key sequences**. Choose the bindings yourself; Pond will register only the values you explicitly set:
+
+```fish
+set -gx POND_REWRITE 1
+set -gx POND_KEYMAP_CODIFY <your-codify-or-explain-key>
+set -gx POND_KEYMAP_COMPLETE <your-completion-or-repair-key>
+set -gx POND_KEYMAP_AGENT <your-agent-key>
+```
+
+The current migration launchers still delegate to the legacy implementation. The bindings are a naming/installation seam, not a backend switch yet. Leave `POND_REWRITE` unset to retain the legacy binding setup unchanged.
 
 ## 🛠️ Development
 
