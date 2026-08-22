@@ -29,6 +29,18 @@ class SessionStore:
         data.setdefault(profile, {})[normalize_workspace(workspace)] = session_id
         self._write(data)
 
+    def delete(self, profile: str, workspace: str | Path) -> bool:
+        data = self._read()
+        profile_sessions = data.get(profile)
+        if not profile_sessions:
+            return False
+        removed = profile_sessions.pop(normalize_workspace(workspace), None) is not None
+        if not profile_sessions:
+            data.pop(profile, None)
+        if removed:
+            self._write(data)
+        return removed
+
     def _read(self) -> dict[str, dict[str, str]]:
         if not self.path.exists():
             return {}

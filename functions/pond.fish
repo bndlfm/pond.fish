@@ -178,6 +178,10 @@ function pond --description "The master command for the pond AI suite."
             end
 
         case forget
+            if set -q POND_REWRITE; and test "$POND_REWRITE" = 1
+                pond-forget --cwd (pwd)
+                return
+            end
             set -l state_file "$_fish_ai_install_dir/agent_session.json"
             if test -f "$state_file"
                 rm "$state_file"

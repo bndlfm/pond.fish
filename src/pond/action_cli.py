@@ -45,6 +45,22 @@ def run_compress(cwd: str, *, profile: str = "default") -> None:
     print(result.text)
 
 
+def run_forget(cwd: str, *, profile: str = "default") -> None:
+    """Detach this workspace from its ACP session without deleting agent history."""
+    removed = SessionStore(_state_path()).delete(profile, cwd)
+    print("Detached ACP session from this workspace." if removed else "No ACP session is mapped to this workspace.")
+
+
+def forget_main() -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--cwd", default=os.getcwd())
+    parser.add_argument("--profile", default="default")
+    args = parser.parse_args()
+    run_forget(args.cwd, profile=args.profile)
+
+
 def run_context(cwd: str, *, profile: str = "default") -> None:
     """Ask the exact active ACP session for harness-owned context status."""
     store = SessionStore(_state_path())
