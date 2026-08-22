@@ -201,7 +201,7 @@ function _fish_ai_get_installation_url
     set -f plugin (fisher list | grep -E 'fish-ai|pond' | head -1)
     if test "$plugin" = ""
         # If we can't find it in the list, check if we're currently in the source directory
-        if test -f pyproject.toml; and grep -q 'name = "fish_ai"' pyproject.toml
+        if test -f pyproject.toml; and grep -q 'name = "pond"' pyproject.toml
             echo -n (pwd)
         else
             # Fallback to the original repository as a last resort

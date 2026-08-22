@@ -7,7 +7,7 @@ This repository ships with a `devcontainer.json` which can be used with
 GitHub Codespaces or Visual Studio Code with
 [the Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
 
-To install `fish-ai` from a local copy, use `fisher`:
+To install `pond` from a local copy, use `fisher`:
 
 ```shell
 fisher install .

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from fish_ai.agent import TOOLS, SYSTEM_PROMPT
+from pond.agent import TOOLS, SYSTEM_PROMPT
 import json
 
 def test_tools_definition():

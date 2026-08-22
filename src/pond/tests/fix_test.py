@@ -4,17 +4,17 @@ from unittest.mock import patch
 
 import pytest
 
-from fish_ai.fix import fix, get_error_message
+from pond.fix import fix, get_error_message
 from subprocess import CalledProcessError
 
 
-@patch('fish_ai.engine.get_args', lambda: ['foo'])
+@patch('pond.engine.get_args', lambda: ['foo'])
 @patch('subprocess.check_output',
        side_effect=CalledProcessError(
            output=b'permission denied',
            returncode=1,
            cmd=['foo']))
-@patch('fish_ai.engine.get_response')
+@patch('pond.engine.get_response')
 def test_successful_fix(mock_get_response, _, capsys):
     mock_get_response.return_value = 'sudo foo'
     fix()

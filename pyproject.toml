@@ -3,10 +3,9 @@ requires = ["setuptools>=82.0.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "fish_ai"
-version = "2.11.1"
-authors = [{ name = "Bastian Fredriksson", email = "realiserad@gmail.com" }]
-description = "Provides core functionality for fish-ai, an AI plugin for the fish shell."
+name = "pond"
+version = "3.0.0.dev0"
+description = "Provides core functionality for Pond, an AI plugin for the Fish shell."
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
@@ -34,20 +33,20 @@ dependencies = [
 "Bug Tracker" = "https://github.com/bndlfm/pond.fish/issues"
 
 [project.scripts]
-fix = "fish_ai.fix:fix"
-codify = "fish_ai.codify:codify"
-explain = "fish_ai.explain:explain"
-autocomplete = "fish_ai.autocomplete:autocomplete"
-switch_context = "fish_ai.switch_context:switch_context"
-put_api_key = "fish_ai.put_api_key:put_api_key"
-lookup_setting = "fish_ai.config:lookup_setting"
-put_setting = "fish_ai.config:put_setting"
-refine = "fish_ai.autocomplete:refine_completions"
-agent = "fish_ai.agent:main"
-ai = "fish_ai.ai:main"
-render = "fish_ai.agent:render_markdown"
+fix = "pond.fix:fix"
+codify = "pond.codify:codify"
+explain = "pond.explain:explain"
+autocomplete = "pond.autocomplete:autocomplete"
+switch_context = "pond.switch_context:switch_context"
+put_api_key = "pond.put_api_key:put_api_key"
+lookup_setting = "pond.config:lookup_setting"
+put_setting = "pond.config:put_setting"
+refine = "pond.autocomplete:refine_completions"
+agent = "pond.agent:main"
+ai = "pond.ai:main"
+render = "pond.agent:render_markdown"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-ra -q"
-testpaths = ["src/fish_ai/tests"]
+testpaths = ["src/pond/tests"]

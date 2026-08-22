@@ -10,7 +10,7 @@ import shlex
 
 def get_config_setting(name):
     try:
-        from fish_ai.config import get_config
+        from pond.config import get_config
         return get_config(name)
     except:
         return None
@@ -24,7 +24,7 @@ def debug_log(msg):
 
 def get_skills_dir():
     try:
-        from fish_ai.config import get_config_path
+        from pond.config import get_config_path
         config_path = get_config_path()
         if not config_path:
             return os.path.expanduser('~/.config/fish-ai/skills')
@@ -231,8 +231,8 @@ def main():
 
     try:
         # Now do the risky imports and logic
-        from fish_ai.engine import get_chat_response, get_os, get_logger
-        from fish_ai.config import get_config, get_config_path
+        from pond.engine import get_chat_response, get_os, get_logger
+        from pond.config import get_config, get_config_path
         
         # Validate configuration
         config_path = get_config_path()

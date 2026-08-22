@@ -2,14 +2,14 @@
 
 from unittest.mock import patch
 
-from fish_ai.autocomplete import autocomplete, get_pipe
+from pond.autocomplete import autocomplete, get_pipe
 
 
-@patch('fish_ai.engine.get_args', lambda: ['echo hello', 10])
-@patch('fish_ai.engine.get_config', lambda key: {
+@patch('pond.engine.get_args', lambda: ['echo hello', 10])
+@patch('pond.engine.get_config', lambda key: {
     'completions': '1'
 }.get(key))
-@patch('fish_ai.autocomplete.iterfzf',
+@patch('pond.autocomplete.iterfzf',
        lambda iterable, **kwargs: 'echo hello world')
 def test_successful_autocomplete(capsys):
     autocomplete()
@@ -17,8 +17,8 @@ def test_successful_autocomplete(capsys):
     assert capsys.readouterr().err == ''
 
 
-@patch('fish_ai.engine.get_args', lambda: ['echo hello', 4])
-@patch('fish_ai.autocomplete.iterfzf',
+@patch('pond.engine.get_args', lambda: ['echo hello', 4])
+@patch('pond.autocomplete.iterfzf',
        side_effect=Exception('crystal ball failed'))
 def test_unsuccessful_autocomplete(_, caplog):
     autocomplete()

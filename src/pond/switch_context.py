@@ -2,7 +2,7 @@
 
 from simple_term_menu import TerminalMenu
 from configparser import ConfigParser
-from fish_ai.config import get_config_path
+from pond.config import get_config_path
 
 
 def switch_context():

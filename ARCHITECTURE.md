@@ -21,7 +21,7 @@ invoked by the fisher package manager.
 `Ctrl + Space`.
 - `functions/_fish_ai_codify_or_explain.fish`: Entrypoint when pressing
 `Ctrl + A`.
-- `src/fish_ai`: Directory containing the `fish_ai` Python module with most
+- `src/pond`: Directory containing the `pond` Python package with most
 of the business logic.
 
 ## How the plugin is installed
@@ -45,25 +45,25 @@ their configuration disappearing.
 
 ## How the Python module is structured
 
-The Python module is located in the `src/fish_ai` directory. It contains
+The Python module is located in the `src/pond` directory. It contains
 the backend code for constructing the prompt, reading configuration values
 and making API calls. It also bundles `fzf` for showing autocompletions.
 
 Here are the most important files and directories:
 
-- `src/fish_ai/tests`: Contains the unit tests which can be executed
+- `src/pond/tests`: Contains the unit tests which can be executed
 using `pytest`.
-- `src/fish_ai/engine.py`: Contains the core logic of the plugin, such as
+- `src/pond/engine.py`: Contains the core logic of the plugin, such as
 constructing the system prompt and making API calls.
-- `src/fish_ai/autocomplete.py`: Constructs the prompt for creating
+- `src/pond/autocomplete.py`: Constructs the prompt for creating
 completions and displays the fuzzy finder window.
-- `src/fish_ai/fix.py`: Constructs the prompt for fixing the commandline.
-- `src/fish_ai/codify.py`: Constructs the prompt for codifying the commandline.
-- `src/fish_ai/explain.py`: Constructs the prompt for explaining the current
+- `src/pond/fix.py`: Constructs the prompt for fixing the commandline.
+- `src/pond/codify.py`: Constructs the prompt for codifying the commandline.
+- `src/pond/explain.py`: Constructs the prompt for explaining the current
 commandline.
-- `src/fish_ai/redact.py`: Contains the logic for redacting sensitive information
+- `src/pond/redact.py`: Contains the logic for redacting sensitive information
 from the prompt.
-- `src/fish_ai/config.py`: Contains logic for parsing the contents of `config.ini`.
+- `src/pond/config.py`: Contains logic for parsing the contents of `config.ini`.
 
 ## How the key bindings work
 

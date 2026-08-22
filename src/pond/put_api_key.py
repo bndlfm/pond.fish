@@ -4,7 +4,7 @@ from simple_term_menu import TerminalMenu
 from configparser import ConfigParser
 import sys
 import keyring
-from fish_ai.config import get_config_path
+from pond.config import get_config_path
 
 
 def select_section(config, sections):

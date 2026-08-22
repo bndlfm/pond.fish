@@ -7,11 +7,19 @@ from unittest.mock import patch
 
 import pytest
 
-from fish_ai import ai
+from pond import ai
+
+
+def test_pond_is_the_only_supported_python_package_identity():
+    import importlib.metadata
+    import pond
+
+    assert pond.__name__ == "pond"
+    assert importlib.metadata.version("pond") == "3.0.0.dev0"
 
 
 def test_acp_neutral_protocol_types_keep_vendor_payloads_at_the_boundary():
-    from fish_ai.backend.protocol import AgentEvent, AgentRequest, AgentResult, EventKind
+    from pond.backend.protocol import AgentEvent, AgentRequest, AgentResult, EventKind
 
     request = AgentRequest(prompt="inspect this workspace", cwd="/tmp/workspace")
     event = AgentEvent(kind=EventKind.TOOL_STARTED, tool_id="call-7", text="Read file")
@@ -26,7 +34,7 @@ def test_acp_neutral_protocol_types_keep_vendor_payloads_at_the_boundary():
 
 
 def test_acp_neutral_errors_are_specific_and_do_not_depend_on_an_agent_vendor():
-    from fish_ai.backend.errors import (
+    from pond.backend.errors import (
         AcpProtocolError,
         AgentCommandError,
         AgentTimeoutError,
@@ -46,7 +54,7 @@ def run_ai(argv, stdin_text="", response=None):
     stdin = io.StringIO(stdin_text)
     with patch.object(sys, "argv", ["ai", *argv]), \
             patch.object(sys, "stdin", stdin), \
-            patch("fish_ai.ai.engine.get_chat_response", return_value=response) as call:
+            patch("pond.ai.engine.get_chat_response", return_value=response) as call:
         ai.main()
     return call
 
@@ -97,7 +105,7 @@ def test_empty_input_exits_nonzero_without_calling_backend(capsys):
     stdin = io.StringIO("")
     with patch.object(sys, "argv", ["ai"]), \
             patch.object(sys, "stdin", stdin), \
-            patch("fish_ai.ai.engine.get_chat_response") as call, \
+            patch("pond.ai.engine.get_chat_response") as call, \
             pytest.raises(SystemExit) as exit_info:
         ai.main()
 
@@ -110,7 +118,7 @@ def test_backend_failure_is_stderr_and_nonzero(capsys):
     stdin = io.StringIO("")
     with patch.object(sys, "argv", ["ai", "question"]), \
             patch.object(sys, "stdin", stdin), \
-            patch("fish_ai.ai.engine.get_chat_response", side_effect=RuntimeError("offline")), \
+            patch("pond.ai.engine.get_chat_response", side_effect=RuntimeError("offline")), \
             pytest.raises(SystemExit) as exit_info:
         ai.main()
 

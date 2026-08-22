@@ -14,8 +14,8 @@ from itertools import islice
 from sys import argv
 
 import json
-from fish_ai.redact import redact
-from fish_ai.config import get_config
+from pond.redact import redact
+from pond.config import get_config
 
 logger = logging.getLogger()
 

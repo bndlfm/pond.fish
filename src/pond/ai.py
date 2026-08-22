@@ -3,7 +3,7 @@
 import sys
 import json
 import argparse
-from fish_ai import engine
+from pond import engine
 
 SYSTEM_PROMPT = """
 You are a concise technical assistant. 

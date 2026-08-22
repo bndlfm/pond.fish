@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from fish_ai.redact import redact_content
+from pond.redact import redact_content
 import textwrap
 
 

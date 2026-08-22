@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from fish_ai import engine
+from pond import engine
 from iterfzf import iterfzf
 import textwrap
-from fish_ai.config import get_config
+from pond.config import get_config
 from subprocess import run, PIPE, DEVNULL
 from base64 import b64encode, b64decode
 
@@ -230,7 +230,7 @@ def autocomplete():
         engine.get_logger().debug(
             'Codifying commandline before completion using instructions: ' +
             commandline[1:].strip())
-        from fish_ai.codify import get_messages
+        from pond.codify import get_messages
         commandline = engine.get_response(
             messages=get_messages(commandline[1:].strip()))
         cursor_position = len(commandline)
