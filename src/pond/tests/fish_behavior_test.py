@@ -114,15 +114,11 @@ def test_pond_stateless_query_mode_is_removed():
 
     assert result.returncode == 2
     assert "pond -q was removed" in result.stderr
-@pytest.mark.xfail(
-    strict=True,
-    reason="Pond 2.x collides with Fish's special $version variable",
-)
 def test_pond_version_reports_the_project_version_without_stderr():
     result = run_fish("source functions/pond.fish; pond version")
 
     assert result.returncode == 0
-    assert "pond v2.11.1" in result.stdout
+    assert "v3.0.0.dev0" in result.stdout
     assert result.stderr == ""
 
 

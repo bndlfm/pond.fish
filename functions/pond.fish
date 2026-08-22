@@ -235,8 +235,8 @@ function pond --description "The master command for the pond AI suite."
             end
 
         case version -v --version
-            set -l version "2.11.1" 
-            echo "🐟 "$bold"pond"$normal" v$version"
+            set -l pond_version "3.0.0.dev0"
+            echo "🐟 "$bold"pond"$normal" v$pond_version"
 
         case help -h --help
             echo "🐟 "$blue$bold"pond: AI-Powered Fish Shell Suite"$normal
