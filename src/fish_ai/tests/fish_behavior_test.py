@@ -155,6 +155,22 @@ function _fish_ai_show_progress_indicator; end
 '''
 
 
+def test_pond_codify_launcher_delegates_to_legacy_during_migration():
+    script = r'''
+set -g __legacy_calls 0
+function _fish_ai_codify_or_explain
+    set -g __legacy_calls (math $__legacy_calls + 1)
+end
+source functions/_pond_codify_or_explain.fish
+_pond_codify_or_explain
+printf 'legacy_calls=<%s>\n' "$__legacy_calls"
+'''
+    result = run_fish(script)
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == "legacy_calls=<1>\n"
+
+
 def test_ctrl_q_codifies_hash_prefixed_natural_language():
     script = commandline_mock("# list files") + r'''
 function _fish_ai_codify; printf 'codified:%s' "$argv[1]"; end
