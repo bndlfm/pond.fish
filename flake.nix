@@ -24,12 +24,12 @@
           shellHook = ''
             echo "🐠 Welcome to the fish-ai development environment (Nix Edition)!"
             
-            # Setup virtual environment with uv if it doesn't exist
-            if [ ! -d ".venv" ]; then
+            # Recreate a stale/garbage-collected Nix venv as well as an absent one.
+            # Checking only the directory leaves broken console-script shebangs behind.
+            if [ ! -x ".venv/bin/python" ]; then
               echo "📦 Creating virtual environment and installing dependencies..."
-              uv venv
-              uv pip install -e .
-              uv pip install pytest
+              uv venv --clear --python "$(command -v python)" .venv
+              uv pip install --python .venv/bin/python -e . -r .devcontainer/requirements-dev.txt
             fi
             
             # Source activation if using bash, else rely on uv run
