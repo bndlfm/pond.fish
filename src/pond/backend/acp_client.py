@@ -8,6 +8,7 @@ from acp.interfaces import Client
 from .command import AgentCommand
 from .errors import AcpProtocolError
 from .history import ConversationTimeline
+from .intents import build_action_request
 from .protocol import AgentRequest, AgentResult
 
 
@@ -42,6 +43,21 @@ def build_user_prompt(timeline: ConversationTimeline, user_text: str) -> str:
     lines.append(f"User request: {user_text}")
     timeline.append_message("user", user_text)
     return "\n".join(lines)
+
+
+async def run_acp_action(
+    command: AgentCommand,
+    action: str,
+    user_text: str,
+    cwd: str,
+    timeline: ConversationTimeline | None = None,
+) -> AgentResult:
+    """Submit a named Pond UI intent through the same generic ACP turn path."""
+    return await run_acp_turn(
+        command,
+        AgentRequest(prompt=build_action_request(action, user_text), cwd=cwd),
+        timeline=timeline,
+    )
 
 
 async def run_acp_turn(

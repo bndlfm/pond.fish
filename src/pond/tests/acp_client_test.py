@@ -24,6 +24,20 @@ def test_explicit_acp_turn_returns_streamed_agent_text_and_session_handle(tmp_pa
     assert result.stop_reason == "end_turn"
 
 
+def test_command_draft_action_uses_the_generic_acp_turn_runner(tmp_path):
+    from pond.backend.acp_client import run_acp_action
+
+    result = asyncio.run(run_acp_action(
+        AgentCommand((sys.executable, str(FIXTURE))),
+        "command-draft",
+        "list files",
+        str(tmp_path),
+    ))
+
+    assert result.session_id == "fixture-1"
+    assert result.stop_reason == "end_turn"
+
+
 def test_user_turn_batches_passive_terminal_entries_only_when_submitted():
     from pond.backend.acp_client import build_user_prompt
     from pond.backend.history import ConversationTimeline
