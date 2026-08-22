@@ -1,4 +1,4 @@
-# Pond 3.0 Hermes Rewrite Contract
+# Pond 3.0 ACP Rewrite Contract
 
 Status: approved pre-implementation boundary for the Pond 3.0 rewrite.
 
@@ -6,7 +6,7 @@ This document separates behavior Pond must preserve from behavior deliberately t
 
 ## Architecture boundary
 
-Pond remains a Fish-native frontend. Hermes becomes the intelligence and agent runtime.
+Pond remains a Fish-native frontend. A compatible ACP agent becomes the stateful agent runtime. Hermes is Pond's shipped default command and reference-tested developer integration, not a required protocol specialization.
 
 ### Pond owns
 
@@ -19,7 +19,7 @@ Pond remains a Fish-native frontend. Hermes becomes the intelligence and agent r
 - A minimal mapping from workspace to Hermes ACP session ID.
 - Stable Pond CLI output and exit-code contracts.
 
-### Hermes owns
+### The selected ACP agent owns
 
 - Provider/model selection and credentials.
 - Inference, reasoning configuration, retries, and usage accounting.
@@ -28,7 +28,7 @@ Pond remains a Fish-native frontend. Hermes becomes the intelligence and agent r
 - Skills, MCP servers, search, delegation, and project rules.
 - Session history, compression, branching, and cancellation.
 
-Pond must not import Hermes internal Python modules. Supported boundaries are the public `hermes` CLI and `hermes acp` stdio protocol.
+Pond's core must not import Hermes internal Python modules. The stateful boundary is standard ACP over stdio. The default command is `hermes acp`; other ACP agent commands are supported when they negotiate the required capabilities.
 
 ## Preserved user behavior
 
@@ -65,7 +65,7 @@ Pond must not import Hermes internal Python modules. Supported boundaries are th
 
 ## Permission contract
 
-Hermes classifies commands and issues ACP permission requests. Pond renders available server options and returns structured responses; it does not maintain a competing command whitelist.
+The selected ACP agent classifies commands and issues ACP permission requests. Pond renders available server options and returns structured responses; it does not maintain a competing command whitelist.
 
 Pond presents:
 
@@ -139,19 +139,19 @@ It must not:
 - Workspace identity is the normalized Git root when available, otherwise normalized cwd.
 - Missing/stale Hermes session IDs create a new explicit session; Pond never resumes a different session by fuzzy title.
 - `pond forget` detaches the workspace mapping.
-- `pond forget --purge` additionally deletes the exact Hermes session after explicit confirmation.
+- `pond forget --purge` additionally deletes the exact selected-agent session only when the negotiated ACP capability supports deletion; otherwise it fails clearly without touching local mapping state.
 - Legacy Pond config and `agent_session.json` remain untouched so the final 2.x rollback ref remains usable.
 
 ## Transport gates
 
 Before production migration:
 
-1. Verify `hermes acp --check` and ACP SDK compatibility.
-2. Verify new/load/resume/cancel, cwd binding, streaming, permissions, and stderr/stdout framing.
+1. Verify the generic ACP SDK handshake and negotiated capabilities.
+2. Verify new/load/resume/cancel, cwd binding, streaming, permissions, and stderr/stdout framing against a protocol fixture.
 3. Measure cold and warm latency.
 4. Verify a public and genuinely zero-tool stateless path.
 5. Compare stdin-safe `hermes chat -Q --query-file -` against any one-shot alternative.
-6. Default ACP startup to `HERMES_ACP_SKIP_CONFIGURED_MCP=1` unless the user explicitly opts into ambient MCP servers.
+6. Run a dedicated Hermes compatibility suite against `hermes acp`; that preset may set `HERMES_ACP_SKIP_CONFIGURED_MCP=1` unless the user explicitly opts into ambient MCP servers. Generic ACP commands receive no Hermes-specific environment variables.
 7. If per-keypress startup misses the Ctrl+Space latency budget, use a persistent per-shell ACP process or a lazy user service.
 
 No provider backend is deleted before these gates pass and the corresponding Pond path is covered by tests.
