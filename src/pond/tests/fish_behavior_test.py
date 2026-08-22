@@ -177,20 +177,34 @@ function _fish_ai_show_progress_indicator; end
 '''
 
 
-def test_pond_codify_launcher_delegates_to_legacy_during_migration():
-    script = r'''
-set -g __legacy_calls 0
-function _fish_ai_codify_or_explain
-    set -g __legacy_calls (math $__legacy_calls + 1)
+def test_pond_codify_launcher_submits_stateful_command_draft():
+    script = commandline_mock("# list files") + r'''
+function pond-action
+    printf 'stateful:%s:%s' "$argv[1]" "$argv[2]"
 end
 source functions/_pond_codify_or_explain.fish
 _pond_codify_or_explain
-printf 'legacy_calls=<%s>\n' "$__legacy_calls"
+printf 'replacement=<%s>\n' "$__replacement"
 '''
     result = run_fish(script)
 
     assert result.returncode == 0, result.stderr
-    assert result.stdout == "legacy_calls=<1>\n"
+    assert result.stdout == "replacement=<stateful:command-draft:# list files>\n"
+
+
+def test_pond_explain_launcher_submits_stateful_explain():
+    script = commandline_mock("printf hello") + r'''
+function pond-action
+    printf 'stateful:%s:%s' "$argv[1]" "$argv[2]"
+end
+source functions/_pond_codify_or_explain.fish
+_pond_codify_or_explain
+printf 'replacement=<%s>\n' "$__replacement"
+'''
+    result = run_fish(script)
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == "replacement=<stateful:explain:printf hello>\n"
 
 
 @pytest.mark.parametrize(
