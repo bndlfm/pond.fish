@@ -64,6 +64,29 @@ def make_permission_requesting_agent(tmp_path, command):
     return tmp_path
 
 
+def test_pond_conf_is_silent_idempotent_and_xdg_scoped(tmp_path):
+    data_home = tmp_path / "data home"
+    config_home = tmp_path / "config home"
+    result = run_fish(
+        "source conf.d/pond.fish; source conf.d/pond.fish; "
+        "printf 'data=<%s> config=<%s>\\n' \"$_pond_data_dir\" \"$_pond_config_path\"",
+        env={
+            "XDG_DATA_HOME": str(data_home),
+            "XDG_CONFIG_HOME": str(config_home),
+        },
+    )
+
+    assert result.returncode == 0
+    assert result.stdout == (
+        f"data=<{data_home}/pond> config=<{config_home}/pond/config.ini>\n"
+    )
+    assert result.stderr == ""
+    # Fish itself may initialize XDG_DATA_HOME/fish. Pond must not create its
+    # own data/config paths merely by being sourced.
+    assert not (data_home / "pond").exists()
+    assert not (config_home / "pond").exists()
+
+
 def test_pond_query_forwards_one_prompt_argument(tmp_path):
     install_dir = make_fake_ai(tmp_path)
     result = run_fish(
