@@ -128,6 +128,8 @@ End-to-end codify/autocomplete/agent latency was not recorded because that would
 
 - `fix` can replay the previous failed command to collect output, which may repeat side effects.
 - `compress` reports success without a proven session-compression implementation.
+- `pond version` collides with Fish's special `$version` variable and prints the Fish version plus an error on the tested Fish 4.6 baseline.
+- `pond -q` without a prompt is not rejected correctly because `-q` remains in the initial subcommand slot after flag cleaning.
 - The Fish-side agent executes approved actions using `eval` in the active shell, allowing cwd, function, and variable mutation.
 - Pond owns provider credentials/configuration, model SDKs, web search, skills, tools, approvals, and JSON session state.
 - Stateless outputs are inserted into the command buffer; they must remain non-executing in the rewrite.
