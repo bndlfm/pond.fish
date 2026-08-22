@@ -6,6 +6,9 @@ from acp import PROTOCOL_VERSION, spawn_agent_process, text_block
 from acp.interfaces import Client
 from acp.schema import AllowedOutcome, RequestPermissionResponse
 
+from pond.render import render_tool_event
+
+from .acp_events import append_acp_update
 from .command import AgentCommand
 from .context import context_pressure_from_acp_update
 from .errors import AcpProtocolError
@@ -16,13 +19,22 @@ from .protocol import AgentRequest, AgentResult
 
 
 class _TurnClient(Client):
-    def __init__(self) -> None:
+    def __init__(self, timeline: ConversationTimeline | None = None) -> None:
         self.text_parts: list[str] = []
         self.context_pressure = None
+        self.timeline = timeline
         self.permission_prompter = TerminalPermissionPrompter()
 
     async def session_update(self, session_id, update, **kwargs) -> None:
         del session_id, kwargs
+        if self.timeline is not None:
+            append_acp_update(self.timeline, update)
+        payload = update.model_dump(by_alias=True)
+        if payload.get("sessionUpdate") in {"tool_call", "tool_call_update"}:
+            render_tool_event(
+                payload.get("title") or payload.get("toolCallId", "Tool"),
+                payload.get("status") or "running",
+            )
         pressure = context_pressure_from_acp_update(update)
         if pressure is not None:
             self.context_pressure = pressure
@@ -87,7 +99,7 @@ async def run_acp_turn(
     session_id: str | None = None,
 ) -> AgentResult:
     """Run exactly one explicit user prompt through a generic ACP subprocess."""
-    client = _TurnClient()
+    client = _TurnClient(timeline)
     try:
         async with spawn_agent_process(
             client,
