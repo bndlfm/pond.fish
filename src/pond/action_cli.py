@@ -45,6 +45,30 @@ def run_compress(cwd: str, *, profile: str = "default") -> None:
     print(result.text)
 
 
+def run_context(cwd: str, *, profile: str = "default") -> None:
+    """Ask the exact active ACP session for harness-owned context status."""
+    store = SessionStore(_state_path())
+    session_id = store.get(profile, cwd)
+    if not session_id:
+        raise AcpProtocolError("no ACP session exists for this workspace")
+    result = asyncio.run(run_acp_turn(
+        resolve_agent_command(os.environ),
+        AgentRequest(prompt="/context", cwd=cwd),
+        session_id=session_id,
+    ))
+    print(result.text)
+
+
+def context_main() -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--cwd", default=os.getcwd())
+    parser.add_argument("--profile", default="default")
+    args = parser.parse_args()
+    run_context(args.cwd, profile=args.profile)
+
+
 def compress_main() -> None:
     import argparse
 

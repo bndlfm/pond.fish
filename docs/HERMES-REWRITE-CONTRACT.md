@@ -36,6 +36,8 @@ The ACP agent/harness owns actual context accounting and compaction. Pond must n
 
 Hermes currently defaults `compression.threshold` to `0.50`, with model/route overrides (including some Codex routes that auto-raise to 85%). Pond must report the effective harness threshold rather than claiming its own guess is authoritative. If Neko wants 80% as the actual Hermes compaction threshold, that is a deliberate Hermes configuration choice, not a Pond setting.
 
+The `pond context` command is an explicit user action: in rewrite mode it invokes `pond-context`, which submits `/context` only to the exact active workspace ACP session. It reports the harness's usage/threshold view and does not alter history or trigger compaction.
+
 ### Pond backend protocol
 
 The temporary pre-rename boundary lives at `fish_ai.backend`, but S10 renames the package to `pond` before further ACP work lands. The post-S10 feature boundary is `pond.backend.protocol` (`AgentRequest`, `AgentEvent`, `AgentResult`, and `EventKind`) plus `pond.backend.errors` (`AgentCommandError`, `AcpProtocolError`, `AgentTimeoutError`, and `UnsupportedCapabilityError`). ACP SDK objects and all agent-vendor objects stay inside the eventual transport adapter.

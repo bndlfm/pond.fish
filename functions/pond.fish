@@ -186,6 +186,13 @@ function pond --description "The master command for the pond AI suite."
                 echo "ℹ️  No active agent session found."
             end
 
+        case context
+            if set -q POND_REWRITE; and test "$POND_REWRITE" = 1
+                pond-context --cwd (pwd)
+                return
+            end
+            echo "ℹ️  Context status is available after enabling the Pond rewrite."
+
         case compress
             if set -q POND_REWRITE; and test "$POND_REWRITE" = 1
                 pond-compress --cwd (pwd)
