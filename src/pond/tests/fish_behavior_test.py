@@ -145,6 +145,21 @@ def test_pond_version_reports_the_project_version_without_stderr():
     assert result.stderr == ""
 
 
+def test_pond_compress_uses_exact_acp_command_when_rewrite_is_enabled():
+    script = r'''
+set -gx POND_REWRITE 1
+function pond-compress
+    printf 'compressed:<%s>' "$argv[2]"
+end
+source functions/pond.fish
+pond compress
+'''
+    result = run_fish(script)
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == "compressed:<" + str(ROOT) + ">"
+
+
 def test_pond_unknown_subcommand_does_not_execute_it():
     result = run_fish("source functions/pond.fish; pond definitely-not-a-command")
 

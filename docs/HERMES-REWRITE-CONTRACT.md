@@ -91,6 +91,7 @@ When `POND_REWRITE=1`, Pond registers only the keymap variables that are explici
 - Pond's visible and persisted conversation timeline interleaves user messages, assistant messages, executed commands, and terminal output in their original order. A command/result must never disappear merely because a later assistant message arrives.
 - Terminal observation is passive: command execution/output never creates a user turn, resumes an agent, or triggers a new assistant response. Pond sends accumulated terminal events to the agent only when the user explicitly begins a later agent message.
 - Agent-owned tool results may continue an already-active agent turn, but must not manufacture a separate unsolicited assistant turn.
+- `pond compress` is an explicit user action: in rewrite mode it invokes `pond-compress`, which submits `/compress` only to the exact active workspace ACP session. It never creates a session merely to compact it.
 - Tool output is bounded for terminal rendering, but the durable history retains the complete result or an explicit truncation record with the original byte count.
 - Ctrl+C cooperatively cancels the active ACP turn and does not leave child processes.
 - Final textual output remains pipeable separately from progress rendering.

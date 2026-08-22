@@ -187,6 +187,10 @@ function pond --description "The master command for the pond AI suite."
             end
 
         case compress
+            if set -q POND_REWRITE; and test "$POND_REWRITE" = 1
+                pond-compress --cwd (pwd)
+                return
+            end
             set -l state_file "$_fish_ai_install_dir/agent_session.json"
             if not test -f "$state_file"
                 echo "ℹ️  No active agent session to compress."
