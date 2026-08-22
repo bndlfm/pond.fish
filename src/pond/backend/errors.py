@@ -19,3 +19,7 @@ class AgentTimeoutError(AgentBackendError):
 
 class UnsupportedCapabilityError(AgentBackendError):
     """The configured ACP agent lacks a feature Pond needs for this action."""
+
+
+class StatelessOutputError(AgentBackendError):
+    """A stateless provider returned no usable stdout response."""

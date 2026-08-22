@@ -44,6 +44,10 @@ set -gx POND_ACP_COMMAND_JSON '["/opt/acp-agent/bin/agent", "--safe"]'
 
 Unset means Pond uses its default Hermes preset `["hermes", "acp"]`. Shell executables, shell strings, empty arrays, empty entries, and non-string entries are rejected. This is a command-selection preset only; it does not make the transport Hermes-specific.
 
+## Stateless-provider contract
+
+Quick command generation remains separate from ACP agent sessions. Until S15 proves a safe default, it is opt-in through `POND_STATELESS_COMMAND_JSON`, a JSON argv array that receives the complete request on stdin and returns final text only on stdout. Pond never shell-parses this command, rejects empty stdout, preserves stdout verbatim for command-buffer insertion, and keeps diagnostics on stderr. The stateless provider receives no ambient terminal events automatically.
+
 ## Binding configuration
 
 Pond 3 defines no default key sequences. Binding choice belongs to the user or their declarative shell configuration:
