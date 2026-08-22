@@ -4,6 +4,7 @@
 _INSTRUCTIONS = {
     "command-draft": "Return one proposed Fish command only. Do not execute commands or use tools.",
     "explain": "Explain the Fish command concisely. Do not execute commands or use tools.",
+    "agent": "Work statefully toward the user's goal. Use tools only when necessary and request permission when required.",
 }
 
 

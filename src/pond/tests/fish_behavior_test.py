@@ -222,6 +222,21 @@ printf 'replacement=<%s>\n' "$__replacement"
     assert result.stdout == "replacement=<stateful:explain:printf hello>\n"
 
 
+def test_pond_agent_launcher_submits_stateful_goal():
+    script = commandline_mock("inspect this repository") + r'''
+function pond-action
+    printf 'agent:%s:%s' "$argv[1]" "$argv[2]"
+end
+source functions/_pond_agent.fish
+_pond_agent
+printf 'replacement=<%s>\n' "$__replacement"
+'''
+    result = run_fish(script)
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == "agent:agent:inspect this repositoryreplacement=<>\n"
+
+
 @pytest.mark.parametrize(
     ("source_file", "pond_function", "legacy_function"),
     [
@@ -230,7 +245,6 @@ printf 'replacement=<%s>\n' "$__replacement"
             "_pond_autocomplete_or_fix",
             "_fish_ai_autocomplete_or_fix",
         ),
-        ("functions/_pond_agent.fish", "_pond_agent", "_fish_ai_agent"),
     ],
 )
 def test_pond_migration_launchers_delegate_to_legacy(source_file, pond_function, legacy_function):
