@@ -13,6 +13,8 @@ class EventKind(str, Enum):
     TOOL_STARTED = "tool_started"
     TOOL_PROGRESS = "tool_progress"
     TOOL_COMPLETED = "tool_completed"
+    TERMINAL_COMMAND = "terminal_command"
+    TERMINAL_OUTPUT = "terminal_output"
     PERMISSION_REQUESTED = "permission_requested"
     ERROR = "error"
 

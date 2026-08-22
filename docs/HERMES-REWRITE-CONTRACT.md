@@ -78,6 +78,10 @@ When `POND_REWRITE=1`, Pond registers only the keymap variables that are explici
 - The current command buffer becomes the initial goal.
 - Agent tools run relative to the intended workspace.
 - Assistant text and tool lifecycle are streamed to the terminal.
+- Pond's visible and persisted conversation timeline interleaves user messages, assistant messages, executed commands, and terminal output in their original order. A command/result must never disappear merely because a later assistant message arrives.
+- Terminal observation is passive: command execution/output never creates a user turn, resumes an agent, or triggers a new assistant response. Pond sends accumulated terminal events to the agent only when the user explicitly begins a later agent message.
+- Agent-owned tool results may continue an already-active agent turn, but must not manufacture a separate unsolicited assistant turn.
+- Tool output is bounded for terminal rendering, but the durable history retains the complete result or an explicit truncation record with the original byte count.
 - Ctrl+C cooperatively cancels the active ACP turn and does not leave child processes.
 - Final textual output remains pipeable separately from progress rendering.
 
@@ -199,6 +203,7 @@ Pond 3.0 cannot release until:
 - Fish syntax and behavioral tests pass.
 - macOS, Ubuntu, Fedora, and Arch installation tests pass.
 - ACP integration tests cover permission, cancel, resume, workspace isolation, and child cleanup.
+- ACP integration tests prove that executed commands and terminal output survive in chronological session history between agent/user messages.
 - Stateless generation is proven tool-free.
 - Completion-binding latency is measured and accepted.
 - No test or log leaks fixture secrets.
