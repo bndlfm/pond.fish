@@ -24,6 +24,17 @@ def test_explicit_acp_turn_returns_streamed_agent_text_and_session_handle(tmp_pa
     assert result.stop_reason == "end_turn"
 
 
+def test_explicit_turn_loads_an_exact_existing_acp_session(tmp_path):
+    from pond.backend.acp_client import run_acp_turn
+
+    result = asyncio.run(run_acp_turn(
+        AgentCommand((sys.executable, str(FIXTURE))),
+        AgentRequest(prompt="resume", cwd=str(tmp_path)),
+        session_id="fixture-restored",
+    ))
+
+    assert result.session_id == "fixture-restored"
+
 def test_command_draft_action_uses_the_generic_acp_turn_runner(tmp_path):
     from pond.backend.acp_client import run_acp_action
 

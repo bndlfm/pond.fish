@@ -4,7 +4,13 @@ import asyncio
 import itertools
 
 import acp
-from acp.schema import Implementation, InitializeResponse, NewSessionResponse, PromptResponse
+from acp.schema import (
+    Implementation,
+    InitializeResponse,
+    LoadSessionResponse,
+    NewSessionResponse,
+    PromptResponse,
+)
 
 
 class TimelineFixtureAgent:
@@ -24,6 +30,9 @@ class TimelineFixtureAgent:
 
     async def new_session(self, cwd, **_kwargs):
         return NewSessionResponse(session_id=f"fixture-{next(self._session_ids)}")
+
+    async def load_session(self, cwd, session_id, **_kwargs):
+        return LoadSessionResponse()
 
     async def cancel(self, session_id, **_kwargs):
         self._cancelled.add(session_id)

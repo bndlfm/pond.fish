@@ -51,12 +51,14 @@ async def run_acp_action(
     user_text: str,
     cwd: str,
     timeline: ConversationTimeline | None = None,
+    session_id: str | None = None,
 ) -> AgentResult:
     """Submit a named Pond UI intent through the same generic ACP turn path."""
     return await run_acp_turn(
         command,
         AgentRequest(prompt=build_action_request(action, user_text), cwd=cwd),
         timeline=timeline,
+        session_id=session_id,
     )
 
 
@@ -64,6 +66,7 @@ async def run_acp_turn(
     command: AgentCommand,
     request: AgentRequest,
     timeline: ConversationTimeline | None = None,
+    session_id: str | None = None,
 ) -> AgentResult:
     """Run exactly one explicit user prompt through a generic ACP subprocess."""
     client = _TurnClient()
@@ -75,10 +78,20 @@ async def run_acp_turn(
             cwd=request.cwd,
         ) as (connection, _process):
             await connection.initialize(protocol_version=PROTOCOL_VERSION)
-            session = await connection.new_session(cwd=request.cwd, mcp_servers=[])
+            if session_id:
+                loaded = await connection.load_session(
+                    cwd=request.cwd,
+                    session_id=session_id,
+                    mcp_servers=[],
+                )
+                if loaded is None:
+                    raise AcpProtocolError(f"ACP session not found: {session_id}")
+            else:
+                session = await connection.new_session(cwd=request.cwd, mcp_servers=[])
+                session_id = session.session_id
             prompt = build_user_prompt(timeline, request.prompt) if timeline else request.prompt
             response = await connection.prompt(
-                session_id=session.session_id,
+                session_id=session_id,
                 prompt=[text_block(prompt)],
             )
     except AcpProtocolError:
@@ -87,7 +100,7 @@ async def run_acp_turn(
         raise AcpProtocolError(f"ACP turn failed: {error}") from error
 
     return AgentResult(
-        session_id=session.session_id,
+        session_id=session_id or "",
         text="".join(client.text_parts),
         stop_reason=response.stop_reason,
     )
