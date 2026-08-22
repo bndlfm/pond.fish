@@ -32,7 +32,7 @@ Pond's core must not import Hermes internal Python modules. The stateful boundar
 
 ### Pond backend protocol
 
-Feature modules exchange only Pond-owned values from `fish_ai.backend.protocol`: `AgentRequest`, `AgentEvent`, `AgentResult`, and the `EventKind` enum. They report failures through `fish_ai.backend.errors` (`AgentCommandError`, `AcpProtocolError`, `AgentTimeoutError`, and `UnsupportedCapabilityError`). ACP SDK objects and all agent-vendor objects stay inside the eventual transport adapter.
+The temporary pre-rename boundary lives at `fish_ai.backend`, but S10 renames the package to `pond` before further ACP work lands. The post-S10 feature boundary is `pond.backend.protocol` (`AgentRequest`, `AgentEvent`, `AgentResult`, and `EventKind`) plus `pond.backend.errors` (`AgentCommandError`, `AcpProtocolError`, `AgentTimeoutError`, and `UnsupportedCapabilityError`). ACP SDK objects and all agent-vendor objects stay inside the eventual transport adapter.
 
 ## Binding configuration
 
