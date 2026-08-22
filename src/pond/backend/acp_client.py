@@ -6,6 +6,7 @@ from acp import PROTOCOL_VERSION, spawn_agent_process, text_block
 from acp.interfaces import Client
 
 from .command import AgentCommand
+from .context import context_pressure_from_acp_update
 from .errors import AcpProtocolError
 from .history import ConversationTimeline
 from .intents import build_action_request
@@ -15,9 +16,14 @@ from .protocol import AgentRequest, AgentResult
 class _TurnClient(Client):
     def __init__(self) -> None:
         self.text_parts: list[str] = []
+        self.context_pressure = None
 
     async def session_update(self, session_id, update, **kwargs) -> None:
         del session_id, kwargs
+        pressure = context_pressure_from_acp_update(update)
+        if pressure is not None:
+            self.context_pressure = pressure
+            return
         content = getattr(update, "content", None)
         text = getattr(content, "text", None)
         if text:
@@ -103,4 +109,5 @@ async def run_acp_turn(
         session_id=session_id or "",
         text="".join(client.text_parts),
         stop_reason=response.stop_reason,
+        context_pressure=client.context_pressure,
     )

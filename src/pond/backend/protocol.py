@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from enum import Enum
+from .context import ContextPressure
 
 
 class EventKind(str, Enum):
@@ -43,3 +44,4 @@ class AgentResult:
     session_id: str
     text: str
     stop_reason: str
+    context_pressure: ContextPressure | None = None

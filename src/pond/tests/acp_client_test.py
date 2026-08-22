@@ -22,6 +22,7 @@ def test_explicit_acp_turn_returns_streamed_agent_text_and_session_handle(tmp_pa
     assert result.session_id == "fixture-1"
     assert result.text == "Inspecting the workspace."
     assert result.stop_reason == "end_turn"
+    assert result.context_pressure.warn is True
 
 
 def test_explicit_turn_loads_an_exact_existing_acp_session(tmp_path):

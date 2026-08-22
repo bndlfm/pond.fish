@@ -10,6 +10,7 @@ from acp.schema import (
     LoadSessionResponse,
     NewSessionResponse,
     PromptResponse,
+    UsageUpdate,
 )
 
 
@@ -63,6 +64,10 @@ class TimelineFixtureAgent:
                 content=[acp.tool_content(acp.text_block(" M README.md\n"))],
                 raw_output=" M README.md\n",
             ),
+        )
+        await self._connection.session_update(
+            session_id,
+            UsageUpdate(used=80, size=100, session_update="usage_update"),
         )
         return PromptResponse(stop_reason="end_turn")
 

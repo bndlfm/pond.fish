@@ -45,7 +45,8 @@ def test_generic_acp_fixture_streams_ordered_terminal_history(tmp_path):
     serialized = [update.model_dump(by_alias=True) for _, update in updates]
     assert serialized[1]["rawInput"] == {"command": "git status --short"}
     assert serialized[2]["rawOutput"] == " M README.md\n"
-    assert len(serialized) == 3
+    assert len(serialized) == 4
+    assert serialized[3]["sessionUpdate"] == "usage_update"
 
     from pond.backend.acp_events import append_acp_update
     from pond.backend.history import ConversationTimeline
