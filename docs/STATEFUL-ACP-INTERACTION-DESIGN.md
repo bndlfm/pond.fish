@@ -30,7 +30,7 @@ Terminal activity observed since the prior user turn:
 Return a proposed Fish command only. Do not execute it.
 ```
 
-Other action names are `explain`, `complete`, `repair`, and `agent`. They are UI intents, not separate backend protocols. The agent receives no ambient terminal activity outside an explicit envelope.
+Other action names are `explain` and `agent`. Completion and repair are deliberately excluded from the stateful harness: reasoning/tool startup latency is unacceptable for interactive shell editing. Their future is a separate low-latency non-agent design (or removal), not a hidden second ACP mode.
 
 ## Terminal is passive
 
