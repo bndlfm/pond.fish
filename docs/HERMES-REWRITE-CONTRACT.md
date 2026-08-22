@@ -30,6 +30,10 @@ Pond remains a Fish-native frontend. A compatible ACP agent becomes the stateful
 
 Pond's core must not import Hermes internal Python modules. The stateful boundary is standard ACP over stdio. The default command is `hermes acp`; other ACP agent commands are supported when they negotiate the required capabilities. The explicit-turn, passive-terminal, workspace-session model is specified in `docs/STATEFUL-ACP-INTERACTION-DESIGN.md`.
 
+### Personality preservation
+
+Pond action envelopes are ordinary user-turn text, not system prompts, profile replacement, or a custom agent mode. The selected Hermes profile continues to supply its personality, SOUL, memory, skills, and project context. Intent instructions constrain only the requested task (for example, a command draft must not execute itself); they must never tell the agent to adopt a different persona or suppress the user's configured character.
+
 ### Context compression
 
 The ACP agent/harness owns actual context accounting and compaction. Pond must never independently summarize or delete ACP history. Pond observes standard ACP usage/session updates and surfaces context pressure plus compression events in its timeline. The requested policy is to warn at 80% of the active model context window and offer an explicit user action to ask the agent for `/context` or `/compress`; a terminal event alone must not trigger compaction.
