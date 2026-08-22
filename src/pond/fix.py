@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import subprocess
 from pond import engine
 import textwrap
 
@@ -67,19 +66,8 @@ def get_messages(command, error_message):
 
 
 def get_error_message(previous_command):
-    """
-    There is no way to get the output of the previous command in fish, so
-    let's rerun the previous command and capture the output.
-    """
-    try:
-        subprocess.check_output(previous_command,
-                                stderr=subprocess.STDOUT,
-                                shell=True)
-    except subprocess.CalledProcessError as e:
-        # Get the last 10 lines of the output and truncate lines exceeding
-        # 200 characters
-        return '\n'.join([line[:200] for line in e.output.decode('utf-8')
-                          .split('\n')[-10:]])
+    """Do not replay arbitrary shell history merely to reconstruct stderr."""
+    return "Command output was not captured; do not rerun the command automatically."
 
 
 def fix():
