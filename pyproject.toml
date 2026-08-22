@@ -15,17 +15,6 @@ classifiers = [
 ]
 dependencies = [
   "agent-client-protocol==0.9.0",
-  "openai==2.32.0",
-  "simple-term-menu==1.6.6",
-  "iterfzf==1.9.0.67.0",
-  "mistralai==2.4.0",
-  "binaryornot==0.6.0",
-  "anthropic==0.96.0",
-  "keyring==25.7.0",
-  "groq==1.1.2",
-  "google-genai==1.73.1",
-  "httpx[socks]==0.28.1",
-  "aws-bedrock-token-generator==1.1.0",
   "rich==13.9.4"
 ]
 
@@ -34,17 +23,6 @@ dependencies = [
 "Bug Tracker" = "https://github.com/bndlfm/pond.fish/issues"
 
 [project.scripts]
-fix = "pond.fix:fix"
-codify = "pond.codify:codify"
-explain = "pond.explain:explain"
-autocomplete = "pond.autocomplete:autocomplete"
-switch_context = "pond.switch_context:switch_context"
-put_api_key = "pond.put_api_key:put_api_key"
-lookup_setting = "pond.config:lookup_setting"
-put_setting = "pond.config:put_setting"
-refine = "pond.autocomplete:refine_completions"
-agent = "pond.agent:main"
-render = "pond.agent:render_markdown"
 pond-action = "pond.action_cli:main"
 pond-compress = "pond.action_cli:compress_main"
 pond-context = "pond.action_cli:context_main"

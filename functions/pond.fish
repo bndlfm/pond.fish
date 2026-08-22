@@ -1,274 +1,48 @@
 #!/usr/bin/env fish
 
-function pond --description "The master command for the pond AI suite."
-    set -l subcommand $argv[1]
-    set -l remaining_args $argv[2..-1]
-    set -l json_flag 0
-    set -l query_flag 0
-    set -l agent_flag 0
-    
-    # 1. Flag Detection
-    if contains -- --json $argv
-        set json_flag 1
-    end
+function pond --description "Stateful ACP shell interface for Pond."
+    set -l action $argv[1]
+    set -l remaining $argv[2..-1]
+
     if contains -- -q $argv
-        set query_flag 1
-    end
-    if contains -- -a $argv
-        set agent_flag 1
-    end
-
-    # 2. Argument Cleaning
-    set -l clean_args
-    for arg in $argv
-        if test "$arg" != "--json" -a "$arg" != "-q" -a "$arg" != "-a"
-            set clean_args $clean_args "$arg"
-        end
-    end
-    
-    # 3. Subcommand/Goal Extraction
-    if test (count $clean_args) -gt 0
-        set subcommand "$clean_args[1]"
-        set remaining_args $clean_args[2..-1]
-    end
-
-    # Helper for colored output
-    set -l blue (set_color blue)
-    set -l cyan (set_color cyan)
-    set -l yellow (set_color yellow)
-    set -l green (set_color green)
-    set -l red (set_color red)
-    set -l bold (set_color --bold)
-    set -l normal (set_color normal)
-
-    # 4. Stateless query mode was deliberately removed for Pond 3.
-    if test $query_flag -eq 1
         echo "pond -q was removed; use an explicit stateful Pond action instead." >&2
         return 2
     end
 
-    # 5. Handle Agent via -a
-    if test $agent_flag -eq 1
-        set -l state_file "$_fish_ai_install_dir/agent_session.json"
-        
-        if test -n "$clean_args"
-            commandline -r "$clean_args"
+    if contains -- -a $argv
+        set -l goal (string join ' ' $remaining)
+        if test -n "$goal"
+            commandline --replace "$goal"
         end
-        
-        if test $json_flag -eq 1
-            set -l action_file (mktemp -t fish-ai-action.XXXXXX)
-            "$_fish_ai_install_dir/bin/agent" --state "$state_file" --action-file "$action_file" --goal "$clean_args" --json
-            rm "$action_file"
-        else
-            _fish_ai_agent
-        end
+        _pond_agent
         return
     end
 
-    # 6. Handle Subcommands
-    switch "$subcommand"
-        case skill
-            set -l action "$remaining_args[1]"
-            if test "$action" = "list" -o -z "$action"
-                set -l skills_dir (dirname "$_fish_ai_config_path")/skills
-                if not test -d "$skills_dir"
-                    echo "ℹ️  No skills directory found at $skills_dir"
-                    return
-                end
-                
-                echo "🔌 "$blue$bold"Available Specialized Skills:"$normal
-                set -l found 0
-                for skill in $skills_dir/*/SKILL.md
-                    set -l name (grep "^name:" "$skill" | cut -d':' -f2- | string trim)
-                    set -l desc (grep "^description:" "$skill" | cut -d':' -f2- | string trim)
-                    if test -n "$name"
-                        set found 1
-                        echo "- "$bold"$name"$normal": $desc"
-                    end
-                end
-                
-                if test $found -eq 0
-                    echo "No skills found in $skills_dir."
-                end
-            else if test "$action" = "add"
-                set -l skill_id "$remaining_args[2]"
-                if test -z "$skill_id"
-                    echo "❌ "$red"Error: No skill ID provided."$normal
-                    echo "Usage: pond skill add <owner>/<repo>/skills/<name>"
-                    return 1
-                end
-                
-                # Expected format: owner/repo/path/to/skill
-                # Example: anthropics/skills/skills/pdf
-                set -l parts (string split "/" "$skill_id")
-                if test (count $parts) -lt 3
-                    echo "❌ "$red"Error: Invalid skill ID format."$normal
-                    echo "Usage: pond skill add <owner>/<repo>/[path/to/skill]"
-                    return 1
-                end
-
-                set -l owner $parts[1]
-                set -l repo $parts[2]
-                set -l skill_path (string join "/" $parts[3..-1])
-                set -l skill_name $parts[-1]
-
-                set -l skills_dir (dirname "$_fish_ai_config_path")/skills
-                mkdir -p "$skills_dir"
-                
-                echo "📥 "$cyan"Installing skill '$skill_name' from github.com/$owner/$repo..."$normal
-                
-                # Check for git
-                if not type -q git
-                    echo "❌ "$red"Error: 'git' is required to install skills."$normal
-                    return 1
-                end
-
-                # Use a temporary directory for sparse clone
-                set -l tmp_clone_dir (mktemp -d -t skill-clone.XXXXXX)
-                
-                if git clone --depth 1 --filter=blob:none --sparse "https://github.com/$owner/$repo.git" "$tmp_clone_dir" >/dev/null 2>&1
-                    pushd "$tmp_clone_dir"
-                    if git sparse-checkout set "$skill_path" >/dev/null 2>&1
-                        if test -d "$skill_path"
-                            cp -R "$skill_path" "$skills_dir/"
-                            echo "✅ "$green"Skill '$skill_name' installed successfully."$normal
-                            echo "   Location: $skills_dir/$skill_name"
-                        else
-                            echo "❌ "$red"Error: Skill path '$skill_path' not found in repository."$normal
-                        end
-                    else
-                        echo "❌ "$red"Failed to perform sparse checkout for '$skill_path'."$normal
-                    end
-                    popd
-                else
-                    echo "❌ "$red"Error: Failed to clone repository 'https://github.com/$owner/$repo.git'."$normal
-                end
-                rm -rf "$tmp_clone_dir"
-            else if test "$action" = "remove"
-                set -l skill_name "$remaining_args[2]"
-                if test -z "$skill_name"
-                    echo "❌ "$red"Error: No skill name provided."$normal
-                    echo "Usage: pond skill remove <skill-name>"
-                    return 1
-                end
-
-                set -l skills_dir (dirname "$_fish_ai_config_path")/skills
-                set -l target_dir "$skills_dir/$skill_name"
-
-                if test -d "$target_dir"
-                    rm -rf "$target_dir"
-                    echo "🗑️  "$green"Skill '$skill_name' removed successfully."$normal
-                else
-                    echo "❌ "$red"Error: Skill '$skill_name' not found in $skills_dir."$normal
-                    return 1
-                end
-            else
-                echo "❓ Unknown skill action: $action"
-                echo "Try 'pond skill list', 'pond skill install <owner/repo/path>' or 'pond skill remove <name>'."
-            end
-
+    switch "$action"
         case forget
-            if set -q POND_REWRITE; and test "$POND_REWRITE" = 1
-                pond-forget --cwd (pwd)
-                return
-            end
-            set -l state_file "$_fish_ai_install_dir/agent_session.json"
-            if test -f "$state_file"
-                rm "$state_file"
-                echo "🧹 "$green"Agent session cleared."$normal
-            else
-                echo "ℹ️  No active agent session found."
-            end
-
-        case context
-            if set -q POND_REWRITE; and test "$POND_REWRITE" = 1
-                pond-context --cwd (pwd)
-                return
-            end
-            echo "ℹ️  Context status is available after enabling the Pond rewrite."
-
-        case compress
-            if set -q POND_REWRITE; and test "$POND_REWRITE" = 1
-                pond-compress --cwd (pwd)
-                return
-            end
-            set -l state_file "$_fish_ai_install_dir/agent_session.json"
-            if not test -f "$state_file"
-                echo "ℹ️  No active agent session to compress."
-                return
-            end
-            set -l action_file (mktemp -t fish-ai-action.XXXXXX)
-            echo "🗜️  "$cyan"Compressing session history..."$normal
-            "$_fish_ai_install_dir/bin/agent" --state "$state_file" --action-file "$action_file" --compress > /dev/null
-            rm "$action_file"
-            echo "✅ "$green"Compression complete."$normal
-
+            pond-forget --cwd (pwd)
         case status
-            if set -q POND_REWRITE; and test "$POND_REWRITE" = 1
-                pond-status --cwd (pwd)
-                return
-            end
-            set -l state_file "$_fish_ai_install_dir/agent_session.json"
-            if test -f "$state_file"
-                set -l size (du -h "$state_file" | cut -f1)
-                set -l turns (grep -c '"role":' "$state_file")
-                echo "🤖 "$bold"Agent Session Status:"$normal
-                echo "  - File: $state_file"
-                echo "  - Size: $size"
-                echo "  - Message turns: $turns"
-            else
-                echo "ℹ️  "$yellow"No active agent session."$normal
-            end
-
-        case edit
-            set -l state_file "$_fish_ai_install_dir/agent_session.json"
-            if not test -f "$state_file"
-                echo "ℹ️  "$yellow"No active agent session to edit."$normal
-                return
-            end
-            if set -q VISUAL
-                $VISUAL "$state_file"
-            else if set -q EDITOR
-                $EDITOR "$state_file"
-            else
-                vi "$state_file"
-            end
-
+            pond-status --cwd (pwd)
+        case context
+            pond-context --cwd (pwd)
+        case compress
+            pond-compress --cwd (pwd)
         case version -v --version
-            set -l pond_version "3.0.0.dev0"
-            echo "🐟 "$bold"pond"$normal" v$pond_version"
-
-        case help -h --help
-            echo "🐟 "$blue$bold"pond: AI-Powered Fish Shell Suite"$normal
+            echo "pond v3.0.0.dev0"
+        case help -h --help ''
+            echo "Pond — stateful ACP shell interface"
             echo ""
-            echo "Usage: pond [options] <command> [arguments]"
+            echo "Usage: pond -a <goal> | pond <command>"
             echo ""
-            echo "$bold""Options:""$normal"
-            echo "  -a <goal>           Trigger the autonomous agent"
-            echo "  --json              Output raw JSON response"
-            echo ""
-            echo "$bold""Session Commands:""$normal"
-            echo "  forget              Clear the agent's session memory"
-            echo "  compress            Summarize long conversation history"
-            echo "  status              Show current session statistics"
-            echo "  edit                Open session history in your editor"
-            echo ""
-            echo "$bold""General Commands:""$normal"
-            echo "  skill list          List all available specialized skills"
-            echo "  skill add <id>      Install a skill from GitHub (e.g., anthropics/skills/skills/pdf)"
-            echo "  skill remove <name> Remove an installed skill"
-            echo "  version, -v         Display version information"
-            echo "  help, -h            Show this help message"
-            echo ""
-            echo "$bold""Examples:""$normal"
-            echo "  pond -a \"fix the tests\""
-
+            echo "Commands:"
+            echo "  status     Show the local workspace ACP session"
+            echo "  context    Show harness context usage and compression status"
+            echo "  compress   Explicitly request harness context compression"
+            echo "  forget     Detach this workspace from its ACP session"
+            echo "  version    Show Pond version"
         case '*'
-            if test -z "$subcommand"
-                pond help
-            else
-                echo "❌ "$red"Unknown subcommand: $subcommand"$normal
-                echo "Use 'pond help' to see supported stateful actions."
-            end
+            echo "Unknown Pond command: $action" >&2
+            echo "Use 'pond help' to see supported stateful actions." >&2
+            return 2
     end
 end

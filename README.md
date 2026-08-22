@@ -1,149 +1,66 @@
-![Badge with time spent](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2FRealiserad%2Fd3ec7fdeecc35aeeb315b4efba493326%2Fraw%2Ffish-ai-git-estimate.json)
-![Popularity badge](https://img.shields.io/endpoint?url=https%3A%2F%2Fgist.githubusercontent.com%2FRealiserad%2Fd3ec7fdeecc35aeeb315b4efba493326%2Fraw%2Fpopularity.json)
-[![Donate XMR](https://img.shields.io/badge/Donate_XMR-grey?style=for-the-badge&logo=monero)](https://github.com/user-attachments/assets/07a29402-4029-4ccb-86bc-539077977467)
+# Pond
 
-# 🐟 pond: AI for Fish shell
+Pond is a Fish-shell interface for a **stateful ACP agent**. It keeps the shell as a shell: terminal activity is recorded in order, but never wakes the agent until you explicitly start a Pond action.
 
-*A powerful fork of the original [fish-ai](https://github.com/Realiserad/fish-ai) by Bastian Fredriksson.*
+Pond 3 uses a generic ACP subprocess. The default agent command is:
 
-`pond` is a minimalist yet capable autonomous AI agent living directly in your Fish shell. It prioritizes **auditability**, **security**, and **seamless shell integration**.
-
-## 🚀 Key Features
-
-1.  **Autonomous AI Agent (`Ctrl+A`)**: A multi-turn expert that can read files, list directories, search the web, and execute shell commands to achieve complex goals.
-2.  **Unified `pond` Command**: A master utility for piping data to an LLM, managing the agent, or asking quick questions.
-3.  **SKILL.md Support**: Fully compatible with the `skills.sh` / `agentskills.io` standard. "Teach" the agent new expertise by dropping Markdown folders into `~/.config/fish-ai/skills/`.
-4.  **Question / Explain (`Ctrl+Q`)**: Instantly turn natural language into shell commands or get clear explanations of what a command does. **Q is for Quick / Query / Question.**
-5.  **Autocomplete / Fix (`Ctrl+Space`)**: Intelligent, context-aware command completions and instant fixes for your last failed command.
-6.  **Brave Search Integration**: Real-time web access for troubleshooting, documentation, and research.
-7.  **Advanced Audit UI**: Color-coded streaming of agent thoughts, tool calls, and truncated results directly in your terminal.
-8.  **Surgical Permissions**: A 4-tier permission system (`[y/t/a/n]`) that puts you in full control of every system-modifying action.
-9.  **Session Persistence**: Maintains conversation state between loops, allowing for long-running, multi-step collaborations.
-
-## 📦 Installation
-
-Install using [fisher](https://github.com/jorgebucaran/fisher):
-
-```shell
-fisher install bndlfm/pond.fish
+```text
+hermes acp
 ```
 
-## 🤖 Usage Guide
+Any compatible ACP agent can be configured with `POND_ACP_COMMAND_JSON`.
 
-### 🦾 The AI Agent
+## What Pond does
 
-Type a goal in plain text or as a comment and press **Ctrl + A**:
+- starts explicit stateful agent goals
+- preserves workspace-scoped ACP sessions
+- records assistant messages, executed commands, and terminal output chronologically
+- renders Markdown and tool lifecycle events with Rich
+- forwards agent permission requests through the terminal
+- exposes harness-owned context status and manual compression
 
-```shell
-# find all python files and search for TODOs
-(press Ctrl+A)
-```
+## What Pond intentionally does not do
 
-The agent will work turn-by-turn. When it needs to execute a command, it will prompt you:
-- **`[y]` Allow once**: Permit only this specific command.
-- **`[t]` Allow for this task**: Grant temporary autonomy until the current goal is met or the agent asks a question.
-- **`[a]` Always allow**: Grant full autonomy for the rest of the shell session.
-- **`[n]` Deny**: Prevent the command from running and let the agent rethink.
+- `pond -q` / stateless query mode
+- fast agent-harness autocomplete or repair
+- provider/API-key/model switching
+- custom web search, skills, agent loop, or command whitelist
+- automatic turns caused by terminal output
 
-**Manage Session State:**
-- `pond -a <goal>`: Trigger the autonomous agent.
-- `pond forget`: Wipes the agent's memory to start a fresh session.
-- `pond compress`: Manually trigger a summarization of long histories.
-- `pond status`: View current session statistics.
-- `pond skill list`: List all available specialized skills.
-
-You can also trigger the agent directly from the CLI:
-```shell
-pond -a "find all large files"
-```
-
-### 🐚 Unified `pond` Command
-
-Pond 3 does not provide a stateless `pond -q` query mode. Explicit stateful ACP actions are the only AI interaction path; terminal activity remains passive until the user starts an action.
-
-### 🛡️ Command Whitelist
-
-`pond` can run safe commands automatically. Customize this list in your configuration:
-
-```ini
-[fish-ai]
-whitelist = ls, grep, find, cat, pwd, date, eza, fd, rg
-```
-
-**Security Guard:** Any command containing redirections (`>`), pipes (`|`), or chaining (`;`, `&&`) is **never** whitelisted and will always require your manual approval.
-
-### 🌐 Web Search
-
-To enable web research, add your [Brave Search API key](https://api.search.brave.com/app/dashboard) to your config:
-
-```ini
-[fish-ai]
-brave_search_api_key = <your_key>
-```
-
-### 🔌 Specialized Skills
-
-`pond` supports the **agentskills.io** open standard. To add an expert, use the `add` command to pull directly from a GitHub repository:
-
-```shell
-pond skill add anthropics/skills/skills/pdf
-```
-
-Or manually drop a skill folder into your skills directory:
-
-```shell
-# Location: ~/.config/fish-ai/skills/
-pond skill list
-```
-
-### 📝 Quick / Query / Question
-
-Press **Ctrl + Q** to swap between natural language and shell commands (**Q is for Quick / Query / Question**):
-- `list files larger than 1gb` &rarr; `find . -size +1G`
-- `tar -xvzf archive.tar.gz` &rarr; Explains the command and flags.
-
-### 🪄 Autocomplete & Fix
-
-- Press **Ctrl + Space** while typing for intelligent completions.
-- Press **Ctrl + Space** after a command fails to receive an immediate fix based on the error output.
-
-## 🤸 Configuration
-
-Edit `~/.config/fish-ai/config.ini` or use environment variables (ideal for **Nix/Home Manager**):
-
-```ini
-[fish-ai]
-configuration = my-provider
-whitelist = ls, rg, fd, cat
-
-[my_provider]
-provider = google
-api_key = <your_key>
-model = gemini-3.1-pro-preview
-```
-
-### Legacy 2.x Runtime Keybindings (Nix/Home Manager)
-The legacy Fish-AI layer has these current defaults, which remain configurable via environment variables:
-- `FISH_AI_KEYMAP_1`: Defaults to `ctrl-q` (Question)
-- `FISH_AI_KEYMAP_2`: Defaults to `ctrl-space` (Autocomplete)
-- `FISH_AI_KEYMAP_3`: Defaults to `ctrl-a` (Agent)
-
-### Pond 3 Migration Bindings
-
-The opt-in Pond migration layer intentionally defines **no default key sequences**. Choose the bindings yourself; Pond will register only the values you explicitly set:
+## Commands
 
 ```fish
-set -gx POND_REWRITE 1
-set -gx POND_KEYMAP_CODIFY <your-codify-or-explain-key>
-set -gx POND_KEYMAP_COMPLETE <your-completion-or-repair-key>
-set -gx POND_KEYMAP_AGENT <your-agent-key>
+pond -a "inspect this repository"
+pond status
+pond context
+pond compress
+pond forget
 ```
 
-The current migration launchers still delegate to the legacy implementation. The bindings are a naming/installation seam, not a backend switch yet. Leave `POND_REWRITE` unset to retain the legacy binding setup unchanged.
+`pond status` reads only the local workspace-to-session pointer. `pond context` and `pond compress` explicitly send `/context` and `/compress` to the exact active ACP session. `pond forget` detaches the workspace pointer without deleting agent history.
 
-## 🛠️ Development
+## Configuring an ACP agent
 
-`pond` includes a **Nix Flake** for a reproducible development environment.
-Run `nix develop` to enter a shell with all dependencies configured.
+The default is Hermes ACP. To select another compatible ACP agent, set an argv-only JSON command—Pond never shell-parses it:
 
-See [DEVELOPMENT.md](DEVELOPMENT.md) for more details.
+```fish
+set -gx POND_ACP_COMMAND_JSON '["/path/to/acp-agent", "--safe"]'
+```
+
+## Bindings
+
+Pond defines no default key sequences. Configure only the bindings you want:
+
+```fish
+set -gx POND_KEYMAP_CODIFY <user-selected-key>
+set -gx POND_KEYMAP_AGENT <user-selected-key>
+```
+
+## Development
+
+```fish
+nix develop
+.venv/bin/python -m pytest
+```
+
+See [DEVELOPMENT.md](DEVELOPMENT.md), [the stateful interaction design](docs/STATEFUL-ACP-INTERACTION-DESIGN.md), and [the rewrite contract](docs/HERMES-REWRITE-CONTRACT.md).

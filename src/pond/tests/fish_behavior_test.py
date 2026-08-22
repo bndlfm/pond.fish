@@ -140,9 +140,9 @@ pond compress
 def test_pond_unknown_subcommand_does_not_execute_it():
     result = run_fish("source functions/pond.fish; pond definitely-not-a-command")
 
-    assert result.returncode == 0
-    assert "Unknown subcommand: definitely-not-a-command" in result.stdout
-    assert "Use 'pond help'" in result.stdout
+    assert result.returncode == 2
+    assert "Unknown Pond command" in result.stderr
+    assert "Use 'pond help'" in result.stderr
 
 
 def commandline_mock(buffer, cursor=0):
@@ -197,103 +197,3 @@ printf 'replacement=<%s>\n' "$__replacement"
 
     assert result.returncode == 0, result.stderr
     assert result.stdout == "agent:agent:inspect this repositoryreplacement=<>\n"
-
-
-@pytest.mark.parametrize(
-    ("source_file", "pond_function", "legacy_function"),
-    [
-        (
-            "functions/_pond_autocomplete_or_fix.fish",
-            "_pond_autocomplete_or_fix",
-            "_fish_ai_autocomplete_or_fix",
-        ),
-    ],
-)
-def test_pond_migration_launchers_delegate_to_legacy(source_file, pond_function, legacy_function):
-    script = f'''
-set -g __legacy_calls 0
-function {legacy_function}
-    set -g __legacy_calls (math $__legacy_calls + 1)
-end
-source {source_file}
-{pond_function}
-printf 'legacy_calls=<%s>\\n' "$__legacy_calls"
-'''
-    result = run_fish(script)
-
-    assert result.returncode == 0, result.stderr
-    assert result.stdout == "legacy_calls=<1>\n"
-
-
-def test_ctrl_q_codifies_hash_prefixed_natural_language():
-    script = commandline_mock("# list files") + r'''
-function _fish_ai_codify; printf 'codified:%s' "$argv[1]"; end
-function _fish_ai_explain; printf 'explained:%s' "$argv[1]"; end
-source functions/_fish_ai_codify_or_explain.fish
-_fish_ai_codify_or_explain
-printf 'replacement=<%s>\n' "$__replacement"
-'''
-    result = run_fish(script)
-
-    assert result.returncode == 0, result.stderr
-    assert result.stdout == "replacement=<codified:# list files>\n"
-
-
-def test_ctrl_q_explains_a_known_command():
-    script = commandline_mock("printf hello") + r'''
-function _fish_ai_codify; printf 'codified:%s' "$argv[1]"; end
-function _fish_ai_explain; printf 'explained:%s' "$argv[1]"; end
-source functions/_fish_ai_codify_or_explain.fish
-_fish_ai_codify_or_explain
-printf 'replacement=<%s>\n' "$__replacement"
-'''
-    result = run_fish(script)
-
-    assert result.returncode == 0, result.stderr
-    assert result.stdout == "replacement=<explained:printf hello>\n"
-
-
-def test_ctrl_space_replaces_buffer_and_preserves_logical_cursor():
-    script = commandline_mock("echo", cursor=4) + r'''
-function _fish_ai_autocomplete; printf '%s++' "$argv[1]"; end
-function _fish_ai_fix; printf 'fixed:%s' "$argv[1]"; end
-source functions/_fish_ai_autocomplete_or_fix.fish
-_fish_ai_autocomplete_or_fix
-printf 'replacement=<%s> cursor=<%s>\n' "$__replacement" "$__cursor"
-'''
-    result = run_fish(script)
-
-    assert result.returncode == 0, result.stderr
-    assert result.stdout == "replacement=<echo++> cursor=<6>\n"
-
-
-def test_ctrl_space_fixes_previous_command_after_failure():
-    script = commandline_mock("") + r'''
-function history; printf 'false --example\n'; end
-function _fish_ai_autocomplete; printf 'unexpected-autocomplete'; end
-function _fish_ai_fix; printf 'fixed:%s' "$argv[1]"; end
-source functions/_fish_ai_autocomplete_or_fix.fish
-false
-_fish_ai_autocomplete_or_fix
-printf 'replacement=<%s>\n' "$__replacement"
-'''
-    result = run_fish(script)
-
-    assert result.returncode == 0, result.stderr
-    assert result.stdout == "replacement=<fixed:false --example>\n"
-
-
-def test_agent_permission_eof_fails_closed(tmp_path):
-    marker = tmp_path / "must-not-exist"
-    install_dir = make_permission_requesting_agent(tmp_path / "install", f"touch {marker}")
-    script = commandline_mock("create marker") + f'''
-set -g _fish_ai_install_dir {install_dir}
-source functions/_fish_ai_agent.fish
-_fish_ai_agent
-'''
-
-    result = run_fish(script)
-
-    assert result.returncode == 0
-    assert not marker.exists()
-    assert "Agent session interrupted" in result.stderr
