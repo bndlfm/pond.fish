@@ -93,6 +93,7 @@ When `POND_REWRITE=1`, Pond registers only the keymap variables that are explici
 - Pond's visible and persisted conversation timeline interleaves user messages, assistant messages, executed commands, and terminal output in their original order. A command/result must never disappear merely because a later assistant message arrives.
 - Terminal observation is passive: command execution/output never creates a user turn, resumes an agent, or triggers a new assistant response. Pond sends accumulated terminal events to the agent only when the user explicitly begins a later agent message.
 - Agent-owned tool results may continue an already-active agent turn, but must not manufacture a separate unsolicited assistant turn.
+- `pond status` is local and read-only: in rewrite mode it invokes `pond-status` to report the exact workspace-to-ACP-session mapping without contacting or waking the agent.
 - `pond forget` is an explicit local detach action: in rewrite mode it invokes `pond-forget`, removing only the workspace-to-session pointer. It does not delete Hermes/ACP history; a future explicit purge requires a negotiated agent capability and confirmation.
 - `pond compress` is an explicit user action: in rewrite mode it invokes `pond-compress`, which submits `/compress` only to the exact active workspace ACP session. It never creates a session merely to compact it.
 - Tool output is bounded for terminal rendering, but the durable history retains the complete result or an explicit truncation record with the original byte count.

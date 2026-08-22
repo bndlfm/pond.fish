@@ -72,3 +72,17 @@ def test_compress_submits_slash_command_to_exact_workspace_session(tmp_path, mon
         run_compress(str(tmp_path), profile="default")
 
     assert seen == [("/compress", "acp-1")]
+
+
+def test_status_reports_exact_workspace_session_without_contacting_agent(tmp_path, capsys, monkeypatch):
+    from pond.action_cli import run_status
+    from pond.backend.sessions import SessionStore
+
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
+    SessionStore(tmp_path / "state" / "pond" / "acp-sessions.json").set(
+        "default", tmp_path, "acp-1"
+    )
+
+    run_status(str(tmp_path), profile="default")
+
+    assert capsys.readouterr().out == "ACP session: acp-1\n"

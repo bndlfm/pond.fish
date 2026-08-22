@@ -50,6 +50,7 @@ pond-action = "pond.action_cli:main"
 pond-compress = "pond.action_cli:compress_main"
 pond-context = "pond.action_cli:context_main"
 pond-forget = "pond.action_cli:forget_main"
+pond-status = "pond.action_cli:status_main"
 
 [tool.pytest.ini_options]
 minversion = "6.0"

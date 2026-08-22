@@ -45,6 +45,22 @@ def run_compress(cwd: str, *, profile: str = "default") -> None:
     print(result.text)
 
 
+def run_status(cwd: str, *, profile: str = "default") -> None:
+    """Show the exact local workspace-to-ACP-session association."""
+    session_id = SessionStore(_state_path()).get(profile, cwd)
+    print(f"ACP session: {session_id}" if session_id else "No ACP session is mapped to this workspace.")
+
+
+def status_main() -> None:
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--cwd", default=os.getcwd())
+    parser.add_argument("--profile", default="default")
+    args = parser.parse_args()
+    run_status(args.cwd, profile=args.profile)
+
+
 def run_forget(cwd: str, *, profile: str = "default") -> None:
     """Detach this workspace from its ACP session without deleting agent history."""
     removed = SessionStore(_state_path()).delete(profile, cwd)

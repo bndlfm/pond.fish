@@ -214,6 +214,10 @@ function pond --description "The master command for the pond AI suite."
             echo "✅ "$green"Compression complete."$normal
 
         case status
+            if set -q POND_REWRITE; and test "$POND_REWRITE" = 1
+                pond-status --cwd (pwd)
+                return
+            end
             set -l state_file "$_fish_ai_install_dir/agent_session.json"
             if test -f "$state_file"
                 set -l size (du -h "$state_file" | cut -f1)
