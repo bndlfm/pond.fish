@@ -87,6 +87,28 @@ def test_pond_conf_is_silent_idempotent_and_xdg_scoped(tmp_path):
     assert not (config_home / "pond").exists()
 
 
+def test_pond_bind_uses_only_explicitly_configured_keys():
+    script = r'''
+set -gx POND_REWRITE 1
+set -gx POND_KEYMAP_CODIFY ctrl-g
+set -gx POND_KEYMAP_COMPLETE ctrl-h
+set -gx POND_KEYMAP_AGENT ctrl-j
+source conf.d/pond.fish
+_pond_bind
+bind ctrl-g
+bind ctrl-h
+bind ctrl-j
+'''
+    result = run_fish(script)
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.splitlines() == [
+        "bind ctrl-g _pond_codify_or_explain",
+        "bind ctrl-h _pond_autocomplete_or_fix",
+        "bind ctrl-j _pond_agent",
+    ]
+
+
 def test_pond_query_forwards_one_prompt_argument(tmp_path):
     install_dir = make_fake_ai(tmp_path)
     result = run_fish(
@@ -164,6 +186,33 @@ end
 source functions/_pond_codify_or_explain.fish
 _pond_codify_or_explain
 printf 'legacy_calls=<%s>\n' "$__legacy_calls"
+'''
+    result = run_fish(script)
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == "legacy_calls=<1>\n"
+
+
+@pytest.mark.parametrize(
+    ("source_file", "pond_function", "legacy_function"),
+    [
+        (
+            "functions/_pond_autocomplete_or_fix.fish",
+            "_pond_autocomplete_or_fix",
+            "_fish_ai_autocomplete_or_fix",
+        ),
+        ("functions/_pond_agent.fish", "_pond_agent", "_fish_ai_agent"),
+    ],
+)
+def test_pond_migration_launchers_delegate_to_legacy(source_file, pond_function, legacy_function):
+    script = f'''
+set -g __legacy_calls 0
+function {legacy_function}
+    set -g __legacy_calls (math $__legacy_calls + 1)
+end
+source {source_file}
+{pond_function}
+printf 'legacy_calls=<%s>\\n' "$__legacy_calls"
 '''
     result = run_fish(script)
 

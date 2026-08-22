@@ -11,9 +11,9 @@ Pond remains a Fish-native frontend. A compatible ACP agent becomes the stateful
 ### Pond owns
 
 - Fish keybindings and command-buffer manipulation.
-- Ctrl+Q codify/explain routing.
-- Ctrl+Space autocomplete/fix routing and FZF selection.
-- Ctrl+A agent launch and terminal presentation.
+- Configurable codify/explain routing.
+- Configurable completion/fix routing and FZF selection.
+- Configurable agent launch and terminal presentation.
 - Shell-specific prompt/context collection.
 - ACP client rendering and permission interaction.
 - A minimal mapping from workspace to Hermes ACP session ID.
@@ -39,7 +39,7 @@ Pond's core must not import Hermes internal Python modules. The stateful boundar
 - Known command: return a concise explanation/comment.
 - Output replaces the command buffer and is never automatically executed.
 
-### Ctrl+Space
+### Completion/fix binding
 
 - Non-empty command buffer: request completion, preserve the logical cursor, and allow FZF refinement.
 - Empty buffer after a failed command: offer a repaired command.
@@ -152,7 +152,7 @@ Before production migration:
 4. Verify a public and genuinely zero-tool stateless path.
 5. Compare stdin-safe `hermes chat -Q --query-file -` against any one-shot alternative.
 6. Run a dedicated Hermes compatibility suite against `hermes acp`; that preset may set `HERMES_ACP_SKIP_CONFIGURED_MCP=1` unless the user explicitly opts into ambient MCP servers. Generic ACP commands receive no Hermes-specific environment variables.
-7. If per-keypress startup misses the Ctrl+Space latency budget, use a persistent per-shell ACP process or a lazy user service.
+7. If per-keypress startup misses the configured completion latency budget, use a persistent per-shell ACP process or a lazy user service.
 
 No provider backend is deleted before these gates pass and the corresponding Pond path is covered by tests.
 
@@ -173,6 +173,6 @@ Pond 3.0 cannot release until:
 - macOS, Ubuntu, Fedora, and Arch installation tests pass.
 - ACP integration tests cover permission, cancel, resume, workspace isolation, and child cleanup.
 - Stateless generation is proven tool-free.
-- Ctrl+Space latency is measured and accepted.
+- Completion-binding latency is measured and accepted.
 - No test or log leaks fixture secrets.
 - Every deliberate break above is documented in migration instructions.
