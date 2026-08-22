@@ -341,10 +341,7 @@ def main():
         sys.exit(1)
 
 def render_markdown():
-    try:
-        from rich.console import Console
-        from rich.markdown import Markdown
-        Console().print(Markdown(sys.stdin.read() or ""))
-    except: sys.stdout.write(sys.stdin.read())
+    from pond.render import render_markdown as render
+    render(sys.stdin.read() or "")
 
 if __name__ == "__main__": main()

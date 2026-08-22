@@ -47,7 +47,7 @@ If an ACP agent executes a tool during an already-active turn, ACP tool results 
 
 ## Rendering and command buffers
 
-- Assistant text streams to the Pond terminal UI.
+- Assistant text streams to the Pond terminal UI through the Rich-backed `pond.render` module.
 - Tool calls and results are rendered as timeline entries between messages.
 - Final content is never executed automatically.
 - Command-draft/complete/repair actions validate final output before replacing a Fish command buffer.
