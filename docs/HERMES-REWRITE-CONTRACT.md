@@ -46,7 +46,7 @@ Unset means Pond uses its default Hermes preset `["hermes", "acp"]`. Shell execu
 
 ## Stateless-provider contract
 
-Quick command generation remains separate from ACP agent sessions. Until S15 proves a safe default, it is opt-in through `POND_STATELESS_COMMAND_JSON`, a JSON argv array that receives the complete request on stdin and returns final text only on stdout. Pond never shell-parses this command, rejects empty stdout, preserves stdout verbatim for command-buffer insertion, and keeps diagnostics on stderr. The stateless provider receives no ambient terminal events automatically.
+Quick command generation remains separate from ACP agent sessions. The 2026-08-22 Hermes evaluation rejected a Hermes default because neither tested CLI path provides Pond's complete public no-tools contract; details are in `docs/STATELESS-PROVIDER-EVALUATION.md`. Stateless use remains opt-in through `POND_STATELESS_COMMAND_JSON`, a JSON argv array that receives the complete request on stdin and returns final text only on stdout. Pond never shell-parses this command, rejects empty stdout, preserves stdout verbatim for command-buffer insertion, and keeps diagnostics on stderr. The stateless provider receives no ambient terminal events automatically.
 
 ## Binding configuration
 
