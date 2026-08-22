@@ -44,7 +44,7 @@ The `pond context` command is an explicit user action: in rewrite mode it invoke
 
 ### Pond backend protocol
 
-The temporary pre-rename boundary lives at `fish_ai.backend`, but S10 renames the package to `pond` before further ACP work lands. The post-S10 feature boundary is `pond.backend.protocol` (`AgentRequest`, `AgentEvent`, `AgentResult`, and `EventKind`) plus `pond.backend.errors` (`AgentCommandError`, `AcpProtocolError`, `AgentTimeoutError`, and `UnsupportedCapabilityError`). ACP SDK objects and all agent-vendor objects stay inside the eventual transport adapter.
+Pond is now the single runtime path. It registers only keymap variables explicitly set by the user; there are no default bindings.
 
 ### ACP agent command
 
@@ -58,51 +58,28 @@ Unset means Pond uses its default Hermes preset `["hermes", "acp"]`. Shell execu
 
 ## No stateless query feature
 
-Pond 3.0 does not ship a standalone stateless query/provider command. The 2026-08-22 Hermes evaluation remains in `docs/STATELESS-PROVIDER-EVALUATION.md` as rejected research, not a user-facing configuration path. The release removes exploratory `POND_STATELESS_COMMAND_JSON` support rather than accumulating an unused second backend.
+Pond 3.0 does not ship a standalone stateless query/provider command. The rejected evaluation is archived under `docs/archive/`; it is not a user-facing configuration path.
 
 ## Binding configuration
 
 Pond 3 defines no default key sequences. Binding choice belongs to the user or their declarative shell configuration:
 
 ```fish
-set -gx POND_REWRITE 1
 set -gx POND_KEYMAP_CODIFY <user-selected-key>
-set -gx POND_KEYMAP_COMPLETE <user-selected-key>
 set -gx POND_KEYMAP_AGENT <user-selected-key>
 ```
 
-When `POND_REWRITE=1`, Pond registers only the keymap variables that are explicitly set. With `POND_REWRITE` unset, Pond creates no migration bindings and leaves the legacy configuration untouched. The migration must not introduce a default sequence in code, comments, examples, or tests.
+Pond registers only explicitly set keymap variables.
+## Explicit agent action
 
-## Preserved user behavior
-
-### Codify/explain binding
-
-- Empty command buffer: no action.
-- Hash-prefixed or unknown natural language: generate a Fish command.
-- Known command: return a concise explanation/comment.
-- Output replaces the command buffer and is never automatically executed.
-
-### Completion/fix binding
-
-- Non-empty command buffer: request completion, preserve the logical cursor, and allow FZF refinement.
-- Empty buffer after a failed command: offer a repaired command.
-- A repaired or completed command is inserted, never automatically executed.
-- Pond 3.0 must not rerun the failed command merely to recover stderr.
-
-### Agent binding
-
-- The current command buffer becomes the initial goal.
+- The current goal is submitted through `pond-action agent`.
 - Agent tools run relative to the intended workspace.
 - Assistant text and tool lifecycle are streamed to the terminal.
-- Pond's visible and persisted conversation timeline interleaves user messages, assistant messages, executed commands, and terminal output in their original order. A command/result must never disappear merely because a later assistant message arrives.
-- Terminal observation is passive: command execution/output never creates a user turn, resumes an agent, or triggers a new assistant response. Pond sends accumulated terminal events to the agent only when the user explicitly begins a later agent message.
-- Agent-owned tool results may continue an already-active agent turn, but must not manufacture a separate unsolicited assistant turn.
-- Legacy repair never re-executes the prior command to reconstruct stderr; when output was not captured, it reports that limitation rather than repeating side effects.
-- `pond status` is local and read-only: in rewrite mode it invokes `pond-status` to report the exact workspace-to-ACP-session mapping without contacting or waking the agent.
-- `pond forget` is an explicit local detach action: in rewrite mode it invokes `pond-forget`, removing only the workspace-to-session pointer. It does not delete Hermes/ACP history; a future explicit purge requires a negotiated agent capability and confirmation.
-- `pond compress` is an explicit user action: in rewrite mode it invokes `pond-compress`, which submits `/compress` only to the exact active workspace ACP session. It never creates a session merely to compact it.
-- Tool output is bounded for terminal rendering, but the durable history retains the complete result or an explicit truncation record with the original byte count.
-- Ctrl+C cooperatively cancels the active ACP turn and does not leave child processes.
+- Terminal observation is passive and is sent only with a later explicit agent action.
+- `pond status` is local and read-only; it reports the workspace-to-ACP-session mapping without waking the agent.
+- `pond forget` detaches only the local workspace pointer.
+- `pond context` and `pond compress` explicitly request harness-owned status/compression on the exact active ACP session.
+- Tool output is bounded for terminal rendering, while durable history retains complete results or truncation metadata.
 - Final textual output remains pipeable separately from progress rendering.
 
 ## Permission contract

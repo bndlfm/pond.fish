@@ -160,7 +160,6 @@ function commandline
         case -f
     end
 end
-function _fish_ai_show_progress_indicator; end
 '''
 
 
