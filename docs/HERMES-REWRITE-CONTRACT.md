@@ -30,6 +30,12 @@ Pond remains a Fish-native frontend. A compatible ACP agent becomes the stateful
 
 Pond's core must not import Hermes internal Python modules. The stateful boundary is standard ACP over stdio. The default command is `hermes acp`; other ACP agent commands are supported when they negotiate the required capabilities. The explicit-turn, passive-terminal, workspace-session model is specified in `docs/STATEFUL-ACP-INTERACTION-DESIGN.md`.
 
+### Context compression
+
+The ACP agent/harness owns actual context accounting and compaction. Pond must never independently summarize or delete ACP history. Pond observes standard ACP usage/session updates and surfaces context pressure plus compression events in its timeline. The requested policy is to warn at 80% of the active model context window and offer an explicit user action to ask the agent for `/context` or `/compress`; a terminal event alone must not trigger compaction.
+
+Hermes currently defaults `compression.threshold` to `0.50`, with model/route overrides (including some Codex routes that auto-raise to 85%). Pond must report the effective harness threshold rather than claiming its own guess is authoritative. If Neko wants 80% as the actual Hermes compaction threshold, that is a deliberate Hermes configuration choice, not a Pond setting.
+
 ### Pond backend protocol
 
 The temporary pre-rename boundary lives at `fish_ai.backend`, but S10 renames the package to `pond` before further ACP work lands. The post-S10 feature boundary is `pond.backend.protocol` (`AgentRequest`, `AgentEvent`, `AgentResult`, and `EventKind`) plus `pond.backend.errors` (`AgentCommandError`, `AcpProtocolError`, `AgentTimeoutError`, and `UnsupportedCapabilityError`). ACP SDK objects and all agent-vendor objects stay inside the eventual transport adapter.

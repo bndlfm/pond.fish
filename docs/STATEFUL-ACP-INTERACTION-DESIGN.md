@@ -11,7 +11,7 @@ The user explicitly starts every turn through a Pond command or a configured bin
 ## Workspace session ownership
 
 - Pond resolves a workspace as the normalized Git root, falling back to normalized cwd.
-- Pond stores the ACP session handle for that workspace/profile only.
+- Pond stores the ACP session handle for that workspace/profile only in an atomic local pointer file (directory mode `0700`, file mode `0600`); ACP owns the actual transcript.
 - ACP owns agent conversation state; Pond owns the chronological display/history timeline and its workspace-to-session mapping.
 - A stale handle creates a new session only after an exact load attempt fails.
 - Pond never selects a session by title or recency alone.
