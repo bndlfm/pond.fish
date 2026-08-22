@@ -28,7 +28,7 @@ Pond remains a Fish-native frontend. A compatible ACP agent becomes the stateful
 - Skills, MCP servers, search, delegation, and project rules.
 - Session history, compression, branching, and cancellation.
 
-Pond's core must not import Hermes internal Python modules. The stateful boundary is standard ACP over stdio. The default command is `hermes acp`; other ACP agent commands are supported when they negotiate the required capabilities.
+Pond's core must not import Hermes internal Python modules. The stateful boundary is standard ACP over stdio. The default command is `hermes acp`; other ACP agent commands are supported when they negotiate the required capabilities. The explicit-turn, passive-terminal, workspace-session model is specified in `docs/STATEFUL-ACP-INTERACTION-DESIGN.md`.
 
 ### Pond backend protocol
 
