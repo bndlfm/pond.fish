@@ -24,11 +24,11 @@ function _pond_install --on-event pond_install
     mkdir -p "$_pond_install_dir"
 
     if type -q uv
-        uv venv --quiet --python python "$_pond_install_dir"
+        uv venv --quiet --clear --python python "$_pond_install_dir"
         or return 1
         uv pip install --quiet --python "$_pond_install_dir/bin/python" "$source"
     else if type -q nix
-        nix run nixpkgs#uv -- venv --quiet --python python "$_pond_install_dir"
+        nix run nixpkgs#uv -- venv --quiet --clear --python python "$_pond_install_dir"
         or return 1
         nix run nixpkgs#uv -- pip install --quiet --python "$_pond_install_dir/bin/python" "$source"
     else
