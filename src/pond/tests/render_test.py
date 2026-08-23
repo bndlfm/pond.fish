@@ -18,7 +18,8 @@ def test_rich_renderer_formats_markdown_through_a_supplied_console():
     assert "git status" in output
 
 
-def test_rich_renderer_formats_tool_lifecycle_event():
+def test_rich_renderer_formats_tool_lifecycle_event(monkeypatch):
+    monkeypatch.setenv("POND_ICON_STYLE", "emoji")
     stream = StringIO()
     console = Console(file=stream, force_terminal=False, width=80)
 

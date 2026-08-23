@@ -1,6 +1,7 @@
 """Compact Rich-backed terminal presentation for Pond."""
 
 import json
+import os
 from typing import Any
 
 from rich.console import Console
@@ -15,7 +16,26 @@ def render_markdown(text: str, *, console: Console | None = None) -> None:
     target.print(Padding(Markdown(text or ""), (0, 2, 0, 2)))
 
 
-_TOOL_ICONS = {
+_NERD_TOOL_ICONS = {
+    "browser": "󰖟",
+    "web": "󰖟",
+    "terminal": "󰆍",
+    "process": "󰒓",
+    "shell": "󰆍",
+    "file": "󰈙",
+    "read_file": "󰈙",
+    "read_files": "󰈙",
+    "search_files": "󰈙",
+    "patch": "󰏫",
+    "write_file": "󰈔",
+    "execute_code": "󰅩",
+    "delegate_task": "󰘉",
+    "cronjob": "󰥔",
+    "memory": "󰍉",
+    "todo": "󰄬",
+}
+
+_EMOJI_TOOL_ICONS = {
     "browser": "🌐",
     "web": "🌐",
     "terminal": "💻",
@@ -36,13 +56,14 @@ _TOOL_ICONS = {
 
 
 def _tool_icon(title: str) -> str:
+    icons = _EMOJI_TOOL_ICONS if os.environ.get("POND_ICON_STYLE") == "emoji" else _NERD_TOOL_ICONS
     name = title.lower()
-    if name in _TOOL_ICONS:
-        return _TOOL_ICONS[name]
-    for group, icon in (("browser", "🌐"), ("web", "🌐"), ("terminal", "💻"), ("file", "📁")):
+    if name in icons:
+        return icons[name]
+    for group, icon in (("browser", icons["browser"]), ("web", icons["web"]), ("terminal", icons["terminal"]), ("file", icons["file"])):
         if group in name:
             return icon
-    return "🛠"
+    return "󰜴" if icons is _NERD_TOOL_ICONS else "🛠"
 
 
 def _tool_detail(title: str, detail: str) -> list[str]:
@@ -81,6 +102,7 @@ def render_tool_event(
     *,
     detail: str = "",
     result: str = "",
+    duration_s: float | None = None,
     skill: str = "",
     console: Console | None = None,
 ) -> None:
@@ -89,7 +111,12 @@ def render_tool_event(
     target.print()
     successful = status.lower() in {"complete", "completed", "success", "succeeded"}
     failed = status.lower() in {"error", "failed", "failure"}
-    marker = "✓" if successful else "✗" if failed else "•"
+    if successful:
+        marker = "✓" if os.environ.get("POND_ICON_STYLE") == "emoji" else "󰄬"
+    elif failed:
+        marker = "✗" if os.environ.get("POND_ICON_STYLE") == "emoji" else "󰅖"
+    else:
+        marker = "•" if os.environ.get("POND_ICON_STYLE") == "emoji" else "󰔰"
     marker_style = "green" if successful else "red" if failed else "yellow"
     if skill:
         target.print(Text("  🔌 ", style="magenta") + Text(marker, style=marker_style) + Text(f" skill: {skill}", style="magenta"))
@@ -97,6 +124,8 @@ def render_tool_event(
         target.print(Text(f"  {_tool_icon(title)} ", style="yellow") + Text(marker, style=marker_style) + Text(f" {title}", style="yellow"))
     for line in _tool_detail(title, detail):
         target.print(Text(f"      {line}"))
+    if duration_s is not None:
+        target.print(Text(f"      ⏱ {duration_s:.1f}s", style="dim"))
     if result:
         compact = " ".join(result.strip().splitlines())
         if len(compact) > 240:
