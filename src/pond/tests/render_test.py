@@ -25,7 +25,7 @@ def test_rich_renderer_formats_tool_lifecycle_event():
     render_tool_event("search_files", "complete", detail='{"pattern":"*.py","path":"src/pond"}', console=console)
 
     output = stream.getvalue()
-    assert "🛠 ✓ search_files" in output
+    assert "📁 ✓ search_files" in output
     assert "✓" in output
     assert "query: *.py" in output
     assert "path: src/pond" in output

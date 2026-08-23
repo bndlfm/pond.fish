@@ -15,6 +15,36 @@ def render_markdown(text: str, *, console: Console | None = None) -> None:
     target.print(Padding(Markdown(text or ""), (0, 2, 0, 2)))
 
 
+_TOOL_ICONS = {
+    "browser": "🌐",
+    "web": "🌐",
+    "terminal": "💻",
+    "process": "⚙️",
+    "shell": "💻",
+    "file": "📁",
+    "read_file": "📁",
+    "read_files": "📁",
+    "search_files": "📁",
+    "patch": "📁",
+    "write_file": "📁",
+    "execute_code": "⚡",
+    "delegate_task": "🤝",
+    "cronjob": "⏰",
+    "memory": "🧠",
+    "todo": "✅",
+}
+
+
+def _tool_icon(title: str) -> str:
+    name = title.lower()
+    if name in _TOOL_ICONS:
+        return _TOOL_ICONS[name]
+    for group, icon in (("browser", "🌐"), ("web", "🌐"), ("terminal", "💻"), ("file", "📁")):
+        if group in name:
+            return icon
+    return "🛠"
+
+
 def _tool_detail(title: str, detail: str) -> list[str]:
     try:
         args: Any = json.loads(detail)
@@ -64,7 +94,7 @@ def render_tool_event(
     if skill:
         target.print(Text("  🔌 ", style="magenta") + Text(marker, style=marker_style) + Text(f" skill: {skill}", style="magenta"))
     else:
-        target.print(Text("  🛠 ", style="yellow") + Text(marker, style=marker_style) + Text(f" {title}", style="yellow"))
+        target.print(Text(f"  {_tool_icon(title)} ", style="yellow") + Text(marker, style=marker_style) + Text(f" {title}", style="yellow"))
     for line in _tool_detail(title, detail):
         target.print(Text(f"      {line}"))
     if result:
