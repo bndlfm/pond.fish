@@ -1,14 +1,48 @@
 """Compact Rich-backed terminal presentation for Pond."""
 
+import json
+from typing import Any
+
 from rich.console import Console
 from rich.markdown import Markdown
+from rich.padding import Padding
 from rich.text import Text
 
 
 def render_markdown(text: str, *, console: Console | None = None) -> None:
     target = console or Console()
     target.print()
-    target.print(Markdown(text or ""))
+    target.print(Padding(Markdown(text or ""), (0, 2, 0, 2)))
+
+
+def _tool_detail(title: str, detail: str) -> list[str]:
+    try:
+        args: Any = json.loads(detail)
+    except (TypeError, json.JSONDecodeError):
+        return [detail.strip()] if detail.strip() else []
+    if not isinstance(args, dict):
+        return [str(args)]
+
+    name = title.lower()
+    if name == "search_files":
+        fields = [
+            ("query", args.get("pattern")),
+            ("path", args.get("path")),
+            ("files", args.get("file_glob")),
+            ("mode", args.get("target")),
+        ]
+    elif name in {"read_file", "read_files"}:
+        fields = [
+            ("path", args.get("path") or args.get("paths")),
+            ("offset", args.get("offset")),
+            ("limit", args.get("limit")),
+        ]
+    elif name == "skill_view":
+        fields = [("skill", args.get("name")), ("file", args.get("file_path"))]
+    else:
+        fields = list(args.items())[:4]
+
+    return [f"{key}: {value}" for key, value in fields if value not in (None, "")]
 
 
 def render_tool_event(
@@ -25,11 +59,11 @@ def render_tool_event(
     target.print()
     if skill:
         target.print(Text(f"  🔌 skill: {skill}", style="magenta"))
-    target.print(Text(f"  🛠  tool: {title} [{status}]", style="yellow"))
-    if detail:
-        target.print(f"    {detail.strip()}")
+    target.print(Text(f"  🛠  {title} [{status}]", style="yellow"))
+    for line in _tool_detail(title, detail):
+        target.print(f"      {line}")
     if result:
         compact = " ".join(result.strip().splitlines())
         if len(compact) > 240:
             compact = compact[:237] + "..."
-        target.print(Text(f"    📋 result: {compact}", style="cyan"))
+        target.print(Text(f"      📋 {compact}", style="cyan"))

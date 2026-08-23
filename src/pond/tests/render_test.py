@@ -22,8 +22,10 @@ def test_rich_renderer_formats_tool_lifecycle_event():
     stream = StringIO()
     console = Console(file=stream, force_terminal=False, width=80)
 
-    render_tool_event("git status --short", "completed", detail='{"command":"git status --short"}', console=console)
+    render_tool_event("search_files", "complete", detail='{"pattern":"*.py","path":"src/pond"}', console=console)
 
     output = stream.getvalue()
-    assert "  🛠  tool: git status --short" in output
-    assert "completed" in output
+    assert "🛠  search_files [complete]" in output
+    assert "query: *.py" in output
+    assert "path: src/pond" in output
+    assert "completed" not in output
