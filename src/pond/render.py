@@ -68,13 +68,28 @@ def _tool_icon(title: str) -> str:
 
 
 def _powerline_enabled() -> bool:
-    return os.environ.get("POND_FRAME_STYLE", "powerline") == "powerline" and os.environ.get("POND_ICON_STYLE") != "emoji"
+    return os.environ.get("POND_FRAME_STYLE", "box") == "powerline" and os.environ.get("POND_ICON_STYLE") != "emoji"
+
+
+def _box_frame_enabled() -> bool:
+    return os.environ.get("POND_FRAME_STYLE", "box") == "box"
 
 
 def _fit(text: str, width: int) -> str:
     value = Text(text)
     value.truncate(max(1, width), overflow="ellipsis")
     return value.plain
+
+
+def _result_text(value: Any) -> str:
+    if isinstance(value, dict):
+        for key in ("content", "text", "result_text", "output", "summary"):
+            if key in value:
+                return _result_text(value[key])
+        return "\n".join(f"{key}: {val}" for key, val in value.items())
+    if isinstance(value, list):
+        return "\n".join(_result_text(item) for item in value)
+    return str(value or "")
 
 
 def _tool_detail(title: str, detail: str) -> list[str]:
@@ -112,7 +127,7 @@ def render_tool_event(
     status: str,
     *,
     detail: str = "",
-    result: str = "",
+    result: Any = "",
     duration_s: float | None = None,
     skill: str = "",
     console: Console | None = None,
@@ -131,11 +146,16 @@ def render_tool_event(
     marker_style = "green" if successful else "red" if failed else "yellow"
     skill_icon = "🔌" if os.environ.get("POND_ICON_STYLE") == "emoji" else "󰏗"
     icon = skill_icon if skill else _tool_icon(title)
-    label = _fit(f"skill: {skill}" if skill else title, max(12, target.width - 16))
+    framed = _powerline_enabled() or _box_frame_enabled()
+    label = _fit(f"skill: {skill}" if skill else title, max(1, target.width - (20 if framed else 10)))
     if _powerline_enabled():
         target.print(Text(f"   {icon} ", style="magenta" if skill else "yellow") + Text(marker, style=marker_style) + Text(f" {label} ", style="magenta" if skill else "yellow"))
-        detail_prefix = "  │   "
-        result_prefix = "  ╰─ 📋 "
+        detail_prefix = "      "
+        result_prefix = "      📋 "
+    elif _box_frame_enabled():
+        target.print(Text(f"  ╭─ {icon} ", style="magenta" if skill else "yellow") + Text(marker, style=marker_style) + Text(f" {label} ─╮", style="magenta" if skill else "yellow"))
+        detail_prefix = "      "
+        result_prefix = "      📋 "
     else:
         target.print(Text(f"  {icon} ", style="magenta" if skill else "yellow") + Text(marker, style=marker_style) + Text(f" {label}", style="magenta" if skill else "yellow"))
         detail_prefix = "      "
@@ -145,6 +165,7 @@ def render_tool_event(
     if duration_s is not None:
         target.print(Text(f"{detail_prefix}⏱ {duration_s:.1f}s", style="dim"))
     if result:
+        result = _result_text(result)
         source_lines = result.strip("\n").splitlines() or [""]
         rows: list[tuple[str, str]] = []
         for index, source_line in enumerate(source_lines):

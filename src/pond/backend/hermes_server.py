@@ -111,7 +111,8 @@ def run_hermes_server_turn(request: AgentRequest, session_id: str | None = None)
                         str(payload.get("title") or payload.get("name") or "Tool"),
                         event.removeprefix("tool."),
                         detail=json.dumps(payload.get("args") or {}, ensure_ascii=False),
-                        result=str(payload.get("result_text") or payload.get("summary") or payload.get("result") or ""),
+                        result=payload.get("result_text") or payload.get("summary") or payload.get("result") or "",
+                        duration_s=float(payload["duration_s"]) if payload.get("duration_s") is not None else None,
                     )
                 elif event == "approval.request":
                     _rpc(ws, request_id + 1, "approval.respond", {"choice": "deny", "session_id": sid})
