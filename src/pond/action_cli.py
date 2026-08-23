@@ -7,6 +7,8 @@ from pathlib import Path
 from .backend.acp_client import run_acp_action, run_acp_turn
 from .backend.command import resolve_agent_command
 from .backend.errors import AcpProtocolError
+from .backend.hermes_server import hermes_server_available, run_hermes_server_turn
+from .backend.intents import build_action_request
 from .backend.protocol import AgentRequest
 from .backend.sessions import SessionStore
 from .render import render_markdown
@@ -21,13 +23,19 @@ def run_action(action: str, user_text: str, cwd: str, *, profile: str = "default
     """Run one explicit stateful action and remember its exact ACP handle."""
     store = SessionStore(_state_path())
     session_id = store.get(profile, cwd)
-    result = asyncio.run(run_acp_action(
-        resolve_agent_command(os.environ),
-        action,
-        user_text,
-        cwd,
-        session_id=session_id,
-    ))
+    if hermes_server_available() and (not session_id or session_id.startswith("hermes:")):
+        result = run_hermes_server_turn(
+            AgentRequest(prompt=build_action_request(action, user_text), cwd=cwd),
+            session_id=session_id,
+        )
+    else:
+        result = asyncio.run(run_acp_action(
+            resolve_agent_command(os.environ),
+            action,
+            user_text,
+            cwd,
+            session_id=session_id,
+        ))
     store.set(profile, cwd, result.session_id)
     render_markdown(result.text)
 

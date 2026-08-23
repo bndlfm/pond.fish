@@ -35,9 +35,9 @@ def test_action_cli_reuses_exact_workspace_session_handle(tmp_path, monkeypatch)
         seen.append(session_id)
         return AgentResult("acp-1", "ok", "end_turn")
 
-    with patch("pond.action_cli.run_acp_action", fake_run):
-        run_action("explain", "ls", str(tmp_path), profile="default")
-        run_action("explain", "ls", str(tmp_path), profile="default")
+    with patch("pond.action_cli.run_acp_action", fake_run), patch("pond.action_cli.hermes_server_available", return_value=False):
+        run_action("agent", "ls", str(tmp_path), profile="default")
+        run_action("agent", "ls", str(tmp_path), profile="default")
 
     assert seen == [None, "acp-1"]
 

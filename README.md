@@ -8,6 +8,8 @@ Pond 3 uses a generic ACP subprocess. The default agent command is:
 hermes acp
 ```
 
+`POND_HERMES_SERVER_URL` optionally selects the running Hermes backend (default `http://127.0.0.1:44437`). When a desktop-owned Hermes server is detected, Pond reuses its WebSocket session; otherwise it falls back to the configured ACP subprocess. `POND_HERMES_WS_TOKEN` can explicitly provide the server WebSocket token, but Pond also discovers a same-user desktop token automatically when possible.
+
 Any compatible ACP agent can be configured with `POND_ACP_COMMAND_JSON`.
 
 ## What Pond does
