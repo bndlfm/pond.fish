@@ -62,9 +62,9 @@ def render_tool_event(
     marker = "✓" if successful else "✗" if failed else "•"
     marker_style = "green" if successful else "red" if failed else "yellow"
     if skill:
-        target.print(Text(f"  🔌 skill: {skill} ", style="magenta") + Text(marker, style=marker_style))
+        target.print(Text("  🔌 ", style="magenta") + Text(marker, style=marker_style) + Text(f" skill: {skill}", style="magenta"))
     else:
-        target.print(Text(f"  🛠  {title} ", style="yellow") + Text(marker, style=marker_style))
+        target.print(Text("  🛠  ", style="yellow") + Text(marker, style=marker_style) + Text(f" {title}", style="yellow"))
     for line in _tool_detail(title, detail):
         target.print(Text(f"      {line}"))
     if result:
