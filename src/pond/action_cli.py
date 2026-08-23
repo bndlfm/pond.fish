@@ -9,6 +9,7 @@ from .backend.command import resolve_agent_command
 from .backend.errors import AcpProtocolError
 from .backend.protocol import AgentRequest
 from .backend.sessions import SessionStore
+from .render import render_markdown
 
 
 def _state_path() -> Path:
@@ -28,7 +29,7 @@ def run_action(action: str, user_text: str, cwd: str, *, profile: str = "default
         session_id=session_id,
     ))
     store.set(profile, cwd, result.session_id)
-    print(result.text)
+    render_markdown(result.text)
 
 
 def run_compress(cwd: str, *, profile: str = "default") -> None:
@@ -42,7 +43,7 @@ def run_compress(cwd: str, *, profile: str = "default") -> None:
         AgentRequest(prompt="/compress", cwd=cwd),
         session_id=session_id,
     ))
-    print(result.text)
+    render_markdown(result.text)
 
 
 def run_status(cwd: str, *, profile: str = "default") -> None:
@@ -88,7 +89,7 @@ def run_context(cwd: str, *, profile: str = "default") -> None:
         AgentRequest(prompt="/context", cwd=cwd),
         session_id=session_id,
     ))
-    print(result.text)
+    render_markdown(result.text)
 
 
 def context_main() -> None:

@@ -23,7 +23,7 @@ def test_action_cli_creates_workspace_session_then_persists_handle(tmp_path, cap
     with patch("pond.action_cli.run_acp_action", fake_run):
         run_action("command-draft", "list files", str(tmp_path), profile="default")
 
-    assert capsys.readouterr().out == "ls -la\n"
+    assert "ls -la" in capsys.readouterr().out
 
 
 def test_action_cli_reuses_exact_workspace_session_handle(tmp_path, monkeypatch):
