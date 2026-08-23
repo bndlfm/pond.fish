@@ -99,6 +99,13 @@ def run_hermes_server_turn(request: AgentRequest, session_id: str | None = None)
                 payload = params.get("payload") or {}
                 if event == "message.delta":
                     parts.append(str(payload.get("text") or ""))
+                elif event in {"skill.activate", "skill.start", "skill.complete"}:
+                    render_tool_event(
+                        "skill",
+                        event.removeprefix("skill."),
+                        skill=str(payload.get("name") or payload.get("skill") or "unknown"),
+                        detail=str(payload.get("description") or ""),
+                    )
                 elif event in {"tool.complete", "tool.error"}:
                     render_tool_event(
                         str(payload.get("title") or payload.get("name") or "Tool"),
