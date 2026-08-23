@@ -72,7 +72,7 @@ def _powerline_enabled() -> bool:
 
 
 def _box_frame_enabled() -> bool:
-    return os.environ.get("POND_FRAME_STYLE", "box") == "box"
+    return os.environ.get("POND_FRAME_STYLE", "box") == "box" and os.environ.get("POND_ICON_STYLE") != "emoji"
 
 
 def _fit(text: str, width: int) -> str:
@@ -122,6 +122,39 @@ def _tool_detail(title: str, detail: str) -> list[str]:
     return [f"{key}: {value}" for key, value in fields if value not in (None, "")]
 
 
+def _render_framed_tool(
+    target: Console,
+    icon: str,
+    marker: str,
+    marker_style: str,
+    label: str,
+    detail_lines: list[str],
+    result: Any,
+    duration_s: float | None,
+    label_style: str,
+) -> None:
+    max_inner = max(12, target.width - 8)
+    content = [label]
+    content.extend(detail_lines)
+    if duration_s is not None:
+        content.append(f"⏱ {duration_s:.1f}s")
+    result_text = _result_text(result) if result else ""
+    result_lines = result_text.strip("\\n").splitlines() or []
+    if result_lines:
+        content.extend(f"📋 {line}" for line in result_lines[:4])
+        if len(result_lines) > 4:
+            content.append(f"… output truncated ({len(result_lines) - 4} more lines)")
+    inner_width = min(max_inner, max(Text(line).cell_len for line in content))
+    header = Text(f"  ╭─ {icon} ", style=label_style)
+    header.append(marker, style=marker_style)
+    header.append(f" {_fit(label, inner_width - Text(f'{icon} {marker} ').cell_len)}", style=label_style)
+    header.append(" " + "─" * max(1, inner_width - header.cell_len + 4) + "╮", style=label_style)
+    target.print(header, overflow="crop", no_wrap=True)
+    for line in content[1:]:
+        target.print(Text(f"  │ {_fit(line, inner_width)} │"), overflow="crop", no_wrap=True)
+    target.print(Text(f"  ╰─{'─' * (inner_width + 2)}╯"), overflow="crop", no_wrap=True)
+
+
 def render_tool_event(
     title: str,
     status: str,
@@ -147,19 +180,24 @@ def render_tool_event(
     skill_icon = "🔌" if os.environ.get("POND_ICON_STYLE") == "emoji" else "󰏗"
     icon = skill_icon if skill else _tool_icon(title)
     framed = _powerline_enabled() or _box_frame_enabled()
-    label = _fit(f"skill: {skill}" if skill else title, max(1, target.width - (20 if framed else 10)))
-    if _powerline_enabled():
-        target.print(Text(f"   {icon} ", style="magenta" if skill else "yellow") + Text(marker, style=marker_style) + Text(f" {label} ", style="magenta" if skill else "yellow"))
-        detail_prefix = "      "
-        result_prefix = "      📋 "
-    elif _box_frame_enabled():
-        target.print(Text(f"  ╭─ {icon} ", style="magenta" if skill else "yellow") + Text(marker, style=marker_style) + Text(f" {label} ─╮", style="magenta" if skill else "yellow"))
-        detail_prefix = "      "
-        result_prefix = "      📋 "
-    else:
-        target.print(Text(f"  {icon} ", style="magenta" if skill else "yellow") + Text(marker, style=marker_style) + Text(f" {label}", style="magenta" if skill else "yellow"))
-        detail_prefix = "      "
-        result_prefix = "      📋 "
+    raw_label = f"skill: {skill}" if skill else title
+    if framed:
+        _render_framed_tool(
+            target,
+            icon,
+            marker,
+            marker_style,
+            raw_label,
+            _tool_detail(title, detail),
+            result,
+            duration_s,
+            "magenta" if skill else "yellow",
+        )
+        return
+    label = _fit(raw_label, max(1, target.width - 10))
+    target.print(Text(f"  {icon} ", style="magenta" if skill else "yellow") + Text(marker, style=marker_style) + Text(f" {label}", style="magenta" if skill else "yellow"))
+    detail_prefix = "      "
+    result_prefix = "      📋 "
     for line in _tool_detail(title, detail):
         target.print(Text(_fit(f"{detail_prefix}{line}", target.width - 1)))
     if duration_s is not None:
