@@ -6,7 +6,9 @@ from rich.text import Text
 
 
 def render_markdown(text: str, *, console: Console | None = None) -> None:
-    (console or Console()).print(Markdown(text or ""))
+    target = console or Console()
+    target.print()
+    target.print(Markdown(text or ""))
 
 
 def render_tool_event(
@@ -20,13 +22,14 @@ def render_tool_event(
 ) -> None:
     """Render one dense Pond 2-style audit block, without a panel/frame."""
     target = console or Console(stderr=True)
+    target.print()
     if skill:
-        target.print(Text(f"🔌 skill: {skill}", style="magenta"))
-    target.print(Text(f"🛠  tool: {title} [{status}]", style="yellow"))
+        target.print(Text(f"  🔌 skill: {skill}", style="magenta"))
+    target.print(Text(f"  🛠  tool: {title} [{status}]", style="yellow"))
     if detail:
-        target.print(f"   {detail.strip()}")
+        target.print(f"    {detail.strip()}")
     if result:
         compact = " ".join(result.strip().splitlines())
         if len(compact) > 240:
             compact = compact[:237] + "..."
-        target.print(Text(f"📋 result: {compact}", style="cyan"))
+        target.print(Text(f"    📋 result: {compact}", style="cyan"))
