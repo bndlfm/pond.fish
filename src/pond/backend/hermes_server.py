@@ -71,10 +71,16 @@ def run_hermes_server_turn(request: AgentRequest, session_id: str | None = None)
                 if frame.get("method") == "event":
                     break
 
+            sid = ""
             if session_id:
                 sid = session_id.removeprefix("hermes:")
-                _rpc(ws, request_id, "session.resume", {"session_id": sid})
-            else:
+                try:
+                    _rpc(ws, request_id, "session.resume", {"session_id": sid})
+                except AcpProtocolError as error:
+                    if "session not found" not in str(error).lower():
+                        raise
+                    session_id = None
+            if not session_id:
                 result = _rpc(ws, request_id, "session.create", {"cols": 120, "cwd": request.cwd, "source": "pond"})
                 sid = result.get("session_id") or result.get("id")
                 if not sid:
