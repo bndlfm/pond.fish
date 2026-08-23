@@ -145,16 +145,22 @@ def _render_framed_tool(
         if len(result_lines) > 4:
             content.append(f"… output truncated ({len(result_lines) - 4} more lines)")
     inner_width = min(max_inner, max(Text(line).cell_len for line in content))
+    body_prefix = "  │ "
+    body_suffix = " │"
+    row_width = Text(body_prefix + (" " * inner_width) + body_suffix).cell_len
     header_text = _fit(f"{icon} {marker} {label}", inner_width)
-    header_line = Text(f"  ╭─ {header_text}", style=label_style)
-    header_line.append(" " * max(0, inner_width - Text(header_text).cell_len))
-    header_line.append(" ─╮", style=label_style)
-    target.print(header_line, overflow="crop", no_wrap=True)
+    header = Text(f"  ╭─ {header_text}", style=label_style)
+    header_suffix = " ─╮"
+    header.append(" " * max(0, row_width - header.cell_len - Text(header_suffix).cell_len))
+    header.append(header_suffix, style=label_style)
+    target.print(header, overflow="crop", no_wrap=True)
     for line in content[1:]:
         padded = _fit(line, inner_width)
         padded += " " * max(0, inner_width - Text(padded).cell_len)
-        target.print(Text(f"  │ {padded} │"), overflow="crop", no_wrap=True)
-    target.print(Text(f"  ╰─{'─' * (inner_width + 2)}╯"), overflow="crop", no_wrap=True)
+        target.print(Text(f"{body_prefix}{padded}{body_suffix}"), overflow="crop", no_wrap=True)
+    bottom_prefix = "  ╰─"
+    bottom_suffix = "╯"
+    target.print(Text(bottom_prefix + ("─" * max(0, row_width - Text(bottom_prefix + bottom_suffix).cell_len)) + bottom_suffix), overflow="crop", no_wrap=True)
 
 
 def render_tool_event(
