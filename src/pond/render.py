@@ -69,6 +69,13 @@ def _tool_icon(title: str) -> str:
 def _powerline_enabled() -> bool:
     return os.environ.get("POND_FRAME_STYLE", "powerline") == "powerline" and os.environ.get("POND_ICON_STYLE") != "emoji"
 
+
+def _fit(text: str, width: int) -> str:
+    value = Text(text)
+    value.truncate(max(1, width), overflow="ellipsis")
+    return value.plain
+
+
 def _tool_detail(title: str, detail: str) -> list[str]:
     try:
         args: Any = json.loads(detail)
@@ -123,7 +130,7 @@ def render_tool_event(
     marker_style = "green" if successful else "red" if failed else "yellow"
     skill_icon = "🔌" if os.environ.get("POND_ICON_STYLE") == "emoji" else "󰏗"
     icon = skill_icon if skill else _tool_icon(title)
-    label = f"skill: {skill}" if skill else title
+    label = _fit(f"skill: {skill}" if skill else title, max(12, target.width - 16))
     if _powerline_enabled():
         target.print(Text(f"   {icon} ", style="magenta" if skill else "yellow") + Text(marker, style=marker_style) + Text(f" {label} ", style="magenta" if skill else "yellow"))
         detail_prefix = "  │   "
@@ -133,11 +140,11 @@ def render_tool_event(
         detail_prefix = "      "
         result_prefix = "      📋 "
     for line in _tool_detail(title, detail):
-        target.print(Text(f"{detail_prefix}{line}"))
+        target.print(Text(_fit(f"{detail_prefix}{line}", target.width - 1)))
     if duration_s is not None:
         target.print(Text(f"{detail_prefix}⏱ {duration_s:.1f}s", style="dim"))
     if result:
         compact = " ".join(result.strip().splitlines())
         if len(compact) > 240:
             compact = compact[:237] + "..."
-        target.print(Text(f"{result_prefix}{compact}", style="cyan"))
+        target.print(Text(_fit(f"{result_prefix}{compact}", target.width - 1), style="cyan"))
