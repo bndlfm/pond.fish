@@ -20,7 +20,7 @@ def test_action_cli_creates_workspace_session_then_persists_handle(tmp_path, cap
         assert session_id is None
         return AgentResult("acp-1", "ls -la", "end_turn")
 
-    with patch("pond.action_cli.run_acp_action", fake_run):
+    with patch("pond.action_cli.run_acp_action", fake_run), patch("pond.action_cli.hermes_server_available", return_value=False):
         run_action("command-draft", "list files", str(tmp_path), profile="default")
 
     assert "ls -la" in capsys.readouterr().out

@@ -37,7 +37,10 @@ def run_action(action: str, user_text: str, cwd: str, *, profile: str = "default
             session_id=session_id,
         ))
     store.set(profile, cwd, result.session_id)
-    render_markdown(result.text)
+    if action == "command-draft":
+        print(result.text)
+    else:
+        render_markdown(result.text)
 
 
 def run_compress(cwd: str, *, profile: str = "default") -> None:
