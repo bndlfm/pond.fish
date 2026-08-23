@@ -119,7 +119,8 @@ def render_tool_event(
         marker = "•" if os.environ.get("POND_ICON_STYLE") == "emoji" else "󰔰"
     marker_style = "green" if successful else "red" if failed else "yellow"
     if skill:
-        target.print(Text("  🔌 ", style="magenta") + Text(marker, style=marker_style) + Text(f" skill: {skill}", style="magenta"))
+        skill_icon = "🔌" if os.environ.get("POND_ICON_STYLE") == "emoji" else "󰏗"
+        target.print(Text(f"  {skill_icon} ", style="magenta") + Text(marker, style=marker_style) + Text(f" skill: {skill}", style="magenta"))
     else:
         target.print(Text(f"  {_tool_icon(title)} ", style="yellow") + Text(marker, style=marker_style) + Text(f" {title}", style="yellow"))
     for line in _tool_detail(title, detail):
