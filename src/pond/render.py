@@ -64,7 +64,7 @@ def render_tool_event(
     if skill:
         target.print(Text("  🔌 ", style="magenta") + Text(marker, style=marker_style) + Text(f" skill: {skill}", style="magenta"))
     else:
-        target.print(Text("  🛠  ", style="yellow") + Text(marker, style=marker_style) + Text(f" {title}", style="yellow"))
+        target.print(Text("  🛠 ", style="yellow") + Text(marker, style=marker_style) + Text(f" {title}", style="yellow"))
     for line in _tool_detail(title, detail):
         target.print(Text(f"      {line}"))
     if result:
