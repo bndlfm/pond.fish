@@ -18,15 +18,26 @@ function pond --description "Stateful ACP shell interface for Pond."
         return
     end
 
+    set -l forget_command pond-forget
+    set -l status_command pond-status
+    set -l context_command pond-context
+    set -l compress_command pond-compress
+    if not type -q $forget_command
+        set forget_command "$_pond_install_dir/bin/pond-forget"
+        set status_command "$_pond_install_dir/bin/pond-status"
+        set context_command "$_pond_install_dir/bin/pond-context"
+        set compress_command "$_pond_install_dir/bin/pond-compress"
+    end
+
     switch "$action"
         case forget
-            pond-forget --cwd (pwd)
+            $forget_command --cwd (pwd)
         case status
-            pond-status --cwd (pwd)
+            $status_command --cwd (pwd)
         case context
-            pond-context --cwd (pwd)
+            $context_command --cwd (pwd)
         case compress
-            pond-compress --cwd (pwd)
+            $compress_command --cwd (pwd)
         case version -v --version
             echo "pond v3.0.0.dev0"
         case help -h --help ''

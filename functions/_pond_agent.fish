@@ -5,7 +5,11 @@ function _pond_agent --description "Pond stateful agent launcher."
         return
     end
 
-    pond-action agent "$goal" --cwd (pwd)
+    set -l action_command pond-action
+    if not type -q $action_command
+        set action_command "$_pond_install_dir/bin/pond-action"
+    end
+    $action_command agent "$goal" --cwd (pwd)
     commandline --replace ""
     commandline -f repaint
 end
