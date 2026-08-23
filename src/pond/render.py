@@ -2,6 +2,7 @@
 
 import json
 import os
+import textwrap
 from typing import Any
 
 from rich.console import Console
@@ -144,11 +145,16 @@ def render_tool_event(
     if duration_s is not None:
         target.print(Text(f"{detail_prefix}⏱ {duration_s:.1f}s", style="dim"))
     if result:
-        lines = result.strip("\n").splitlines()
-        visible = lines[:4]
-        for index, line in enumerate(visible):
+        source_lines = result.strip("\n").splitlines() or [""]
+        rows: list[tuple[str, str]] = []
+        for index, source_line in enumerate(source_lines):
             prefix = result_prefix if index == 0 else detail_prefix
+            width = max(1, target.width - Text(prefix).cell_len)
+            wrapped = textwrap.wrap(source_line, width=width) or [""]
+            rows.extend((prefix if row_index == 0 else detail_prefix, row) for row_index, row in enumerate(wrapped))
+        visible = rows[:4]
+        for prefix, line in visible:
             target.print(Text(f"{prefix}{line}", style="cyan"), overflow="fold")
-        if len(lines) > len(visible):
-            remaining = len(lines) - len(visible)
-            target.print(Text(f"{detail_prefix}… output truncated ({remaining} more lines)", style="dim"))
+        if len(rows) > len(visible):
+            remaining = len(rows) - len(visible)
+            target.print(Text(_fit(f"{detail_prefix}… output truncated ({remaining} more rows)", target.width - 1), style="dim"))

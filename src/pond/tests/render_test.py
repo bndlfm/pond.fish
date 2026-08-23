@@ -44,4 +44,16 @@ def test_rich_renderer_preserves_four_result_lines_and_marks_truncation(monkeypa
     assert "one" in output
     assert "four" in output
     assert "five" not in output
-    assert "output truncated (1 more lines)" in output
+    assert "output truncated (1 more rows)" in output
+
+
+def test_rich_renderer_caps_wrapped_long_result_rows(monkeypatch):
+    monkeypatch.setenv("POND_ICON_STYLE", "emoji")
+    stream = StringIO()
+    console = Console(file=stream, force_terminal=False, width=20)
+
+    render_tool_event("terminal", "complete", result="x" * 200, console=console)
+
+    output = stream.getvalue()
+    assert "output tru" in output
+    assert len(output.splitlines()) <= 7
