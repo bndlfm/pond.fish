@@ -57,9 +57,14 @@ def render_tool_event(
     """Render one dense Pond 2-style audit block, without a panel/frame."""
     target = console or Console(stderr=True)
     target.print()
+    successful = status.lower() in {"complete", "completed", "success", "succeeded"}
+    failed = status.lower() in {"error", "failed", "failure"}
+    marker = "✓" if successful else "✗" if failed else "•"
+    marker_style = "green" if successful else "red" if failed else "yellow"
     if skill:
-        target.print(Text(f"  🔌 skill: {skill}", style="magenta"))
-    target.print(Text(f"  🛠  {title} [{status}]", style="yellow"))
+        target.print(Text(f"  🔌 skill: {skill} ", style="magenta") + Text(marker, style=marker_style))
+    else:
+        target.print(Text(f"  🛠  {title} ", style="yellow") + Text(marker, style=marker_style))
     for line in _tool_detail(title, detail):
         target.print(Text(f"      {line}"))
     if result:
