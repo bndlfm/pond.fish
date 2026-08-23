@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from acp import PROTOCOL_VERSION, spawn_agent_process, text_block
 from acp.interfaces import Client
 from acp.schema import AllowedOutcome, RequestPermissionResponse
@@ -31,10 +33,17 @@ class _TurnClient(Client):
             append_acp_update(self.timeline, update)
         payload = update.model_dump(by_alias=True)
         if payload.get("sessionUpdate") in {"tool_call", "tool_call_update"}:
-            render_tool_event(
-                payload.get("title") or payload.get("toolCallId", "Tool"),
-                payload.get("status") or "running",
-            )
+            status = str(payload.get("status") or "running")
+            if status in {"completed", "failed", "error"}:
+                raw_input = payload.get("rawInput") or {}
+                detail = json.dumps(raw_input, ensure_ascii=False) if raw_input else ""
+                content = payload.get("content") or payload.get("output") or ""
+                render_tool_event(
+                    payload.get("title") or payload.get("toolCallId", "Tool"),
+                    status,
+                    detail=detail,
+                    result=str(content) if content else "",
+                )
         pressure = context_pressure_from_acp_update(update)
         if pressure is not None:
             self.context_pressure = pressure

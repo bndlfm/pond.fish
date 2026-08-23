@@ -99,8 +99,13 @@ def run_hermes_server_turn(request: AgentRequest, session_id: str | None = None)
                 payload = params.get("payload") or {}
                 if event == "message.delta":
                     parts.append(str(payload.get("text") or ""))
-                elif event in {"tool.start", "tool.complete", "tool.error"}:
-                    render_tool_event(str(payload.get("title") or payload.get("name") or "Tool"), event)
+                elif event in {"tool.complete", "tool.error"}:
+                    render_tool_event(
+                        str(payload.get("title") or payload.get("name") or "Tool"),
+                        event.removeprefix("tool."),
+                        detail=str(payload.get("command") or payload.get("input") or ""),
+                        result=str(payload.get("result") or payload.get("output") or ""),
+                    )
                 elif event == "approval.request":
                     _rpc(ws, request_id + 1, "approval.respond", {"choice": "deny", "session_id": sid})
                     raise AcpProtocolError("Hermes server permission request denied by Pond fallback")

@@ -22,9 +22,8 @@ def test_rich_renderer_formats_tool_lifecycle_event():
     stream = StringIO()
     console = Console(file=stream, force_terminal=False, width=80)
 
-    render_tool_event("git status --short", "completed", console=console)
+    render_tool_event("git status --short", "completed", detail='{"command":"git status --short"}', console=console)
 
     output = stream.getvalue()
-    assert "Tool" in output
-    assert "git status --short" in output
+    assert "tool: git status --short" in output
     assert "completed" in output
