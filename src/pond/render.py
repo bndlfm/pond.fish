@@ -145,6 +145,4 @@ def render_tool_event(
         target.print(Text(f"{detail_prefix}⏱ {duration_s:.1f}s", style="dim"))
     if result:
         compact = " ".join(result.strip().splitlines())
-        if len(compact) > 240:
-            compact = compact[:237] + "..."
-        target.print(Text(_fit(f"{result_prefix}{compact}", target.width - 1), style="cyan"))
+        target.print(Text(f"{result_prefix}{compact}", style="cyan"), overflow="fold")
