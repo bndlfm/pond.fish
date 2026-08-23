@@ -3,6 +3,7 @@
 from io import StringIO
 
 from rich.console import Console
+from rich.text import Text
 
 from pond.render import render_markdown, render_tool_event
 
@@ -57,3 +58,15 @@ def test_rich_renderer_caps_wrapped_long_result_rows(monkeypatch):
     output = stream.getvalue()
     assert "output tru" in output
     assert len(output.splitlines()) <= 7
+
+
+def test_framed_tool_rows_share_one_right_edge(monkeypatch):
+    monkeypatch.delenv("POND_ICON_STYLE", raising=False)
+    monkeypatch.setenv("POND_FRAME_STYLE", "box")
+    stream = StringIO()
+    console = Console(file=stream, force_terminal=False, width=60)
+
+    render_tool_event("read_file", "complete", detail='{"path":"/tmp/example"}', result="short\nlonger result text", console=console)
+
+    rows = [line for line in stream.getvalue().splitlines() if "╭" in line or "│" in line or "╰" in line]
+    assert len({Text(row).cell_len for row in rows}) == 1
