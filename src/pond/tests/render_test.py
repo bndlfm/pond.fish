@@ -31,3 +31,17 @@ def test_rich_renderer_formats_tool_lifecycle_event(monkeypatch):
     assert "query: *.py" in output
     assert "path: src/pond" in output
     assert "[complete]" not in output
+
+
+def test_rich_renderer_preserves_four_result_lines_and_marks_truncation(monkeypatch):
+    monkeypatch.setenv("POND_ICON_STYLE", "emoji")
+    stream = StringIO()
+    console = Console(file=stream, force_terminal=False, width=80)
+
+    render_tool_event("read_file", "complete", result="one\ntwo\nthree\nfour\nfive", console=console)
+
+    output = stream.getvalue()
+    assert "one" in output
+    assert "four" in output
+    assert "five" not in output
+    assert "output truncated (1 more lines)" in output

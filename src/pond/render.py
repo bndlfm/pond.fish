@@ -144,5 +144,11 @@ def render_tool_event(
     if duration_s is not None:
         target.print(Text(f"{detail_prefix}⏱ {duration_s:.1f}s", style="dim"))
     if result:
-        compact = " ".join(result.strip().splitlines())
-        target.print(Text(f"{result_prefix}{compact}", style="cyan"), overflow="fold")
+        lines = result.strip("\n").splitlines()
+        visible = lines[:4]
+        for index, line in enumerate(visible):
+            prefix = result_prefix if index == 0 else detail_prefix
+            target.print(Text(f"{prefix}{line}", style="cyan"), overflow="fold")
+        if len(lines) > len(visible):
+            remaining = len(lines) - len(visible)
+            target.print(Text(f"{detail_prefix}… output truncated ({remaining} more lines)", style="dim"))
