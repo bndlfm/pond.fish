@@ -70,3 +70,15 @@ def test_framed_tool_rows_share_one_right_edge(monkeypatch):
 
     rows = [line for line in stream.getvalue().splitlines() if "╭" in line or "│" in line or "╰" in line]
     assert len({Text(row).cell_len for row in rows}) == 1
+
+
+def test_tool_parameters_escape_newlines_to_one_line(monkeypatch):
+    monkeypatch.delenv("POND_ICON_STYLE", raising=False)
+    monkeypatch.setenv("POND_FRAME_STYLE", "box")
+    stream = StringIO()
+    console = Console(file=stream, force_terminal=False, width=60)
+
+    render_tool_event("terminal", "complete", detail='{"command":"printf \\\"a\\n b\\\""}', console=console)
+
+    output = stream.getvalue()
+    assert "\\n" in output

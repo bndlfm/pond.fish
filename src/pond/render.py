@@ -119,7 +119,10 @@ def _tool_detail(title: str, detail: str) -> list[str]:
     else:
         fields = list(args.items())[:4]
 
-    return [f"{key}: {value}" for key, value in fields if value not in (None, "")]
+    def one_line(value: Any) -> str:
+        return str(value).replace("\r", "\\r").replace("\n", "\\n")
+
+    return [f"{key}: {one_line(value)}" for key, value in fields if value not in (None, "")]
 
 
 def _render_framed_tool(
