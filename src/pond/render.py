@@ -148,9 +148,9 @@ def _render_framed_tool(
     body_prefix = "  │ "
     body_suffix = " │"
     row_width = Text(body_prefix + (" " * inner_width) + body_suffix).cell_len
-    header_text = _fit(f"{icon} {marker} {label}", inner_width)
+    header_text = _fit(f"{icon} {marker} {label} ", inner_width)
     header = Text(f"  ╭─ {header_text}", style=label_style)
-    header_suffix = " ─╮"
+    header_suffix = "─╮"
     header.append("─" * max(0, row_width - header.cell_len - Text(header_suffix).cell_len))
     header.append(header_suffix, style=label_style)
     target.print(header, overflow="crop", no_wrap=True)
