@@ -12,7 +12,7 @@ hermes acp
 
 Any compatible ACP agent can be configured with `POND_ACP_COMMAND_JSON`.
 
-`POND_ICON_STYLE=emoji` opts into emoji icons if your terminal font does not include Nerd Font glyphs; the default style uses Nerd Font symbols for more stable alignment.
+`POND_ICON_STYLE=emoji` opts into emoji icons if your terminal font does not include Nerd Font glyphs; the default style uses Nerd Font symbols for more stable alignment. Set `POND_FRAME_STYLE=plain` to disable the lightweight Powerline caps/gutter.
 ## What Pond does
 
 - starts explicit stateful agent goals
