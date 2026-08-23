@@ -151,7 +151,7 @@ def _render_framed_tool(
     header_text = _fit(f"{icon} {marker} {label}", inner_width)
     header = Text(f"  ╭─ {header_text}", style=label_style)
     header_suffix = " ─╮"
-    header.append(" " * max(0, row_width - header.cell_len - Text(header_suffix).cell_len))
+    header.append("─" * max(0, row_width - header.cell_len - Text(header_suffix).cell_len))
     header.append(header_suffix, style=label_style)
     target.print(header, overflow="crop", no_wrap=True)
     for line in content[1:]:
