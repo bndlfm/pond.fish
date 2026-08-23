@@ -61,7 +61,7 @@ def render_tool_event(
         target.print(Text(f"  🔌 skill: {skill}", style="magenta"))
     target.print(Text(f"  🛠  {title} [{status}]", style="yellow"))
     for line in _tool_detail(title, detail):
-        target.print(f"      {line}")
+        target.print(Text(f"      {line}"))
     if result:
         compact = " ".join(result.strip().splitlines())
         if len(compact) > 240:
