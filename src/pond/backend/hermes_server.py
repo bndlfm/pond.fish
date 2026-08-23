@@ -110,8 +110,8 @@ def run_hermes_server_turn(request: AgentRequest, session_id: str | None = None)
                     render_tool_event(
                         str(payload.get("title") or payload.get("name") or "Tool"),
                         event.removeprefix("tool."),
-                        detail=str(payload.get("command") or payload.get("input") or ""),
-                        result=str(payload.get("result") or payload.get("output") or ""),
+                        detail=json.dumps(payload.get("args") or {}, ensure_ascii=False),
+                        result=str(payload.get("result_text") or payload.get("summary") or payload.get("result") or ""),
                     )
                 elif event == "approval.request":
                     _rpc(ws, request_id + 1, "approval.respond", {"choice": "deny", "session_id": sid})
