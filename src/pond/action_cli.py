@@ -65,11 +65,17 @@ def _consume_pending_terminal() -> str:
     return text.strip()
 
 
-def _prompt_with_terminal_context(user_text: str, explicit_context: str = "") -> str:
+def _prompt_with_terminal_context(user_text: str, explicit_context: str = "", *, include_log_hint: bool = False) -> str:
     pending = _consume_pending_terminal()
     context = "\n".join(part for part in (pending, explicit_context.strip()) if part)
     log_path = _terminal_log_path()
-    log_hint = f"Capture log available at {log_path}. Use jq to inspect only relevant command records." if log_path.exists() else ""
+    log_hint = ""
+    if include_log_hint:
+        log_hint = (
+            f"Capture log: {log_path}. Use jq to inspect only the records you need; "
+            "for example: jq -s 'sort_by(.ended_at_ms) | .[-5:]' "
+            f"'{log_path}'."
+        )
     if not context and not log_hint:
         return user_text
     sections = ["[Passive terminal activity]"]
@@ -83,7 +89,11 @@ def _prompt_with_terminal_context(user_text: str, explicit_context: str = "") ->
 
 def run_action(action: str, user_text: str, cwd: str, *, profile: str = "default", terminal_context: str = "") -> None:
     """Run one explicit stateful action and remember its exact ACP handle."""
-    user_text = _prompt_with_terminal_context(user_text, terminal_context)
+    user_text = _prompt_with_terminal_context(
+        user_text,
+        terminal_context,
+        include_log_hint=action == "agent",
+    )
     store = SessionStore(_state_path())
     session_id = store.get(profile, cwd)
     if hermes_server_available() and (not session_id or session_id.startswith("hermes:")):
