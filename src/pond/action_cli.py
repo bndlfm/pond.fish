@@ -22,11 +22,11 @@ def _state_path() -> Path:
 
 
 def _agent_events_path() -> Path:
-    configured = os.environ.get("POND_AGENT_EVENTS_PATH")
+    configured = os.environ.get("POND_EVENTS_PATH") or os.environ.get("POND_AGENT_EVENTS_PATH")
     if configured:
         return Path(configured).expanduser()
     root = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share"))
-    return root / "pond" / "agent-events.jsonl"
+    return root / "pond" / "events.jsonl"
 
 
 def _record_agent_action(action: str, cwd: str, prompt: str, session_id: str | None) -> None:
@@ -43,11 +43,11 @@ def _record_agent_action(action: str, cwd: str, prompt: str, session_id: str | N
     with path.open("a", encoding="utf-8") as stream:
         stream.write(json.dumps(record, ensure_ascii=False) + "\n")
 def _terminal_log_path() -> Path:
-    configured = os.environ.get("FISH_COMMAND_CAPTURE_PATH")
+    configured = os.environ.get("POND_EVENTS_PATH") or os.environ.get("FISH_COMMAND_CAPTURE_PATH")
     if configured:
         return Path(configured).expanduser()
     root = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share"))
-    return root / "pond" / "terminal-events.jsonl"
+    return root / "pond" / "events.jsonl"
 
 
 def _pending_terminal_path() -> Path:

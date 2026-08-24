@@ -134,7 +134,7 @@ index 0000000..59f27a5
 +tar
 +unzip
 diff --git a/src/exec.rs b/src/exec.rs
-index 512147f..d779804 100644
+index 512147f..31a51d9 100644
 --- a/src/exec.rs
 +++ b/src/exec.rs
 @@ -42,7 +42,7 @@ use crate::signal::RawSignal;
@@ -187,7 +187,7 @@ index 512147f..d779804 100644
          let file = parser.current_filename.borrow();
          let count = FORK_COUNT.fetch_add(1, Ordering::Relaxed) + 1; // spawn counts as a fork+exec
  
-@@ -942,11 +947,235 @@ fn exec_external_command(
+@@ -942,11 +947,236 @@ fn exec_external_command(
          return Ok(());
      }
  
@@ -255,7 +255,8 @@ index 512147f..d779804 100644
 +    {
 +        return None;
 +    }
-+    let path = std::env::var_os("FISH_COMMAND_CAPTURE_PATH")?;
++    let path = std::env::var_os("POND_EVENTS_PATH")
++        .or_else(|| std::env::var_os("FISH_COMMAND_CAPTURE_PATH"))?;
 +    let stdout = make_autoclose_pipes().ok()?;
 +    let stderr = make_autoclose_pipes().ok()?;
 +    dup2s.add_dup2(stdout.write.as_raw_fd(), STDOUT_FILENO);

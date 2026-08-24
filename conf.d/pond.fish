@@ -28,7 +28,7 @@ function _pond_record_postexec --on-event fish_postexec --description "Record pa
     if test (count $argv) -eq 0; or not type -q jq
         return
     end
-    set -l capture_path (set -q FISH_COMMAND_CAPTURE_PATH; and echo "$FISH_COMMAND_CAPTURE_PATH"; or echo "$_pond_install_dir/terminal-events.jsonl")
+    set -l capture_path (set -q POND_EVENTS_PATH; and echo "$POND_EVENTS_PATH"; or set -q FISH_COMMAND_CAPTURE_PATH; and echo "$FISH_COMMAND_CAPTURE_PATH"; or echo "$_pond_install_dir/events.jsonl")
     mkdir -p (dirname "$capture_path")
     set -l command_text (string join ' ' -- $argv)
     set -l timestamp (date -u +%Y-%m-%dT%H:%M:%SZ)

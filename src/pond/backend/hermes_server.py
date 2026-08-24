@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlencode, urlparse, urlunparse
 
@@ -14,6 +15,29 @@ from pond.render import render_markdown, render_thinking, render_tool_event
 from .errors import AcpProtocolError
 from .protocol import AgentRequest, AgentResult
 
+
+def _agent_events_path() -> Path:
+    configured = os.environ.get("POND_EVENTS_PATH") or os.environ.get("POND_AGENT_EVENTS_PATH")
+    if configured:
+        return Path(configured).expanduser()
+    root = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share"))
+    return root / "pond" / "events.jsonl"
+
+
+def _record_agent_event(kind: str, session_id: str, **payload) -> None:
+    path = _agent_events_path()
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        record = {
+            "time": datetime.now(timezone.utc).isoformat(),
+            "kind": kind,
+            "session_id": session_id,
+            **payload,
+        }
+        with path.open("a", encoding="utf-8") as stream:
+            stream.write(json.dumps(record, ensure_ascii=False) + "\n")
+    except OSError:
+        pass
 
 def _server_url() -> str:
     return os.environ.get("POND_HERMES_SERVER_URL", "http://127.0.0.1:44437").rstrip("/")
