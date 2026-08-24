@@ -9,7 +9,7 @@ from urllib.parse import urlencode, urlparse, urlunparse
 
 from websockets.sync.client import connect
 
-from pond.render import render_markdown, render_tool_event
+from pond.render import render_markdown, render_thinking, render_tool_event
 
 from .errors import AcpProtocolError
 from .protocol import AgentRequest, AgentResult
@@ -89,9 +89,13 @@ def run_hermes_server_turn(request: AgentRequest, session_id: str | None = None)
             _rpc(ws, request_id, "prompt.submit", {"session_id": sid, "text": request.prompt})
 
             parts: list[str] = []
+            thinking_parts: list[str] = []
             stop_reason = "end_turn"
 
-            def flush_assistant_text() -> None:
+            def flush_assistant_context() -> None:
+                if thinking_parts:
+                    render_thinking("".join(thinking_parts))
+                    thinking_parts.clear()
                 if parts:
                     render_markdown("".join(parts))
                     parts.clear()
@@ -103,10 +107,12 @@ def run_hermes_server_turn(request: AgentRequest, session_id: str | None = None)
                     continue
                 event = params.get("type")
                 payload = params.get("payload") or {}
-                if event == "message.delta":
+                if event in {"reasoning.delta", "thinking.delta"}:
+                    thinking_parts.append(str(payload.get("text") or ""))
+                elif event == "message.delta":
                     parts.append(str(payload.get("text") or ""))
                 elif event in {"skill.activate", "skill.start", "skill.complete"}:
-                    flush_assistant_text()
+                    flush_assistant_context()
                     render_tool_event(
                         "skill",
                         event.removeprefix("skill."),
@@ -114,7 +120,7 @@ def run_hermes_server_turn(request: AgentRequest, session_id: str | None = None)
                         detail=str(payload.get("description") or ""),
                     )
                 elif event in {"tool.start", "tool.complete", "tool.error"}:
-                    flush_assistant_text()
+                    flush_assistant_context()
                     if event != "tool.start":
                         render_tool_event(
                             str(payload.get("title") or payload.get("name") or "Tool"),
@@ -127,6 +133,9 @@ def run_hermes_server_turn(request: AgentRequest, session_id: str | None = None)
                     _rpc(ws, request_id + 1, "approval.respond", {"choice": "deny", "session_id": sid})
                     raise AcpProtocolError("Hermes server permission request denied by Pond fallback")
                 elif event == "message.complete":
+                    if thinking_parts:
+                        render_thinking("".join(thinking_parts))
+                        thinking_parts.clear()
                     stop_reason = str(payload.get("status") or "end_turn")
                     break
             return AgentResult(session_id=f"hermes:{sid}", text="".join(parts), stop_reason=stop_reason)

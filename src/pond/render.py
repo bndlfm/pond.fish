@@ -11,6 +11,14 @@ from rich.padding import Padding
 from rich.text import Text
 
 
+def render_thinking(text: str, *, console: Console | None = None) -> None:
+    if not text.strip():
+        return
+    target = console or Console(stderr=True)
+    target.print()
+    target.print(Text("  💭 thinking", style="dim yellow"))
+    target.print(Padding(Markdown(text.strip()), (0, 4, 0, 2)))
+
 def render_markdown(text: str, *, console: Console | None = None) -> None:
     target = console or Console()
     target.print()
