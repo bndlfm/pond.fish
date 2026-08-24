@@ -51,6 +51,7 @@ def run_action(action: str, user_text: str, cwd: str, *, profile: str = "default
         result = run_hermes_server_turn(
             AgentRequest(prompt=build_action_request(action, user_text), cwd=cwd),
             session_id=session_id,
+            suppress_activity=action == "command-draft",
         )
     else:
         result = asyncio.run(run_acp_action(

@@ -60,7 +60,12 @@ def hermes_server_available() -> bool:
     return bool(_desktop_token())
 
 
-def run_hermes_server_turn(request: AgentRequest, session_id: str | None = None) -> AgentResult:
+def run_hermes_server_turn(
+    request: AgentRequest,
+    session_id: str | None = None,
+    *,
+    suppress_activity: bool = False,
+) -> AgentResult:
     """Submit one turn to the already-running Hermes desktop backend."""
     try:
         with connect(_ws_url(), open_timeout=3, close_timeout=3) as ws:
@@ -94,7 +99,8 @@ def run_hermes_server_turn(request: AgentRequest, session_id: str | None = None)
 
             def flush_assistant_context() -> None:
                 if thinking_parts:
-                    render_thinking("".join(thinking_parts))
+                    if not suppress_activity:
+                        render_thinking("".join(thinking_parts))
                     thinking_parts.clear()
                 if parts:
                     render_markdown("".join(parts))
@@ -113,15 +119,16 @@ def run_hermes_server_turn(request: AgentRequest, session_id: str | None = None)
                     parts.append(str(payload.get("text") or ""))
                 elif event in {"skill.activate", "skill.start", "skill.complete"}:
                     flush_assistant_context()
-                    render_tool_event(
-                        "skill",
-                        event.removeprefix("skill."),
-                        skill=str(payload.get("name") or payload.get("skill") or "unknown"),
-                        detail=str(payload.get("description") or ""),
-                    )
+                    if not suppress_activity:
+                        render_tool_event(
+                            "skill",
+                            event.removeprefix("skill."),
+                            skill=str(payload.get("name") or payload.get("skill") or "unknown"),
+                            detail=str(payload.get("description") or ""),
+                        )
                 elif event in {"tool.start", "tool.complete", "tool.error"}:
                     flush_assistant_context()
-                    if event != "tool.start":
+                    if event != "tool.start" and not suppress_activity:
                         render_tool_event(
                             str(payload.get("title") or payload.get("name") or "Tool"),
                             event.removeprefix("tool."),
@@ -134,7 +141,8 @@ def run_hermes_server_turn(request: AgentRequest, session_id: str | None = None)
                     raise AcpProtocolError("Hermes server permission request denied by Pond fallback")
                 elif event == "message.complete":
                     if thinking_parts:
-                        render_thinking("".join(thinking_parts))
+                        if not suppress_activity:
+                            render_thinking("".join(thinking_parts))
                         thinking_parts.clear()
                     stop_reason = str(payload.get("status") or "end_turn")
                     break
