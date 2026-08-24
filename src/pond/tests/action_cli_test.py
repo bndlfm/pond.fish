@@ -12,6 +12,7 @@ from pond.action_cli import run_action
 def test_action_cli_creates_workspace_session_then_persists_handle(tmp_path, capsys, monkeypatch):
     monkeypatch.setenv("POND_ACP_COMMAND_JSON", '["fixture-agent"]')
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "data"))
 
     async def fake_run(command, action, user_text, cwd, *, session_id=None, timeline=None):
         assert command.argv == ("fixture-agent",)
@@ -29,6 +30,7 @@ def test_action_cli_creates_workspace_session_then_persists_handle(tmp_path, cap
 def test_action_cli_reuses_exact_workspace_session_handle(tmp_path, monkeypatch):
     monkeypatch.setenv("POND_ACP_COMMAND_JSON", '["fixture-agent"]')
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "data"))
     seen = []
 
     async def fake_run(command, action, user_text, cwd, *, session_id=None, timeline=None):
@@ -48,6 +50,7 @@ def test_compress_requires_existing_workspace_session(tmp_path, monkeypatch):
 
     monkeypatch.setenv("POND_ACP_COMMAND_JSON", '["fixture-agent"]')
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "data"))
 
     with pytest.raises(AcpProtocolError, match="no ACP session"):
         run_compress(str(tmp_path), profile="default")
@@ -59,6 +62,7 @@ def test_compress_submits_slash_command_to_exact_workspace_session(tmp_path, mon
 
     monkeypatch.setenv("POND_ACP_COMMAND_JSON", '["fixture-agent"]')
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "data"))
     SessionStore(tmp_path / "state" / "pond" / "acp-sessions.json").set(
         "default", tmp_path, "acp-1"
     )
@@ -79,6 +83,7 @@ def test_status_reports_exact_workspace_session_without_contacting_agent(tmp_pat
     from pond.backend.sessions import SessionStore
 
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "data"))
     SessionStore(tmp_path / "state" / "pond" / "acp-sessions.json").set(
         "default", tmp_path, "acp-1"
     )
@@ -94,6 +99,7 @@ def test_context_submits_acp_slash_command_to_exact_workspace_session(tmp_path, 
 
     monkeypatch.setenv("POND_ACP_COMMAND_JSON", '["fixture-agent"]')
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "data"))
     SessionStore(tmp_path / "state" / "pond" / "acp-sessions.json").set(
         "default", tmp_path, "acp-1"
     )

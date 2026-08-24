@@ -20,7 +20,7 @@ def _state_path() -> Path:
 
 
 def _pending_terminal_path() -> Path:
-    root = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state"))
+    root = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share"))
     return root / "pond" / "pending-terminal.log"
 
 
