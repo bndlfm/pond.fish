@@ -199,7 +199,6 @@ def render_tool_event(
 ) -> None:
     """Render one dense Pond 2-style audit block, without a panel/frame."""
     target = console or Console(stderr=True)
-    target.print()
     successful = status.lower() in {"complete", "completed", "success", "succeeded"}
     failed = status.lower() in {"error", "failed", "failure"}
     if successful:
