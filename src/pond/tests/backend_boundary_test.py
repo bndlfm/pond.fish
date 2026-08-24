@@ -6,7 +6,7 @@ def test_pond_is_the_only_supported_python_package_identity():
     import pond
 
     assert pond.__name__ == "pond"
-    assert importlib.metadata.version("pond") == "3.0.0.dev0"
+    assert importlib.metadata.version("pond") == "3.0.0.dev1"
 
 
 def test_acp_neutral_protocol_types_keep_vendor_payloads_at_the_boundary():

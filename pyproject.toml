@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pond"
-version = "3.0.0.dev0"
+version = "3.0.0.dev1"
 description = "Provides core functionality for Pond, an AI plugin for the Fish shell."
 readme = "README.md"
 requires-python = ">=3.10"
