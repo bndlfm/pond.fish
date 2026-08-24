@@ -12,6 +12,8 @@ hermes acp
 
 Any compatible ACP agent can be configured with `POND_ACP_COMMAND_JSON`.
 
+`FISH_COMMAND_CAPTURE_PATH` selects the JSONL terminal-event log used by the Fish capture patch and Pond agent context. If unset, Pond uses `$XDG_DATA_HOME/pond/terminal-events.jsonl`.
+
 `POND_ICON_STYLE=emoji` opts into emoji icons if your terminal font does not include Nerd Font glyphs; the default style uses Nerd Font symbols for more stable alignment. Set `POND_FRAME_STYLE=plain` to disable the lightweight Powerline caps/gutter.
 ## What Pond does
 
