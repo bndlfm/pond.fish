@@ -19,6 +19,14 @@ def _state_path() -> Path:
     return root / "pond" / "acp-sessions.json"
 
 
+def _terminal_log_path() -> Path:
+    configured = os.environ.get("FISH_COMMAND_CAPTURE_PATH")
+    if configured:
+        return Path(configured).expanduser()
+    root = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share"))
+    return root / "pond" / "terminal-events.jsonl"
+
+
 def _pending_terminal_path() -> Path:
     root = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share"))
     return root / "pond" / "pending-terminal.log"
@@ -37,9 +45,17 @@ def _consume_pending_terminal() -> str:
 def _prompt_with_terminal_context(user_text: str, explicit_context: str = "") -> str:
     pending = _consume_pending_terminal()
     context = "\n".join(part for part in (pending, explicit_context.strip()) if part)
-    if not context:
+    log_path = _terminal_log_path()
+    log_hint = f"Capture log available at {log_path}. Use jq to inspect only relevant command records." if log_path.exists() else ""
+    if not context and not log_hint:
         return user_text
-    return f"[Passive terminal activity since the prior Pond turn]\n{context}\n\nUser request: {user_text}"
+    sections = ["[Passive terminal activity]"]
+    if log_hint:
+        sections.append(log_hint)
+    if context:
+        sections.append(context)
+    sections.append(f"User request: {user_text}")
+    return "\n\n".join(sections)
 
 
 def run_action(action: str, user_text: str, cwd: str, *, profile: str = "default", terminal_context: str = "") -> None:
