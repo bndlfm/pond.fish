@@ -19,8 +19,31 @@ def _state_path() -> Path:
     return root / "pond" / "acp-sessions.json"
 
 
+def _pending_terminal_path() -> Path:
+    root = Path(os.environ.get("XDG_STATE_HOME", Path.home() / ".local/state"))
+    return root / "pond" / "pending-terminal.log"
+
+
+def _consume_pending_terminal() -> str:
+    path = _pending_terminal_path()
+    try:
+        text = path.read_text(encoding="utf-8")
+        path.unlink()
+    except FileNotFoundError:
+        return ""
+    return text.strip()
+
+
+def _prompt_with_terminal_context(user_text: str) -> str:
+    pending = _consume_pending_terminal()
+    if not pending:
+        return user_text
+    return f"[Passive terminal activity since the prior Pond turn]\n{pending}\n\nUser request: {user_text}"
+
+
 def run_action(action: str, user_text: str, cwd: str, *, profile: str = "default") -> None:
     """Run one explicit stateful action and remember its exact ACP handle."""
+    user_text = _prompt_with_terminal_context(user_text)
     store = SessionStore(_state_path())
     session_id = store.get(profile, cwd)
     if hermes_server_available() and (not session_id or session_id.startswith("hermes:")):

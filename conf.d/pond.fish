@@ -19,6 +19,15 @@ function _pond_bind --description "Register explicitly configured Pond bindings.
     end
 end
 
+function _pond_record_preexec --on-event fish_preexec --description "Record passive terminal commands for the next Pond turn."
+    if test (count $argv) -eq 0
+        return
+    end
+    mkdir -p "$_pond_install_dir"
+    string join ' ' -- $argv >> "$_pond_install_dir/pending-terminal.log"
+end
+
+
 function _pond_install --on-event pond_install
     set -l source (set -q POND_PYTHON_SOURCE; and echo "$POND_PYTHON_SOURCE"; or echo "git+https://github.com/bndlfm/pond.fish@feat/pond-3-acp-rewrite")
     mkdir -p "$_pond_install_dir"

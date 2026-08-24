@@ -32,6 +32,10 @@ function pond --description "Stateful ACP shell interface for Pond."
     switch "$action"
         case forget
             $forget_command --cwd (pwd)
+            if status is-interactive
+                commandline --replace ""
+                commandline -f repaint
+            end
         case status
             $status_command --cwd (pwd)
         case context

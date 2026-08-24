@@ -140,6 +140,19 @@ def test_pond_unknown_subcommand_does_not_execute_it():
     assert "Use 'pond help'" in result.stderr
 
 
+def test_pond_forget_clears_active_command_buffer():
+    script = commandline_mock("stale command") + r'''
+function pond-forget; end
+source functions/pond.fish
+pond forget
+printf 'replacement=<%s>\n' "$__replacement"
+'''
+    result = run_fish(script)
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == "replacement=<>\n"
+
+
 def commandline_mock(buffer, cursor=0):
     return f'''
 set -g __buffer {subprocess.list2cmdline([buffer])}
