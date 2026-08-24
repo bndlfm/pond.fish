@@ -1,9 +1,9 @@
 diff --git a/src/command_capture_allowlist.txt b/src/command_capture_allowlist.txt
 new file mode 100644
-index 0000000..8fcf06b
+index 0000000..59f27a5
 --- /dev/null
 +++ b/src/command_capture_allowlist.txt
-@@ -0,0 +1,111 @@
+@@ -0,0 +1,129 @@
 +[
 +b2sum
 +base32
@@ -115,6 +115,24 @@ index 0000000..8fcf06b
 +fd
 +ag
 +jq
++git
++python
++python3
++pytest
++cargo
++make
++cmake
++uv
++nix
++home-manager
++nh
++nixos-rebuild
++nix-shell
++curl
++wget
++gh
++tar
++unzip
 diff --git a/src/exec.rs b/src/exec.rs
 index 512147f..367a985 100644
 --- a/src/exec.rs
