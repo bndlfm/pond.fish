@@ -23,12 +23,20 @@ function _pond_bind --description "Register Pond bindings, with Fish-compatible 
     bind -M insert "$agent_key" _pond_agent
 end
 
-function _pond_record_preexec --on-event fish_preexec --description "Record passive terminal commands for the next Pond turn."
-    if test (count $argv) -eq 0
+function _pond_record_postexec --on-event fish_postexec --description "Record passive terminal events as JSONL."
+    set -l exit_status $status
+    if test (count $argv) -eq 0; or not type -q jq
         return
     end
     mkdir -p "$_pond_install_dir"
-    string join ' ' -- $argv >> "$_pond_install_dir/pending-terminal.log"
+    set -l command_text (string join ' ' -- $argv)
+    set -l timestamp (date -u +%Y-%m-%dT%H:%M:%SZ)
+    jq -cn \
+        --arg time "$timestamp" \
+        --arg command "$command_text" \
+        --argjson status $exit_status \
+        '{time: $time, command: $command, stdout: null, stderr: null, exit_status: $status, capture: "fish_event_hook"}' \
+        >> "$_pond_install_dir/terminal-events.jsonl"
 end
 
 
