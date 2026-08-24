@@ -9,7 +9,8 @@ function _pond_agent --description "Pond stateful agent launcher."
     if not type -q $action_command
         set action_command "$_pond_install_dir/bin/pond-action"
     end
-    $action_command agent "$goal" --cwd (pwd)
+    set -l terminal_context (history --max=20 | string collect)
+    $action_command agent "$goal" --cwd (pwd) --terminal-context "$terminal_context"
     commandline --replace ""
     commandline -f repaint
 end

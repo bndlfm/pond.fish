@@ -34,16 +34,17 @@ def _consume_pending_terminal() -> str:
     return text.strip()
 
 
-def _prompt_with_terminal_context(user_text: str) -> str:
+def _prompt_with_terminal_context(user_text: str, explicit_context: str = "") -> str:
     pending = _consume_pending_terminal()
-    if not pending:
+    context = "\n".join(part for part in (pending, explicit_context.strip()) if part)
+    if not context:
         return user_text
-    return f"[Passive terminal activity since the prior Pond turn]\n{pending}\n\nUser request: {user_text}"
+    return f"[Passive terminal activity since the prior Pond turn]\n{context}\n\nUser request: {user_text}"
 
 
-def run_action(action: str, user_text: str, cwd: str, *, profile: str = "default") -> None:
+def run_action(action: str, user_text: str, cwd: str, *, profile: str = "default", terminal_context: str = "") -> None:
     """Run one explicit stateful action and remember its exact ACP handle."""
-    user_text = _prompt_with_terminal_context(user_text)
+    user_text = _prompt_with_terminal_context(user_text, terminal_context)
     store = SessionStore(_state_path())
     session_id = store.get(profile, cwd)
     if hermes_server_available() and (not session_id or session_id.startswith("hermes:")):
@@ -154,8 +155,9 @@ def main() -> None:
     parser.add_argument("text")
     parser.add_argument("--cwd", default=os.getcwd())
     parser.add_argument("--profile", default="default")
+    parser.add_argument("--terminal-context", default="")
     args = parser.parse_args()
-    run_action(args.action, args.text, args.cwd, profile=args.profile)
+    run_action(args.action, args.text, args.cwd, profile=args.profile, terminal_context=args.terminal_context)
 
 
 if __name__ == "__main__":

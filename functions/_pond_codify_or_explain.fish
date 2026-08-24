@@ -15,7 +15,8 @@ function _pond_codify_or_explain --description "Pond command draft and explanati
     if not type -q $action_command
         set action_command "$_pond_install_dir/bin/pond-action"
     end
-    set -l output ($action_command command-draft "$input" --cwd (pwd) | string collect)
+    set -l terminal_context (history --max=20 | string collect)
+    set -l output ($action_command command-draft "$input" --cwd (pwd) --terminal-context "$terminal_context" | string collect)
     commandline --replace "$output"
     commandline -f repaint
 end
