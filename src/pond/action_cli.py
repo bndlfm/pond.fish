@@ -1,7 +1,9 @@
 """CLI bridge between Pond's Fish UI and a stateful ACP action."""
 
 import asyncio
+import json
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .backend.acp_client import run_acp_action, run_acp_turn
@@ -19,6 +21,27 @@ def _state_path() -> Path:
     return root / "pond" / "acp-sessions.json"
 
 
+def _agent_events_path() -> Path:
+    configured = os.environ.get("POND_AGENT_EVENTS_PATH")
+    if configured:
+        return Path(configured).expanduser()
+    root = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share"))
+    return root / "pond" / "agent-events.jsonl"
+
+
+def _record_agent_action(action: str, cwd: str, prompt: str, session_id: str | None) -> None:
+    path = _agent_events_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    record = {
+        "time": datetime.now(timezone.utc).isoformat(),
+        "kind": "agent_action",
+        "action": action,
+        "cwd": cwd,
+        "session_id": session_id,
+        "prompt": prompt,
+    }
+    with path.open("a", encoding="utf-8") as stream:
+        stream.write(json.dumps(record, ensure_ascii=False) + "\n")
 def _terminal_log_path() -> Path:
     configured = os.environ.get("FISH_COMMAND_CAPTURE_PATH")
     if configured:
@@ -77,6 +100,7 @@ def run_action(action: str, user_text: str, cwd: str, *, profile: str = "default
             cwd,
             session_id=session_id,
         ))
+    _record_agent_action(action, cwd, user_text, result.session_id)
     if action != "command-draft":
         store.set(profile, cwd, result.session_id)
     if action == "command-draft":
