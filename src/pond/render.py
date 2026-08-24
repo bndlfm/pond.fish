@@ -33,7 +33,6 @@ def render_thinking(text: str, *, console: Console | None = None) -> None:
 
 def render_markdown(text: str, *, console: Console | None = None) -> None:
     target = console or Console()
-    target.print()
     target.print(Padding(Markdown(text or ""), (0, 2, 0, 2)))
 
 
