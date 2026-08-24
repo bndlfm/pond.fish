@@ -27,9 +27,9 @@ def render_thinking(text: str, *, console: Console | None = None) -> None:
     body_parts = ([first_body] if first_body else []) + [line.strip() for line in lines[1:] if line.strip()]
     body = "\n".join(body_parts).strip()
     target.print()
-    target.print(Text(f"  💭 {headline}", style="dim yellow"))
+    target.print(Text(f"  💭 {headline}", style="bold yellow"))
     if body:
-        target.print(Padding(Markdown(body), (0, 4, 0, 2)))
+        target.print(Padding(Text(body, style="white"), (0, 4, 0, 2)))
 
 def render_markdown(text: str, *, console: Console | None = None) -> None:
     target = console or Console()
