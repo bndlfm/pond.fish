@@ -77,7 +77,7 @@ def run_hermes_server_turn(
                     break
 
             sid = ""
-            if session_id:
+            if session_id and not suppress_activity:
                 sid = session_id.removeprefix("hermes:")
                 try:
                     _rpc(ws, request_id, "session.resume", {"session_id": sid})
@@ -85,8 +85,13 @@ def run_hermes_server_turn(
                     if "session not found" not in str(error).lower():
                         raise
                     session_id = None
+            else:
+                session_id = None
             if not session_id:
-                result = _rpc(ws, request_id, "session.create", {"cols": 120, "cwd": request.cwd, "source": "pond"})
+                create_params = {"cols": 120, "cwd": request.cwd, "source": "pond"}
+                if suppress_activity:
+                    create_params["reasoning_effort"] = "none"
+                result = _rpc(ws, request_id, "session.create", create_params)
                 sid = result.get("session_id") or result.get("id")
                 if not sid:
                     raise AcpProtocolError("Hermes server returned no session id")

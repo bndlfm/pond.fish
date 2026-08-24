@@ -61,7 +61,8 @@ def run_action(action: str, user_text: str, cwd: str, *, profile: str = "default
             cwd,
             session_id=session_id,
         ))
-    store.set(profile, cwd, result.session_id)
+    if action != "command-draft":
+        store.set(profile, cwd, result.session_id)
     if action == "command-draft":
         print(result.text)
     else:
