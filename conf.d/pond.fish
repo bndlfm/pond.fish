@@ -10,13 +10,17 @@ if not set -q _pond_config_path
     set -g _pond_config_path (test -n "$XDG_CONFIG_HOME"; and echo "$XDG_CONFIG_HOME/pond/config.ini"; or echo "$HOME/.config/pond/config.ini")
 end
 
-function _pond_bind --description "Register explicitly configured Pond bindings."
+function _pond_bind --description "Register Pond bindings, with Fish-compatible defaults."
+    set -l ask_key ctrl-x
+    set -l agent_key ctrl-a
     if set -q POND_KEYMAP_CODIFY
-        bind "$POND_KEYMAP_CODIFY" _pond_codify_or_explain
+        set ask_key "$POND_KEYMAP_CODIFY"
     end
     if set -q POND_KEYMAP_AGENT
-        bind "$POND_KEYMAP_AGENT" _pond_agent
+        set agent_key "$POND_KEYMAP_AGENT"
     end
+    bind -M insert "$ask_key" _pond_codify_or_explain
+    bind -M insert "$agent_key" _pond_agent
 end
 
 function _pond_record_preexec --on-event fish_preexec --description "Record passive terminal commands for the next Pond turn."

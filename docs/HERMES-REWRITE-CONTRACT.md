@@ -62,14 +62,7 @@ Pond 3.0 does not ship a standalone stateless query/provider command. The reject
 
 ## Binding configuration
 
-Pond 3 defines no default key sequences. Binding choice belongs to the user or their declarative shell configuration:
-
-```fish
-set -gx POND_KEYMAP_CODIFY <user-selected-key>
-set -gx POND_KEYMAP_AGENT <user-selected-key>
-```
-
-Pond registers only explicitly set keymap variables.
+Pond 3 defaults to the familiar Fish layout: Ctrl-X invokes ASK/xplain (no tools or reasoning), and Ctrl-A invokes agent mode. `POND_KEYMAP_CODIFY` and `POND_KEYMAP_AGENT` override those defaults.
 ## Explicit agent action
 
 - The current goal is submitted through `pond-action agent`.

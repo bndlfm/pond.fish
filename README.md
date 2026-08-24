@@ -52,12 +52,14 @@ set -gx POND_ACP_COMMAND_JSON '["/path/to/acp-agent", "--safe"]'
 
 ## Bindings
 
-Pond defines no default key sequences. Configure only the bindings you want:
+Pond defaults match the familiar Fish layout:
 
-```fish
-set -gx POND_KEYMAP_CODIFY <user-selected-key>
-set -gx POND_KEYMAP_AGENT <user-selected-key>
+```text
+Ctrl-X  ASK / xplain (no tools or reasoning)
+Ctrl-A  agent mode (tools, skills, and reasoning)
 ```
+
+Override them with `POND_KEYMAP_CODIFY` and `POND_KEYMAP_AGENT` if desired.
 
 ## Development
 

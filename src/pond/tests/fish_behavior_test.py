@@ -100,8 +100,18 @@ bind ctrl-j
 
     assert result.returncode == 0, result.stderr
     assert result.stdout.splitlines() == [
-        "bind ctrl-g _pond_codify_or_explain",
-        "bind ctrl-j _pond_agent",
+        "bind -M insert ctrl-g _pond_codify_or_explain",
+        "bind -M insert ctrl-j _pond_agent",
+    ]
+
+
+def test_pond_bind_defaults_match_fish_layout():
+    result = run_fish("source conf.d/pond.fish; _pond_bind; bind ctrl-x; bind ctrl-a")
+
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.splitlines() == [
+        "bind -M insert ctrl-x _pond_codify_or_explain",
+        "bind -M insert ctrl-a _pond_agent",
     ]
 
 
