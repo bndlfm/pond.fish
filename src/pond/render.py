@@ -15,9 +15,13 @@ def render_thinking(text: str, *, console: Console | None = None) -> None:
     if not text.strip():
         return
     target = console or Console(stderr=True)
+    lines = text.strip().splitlines()
+    headline = lines[0].strip()
+    body = "\n".join(lines[1:]).strip()
     target.print()
-    target.print(Text("  💭 thinking", style="dim yellow"))
-    target.print(Padding(Markdown(text.strip()), (0, 4, 0, 2)))
+    target.print(Text(f"  💭 {headline}", style="dim yellow"))
+    if body:
+        target.print(Padding(Markdown(body), (0, 4, 0, 2)))
 
 def render_markdown(text: str, *, console: Console | None = None) -> None:
     target = console or Console()
