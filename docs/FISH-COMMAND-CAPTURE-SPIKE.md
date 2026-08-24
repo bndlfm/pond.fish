@@ -22,7 +22,7 @@ This is honest about unavailable streams and does not alter command behavior.
 
 ## Current boundary
 
-The patch captures only eligible direct-terminal commands. Pipelines, explicit redirections, non-TTY execution, and unallowlisted/TTY-sensitive commands bypass capture by design. The 107-command policy is maintained at `patches/fish-command-capture-allowlist.txt` and embedded into the Fish patch at build time.
+The patch captures only eligible direct-terminal commands. Pipelines, explicit redirections, non-TTY execution, and unallowlisted/TTY-sensitive commands bypass capture by design. The 129-command policy is embedded directly in the local patch.
 
 ## Remaining regression coverage
 

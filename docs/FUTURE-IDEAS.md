@@ -25,7 +25,7 @@ Investigate an opt-in Fish runtime patch that writes complete command records as
 
 - **Nix users:** provide a declarative Fish overlay/override applying `patches/fish-command-capture.patch`.
 - **Non-Nix users:** provide the same source patch plus standard Fish build instructions, and eventually a portable patched Fish release if the patch proves stable.
-- **Allowlist:** `patches/fish-command-capture-allowlist.txt` starts with non-TUI GNU coreutils and includes `eza`, `pond`, `fish`, and `fisher`. TTY/control tools remain excluded.
+- **Allowlist:** the local Fish patch embeds the non-TUI GNU coreutils set plus `eza`, `pond`, `fish`, `fisher`, `rg`, `fd`, `ag`, `jq`, development tools, Nix tools, and network/CLI tools. TTY control tools remain excluded.
 - **Default behavior:** capture disabled unless `FISH_COMMAND_CAPTURE_PATH` is set.
 - **Compatibility requirements:** preserve pipelines, binary output, interactive programs, redirections, job control, TTY behavior, and normal performance when disabled.
 

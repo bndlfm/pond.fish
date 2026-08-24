@@ -1,17 +1,152 @@
+diff --git a/src/command_capture_allowlist.txt b/src/command_capture_allowlist.txt
+new file mode 100644
+index 0000000..59f27a5
+--- /dev/null
++++ b/src/command_capture_allowlist.txt
+@@ -0,0 +1,129 @@
++[
++b2sum
++base32
++base64
++basenc
++basename
++cat
++chcon
++chgrp
++chmod
++chown
++chroot
++cksum
++comm
++cp
++csplit
++cut
++date
++dd
++df
++dir
++dircolors
++dirname
++du
++echo
++env
++expand
++expr
++factor
++false
++fmt
++fold
++groups
++head
++hostid
++hostname
++id
++install
++join
++kill
++link
++ln
++logname
++ls
++md5sum
++mkdir
++mkfifo
++mknod
++mktemp
++mv
++nice
++nl
++nohup
++nproc
++numfmt
++od
++paste
++pathchk
++pinky
++pr
++printenv
++printf
++ptx
++pwd
++readlink
++realpath
++rm
++rmdir
++runcon
++seq
++sha1sum
++sha224sum
++sha256sum
++sha384sum
++sha512sum
++shred
++shuf
++sleep
++sort
++split
++stdbuf
++sync
++tac
++tail
++tee
++test
++timeout
++touch
++tr
++true
++truncate
++tsort
++uname
++unexpand
++uniq
++unlink
++uptime
++users
++vdir
++wc
++who
++whoami
++yes
++eza
++pond
++fish
++fisher
++rg
++fd
++ag
++jq
++git
++python
++python3
++pytest
++cargo
++make
++cmake
++uv
++nix
++home-manager
++nh
++nixos-rebuild
++nix-shell
++curl
++wget
++gh
++tar
++unzip
 diff --git a/src/exec.rs b/src/exec.rs
-index 76d77e1..5ba360a 100644
+index 512147f..367a985 100644
 --- a/src/exec.rs
 +++ b/src/exec.rs
-@@ -42,7 +42,7 @@
+@@ -42,7 +42,7 @@ use crate::signal::RawSignal;
  use crate::threads::{ThreadPool, is_forked_child};
  use crate::trace::trace_if_enabled_with_args;
  use crate::tty_handoff::TtyHandoff;
--use crate::wutil::{fish_wcstol, perror_nix};
-+use crate::wutil::{fish_wcstol, perror_nix, wbasename};
+-use crate::wutil::{fish_wcstol, perror_io};
++use crate::wutil::{fish_wcstol, perror_io, wbasename};
+ use errno::{errno, set_errno};
  use fish_common::{ScopeGuard, exit_without_destructors, truncate_at_nul, write_loop};
  use fish_widestring::{ToWString as _, bytes2wcstring, wcs2bytes, wcs2zstring};
- use libc::{
-@@ -56,16 +56,20 @@
+@@ -57,16 +57,20 @@ use nix::{
  };
  use std::sync::LazyLock;
  use std::{
@@ -33,7 +168,7 @@ index 76d77e1..5ba360a 100644
  };
  
  /// The singleton shared exec thread pool.
-@@ -871,7 +875,8 @@ fn exec_external_command(
+@@ -879,7 +883,8 @@ fn exec_external_command(
      let argv = OwningNullTerminatedArray::new(narrow_argv);
  
      // Convert our IO chain to a dup2 sequence.
@@ -43,7 +178,7 @@ index 76d77e1..5ba360a 100644
  
      // Decide on pgroups - either we stay in fish's pgroup, or we set the pgroup from our leader,
      // or we become the leader.
-@@ -893,7 +898,7 @@ fn exec_external_command(
+@@ -901,7 +906,7 @@ fn exec_external_command(
  
      #[cfg(have_posix_spawn)]
      // Prefer to use posix_spawn, since it's faster on some systems like OS X.
@@ -52,7 +187,7 @@ index 76d77e1..5ba360a 100644
          let file = parser.current_filename.borrow();
          let count = FORK_COUNT.fetch_add(1, Ordering::Relaxed) + 1; // spawn counts as a fork+exec
  
-@@ -934,11 +939,211 @@ fn exec_external_command(
+@@ -942,11 +947,211 @@ fn exec_external_command(
          return Ok(());
      }
  
@@ -266,10 +401,10 @@ index 76d77e1..5ba360a 100644
  // variable environment.
  fn function_prepare_environment(
 diff --git a/src/proc.rs b/src/proc.rs
-index d988a3b..89c43dc 100644
+index 63910a6..2c0e838 100644
 --- a/src/proc.rs
 +++ b/src/proc.rs
-@@ -1271,6 +1271,10 @@ fn process_mark_finished_children(parser: &mut Parser, block_ok: bool, block_io:
+@@ -1275,6 +1275,10 @@ fn process_mark_finished_children(parser: &mut Parser, block_ok: bool, block_io:
                  j.flags_mut().notified_of_stop = false;
              }
              if status.normal_exited() || status.signal_exited() {
@@ -280,137 +415,3 @@ index d988a3b..89c43dc 100644
                  flogf!(
                      proc_reap_external,
                      "Reaped external process '%s' (pid %d, status %d)",
-diff --git a/src/command_capture_allowlist.txt b/src/command_capture_allowlist.txt
-new file mode 100644
---- /dev/null
-+++ b/src/command_capture_allowlist.txt
-@@ -0,0 +1,129 @@
-+[
-+b2sum
-+base32
-+base64
-+basenc
-+basename
-+cat
-+chcon
-+chgrp
-+chmod
-+chown
-+chroot
-+cksum
-+comm
-+cp
-+csplit
-+cut
-+date
-+dd
-+df
-+dir
-+dircolors
-+dirname
-+du
-+echo
-+env
-+expand
-+expr
-+factor
-+false
-+fmt
-+fold
-+groups
-+head
-+hostid
-+hostname
-+id
-+install
-+join
-+kill
-+link
-+ln
-+logname
-+ls
-+md5sum
-+mkdir
-+mkfifo
-+mknod
-+mktemp
-+mv
-+nice
-+nl
-+nohup
-+nproc
-+numfmt
-+od
-+paste
-+pathchk
-+pinky
-+pr
-+printenv
-+printf
-+ptx
-+pwd
-+readlink
-+realpath
-+rm
-+rmdir
-+runcon
-+seq
-+sha1sum
-+sha224sum
-+sha256sum
-+sha384sum
-+sha512sum
-+shred
-+shuf
-+sleep
-+sort
-+split
-+stdbuf
-+sync
-+tac
-+tail
-+tee
-+test
-+timeout
-+touch
-+tr
-+true
-+truncate
-+tsort
-+uname
-+unexpand
-+uniq
-+unlink
-+uptime
-+users
-+vdir
-+wc
-+who
-+whoami
-+yes
-+eza
-+pond
-+fish
-+fisher
-+rg
-+fd
-+ag
-+jq
-+git
-+python
-+python3
-+pytest
-+cargo
-+make
-+cmake
-+uv
-+nix
-+home-manager
-+nh
-+nixos-rebuild
-+nix-shell
-+curl
-+wget
-+gh
-+tar
-+unzip
