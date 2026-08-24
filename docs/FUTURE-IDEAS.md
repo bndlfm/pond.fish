@@ -31,6 +31,10 @@ Investigate an opt-in Fish runtime patch that writes complete command records as
 
 This would provide reliable stdout/stderr capture without forcing Pond to own the entire shell PTY.
 
+### Verified first Fish patch
+
+`patches/fish-command-capture.patch` now applies to Fish 4.8.1 and has been independently verified with focused capture tests, the Fish library suite, and a Fish binary build. It captures separate streams only for the allowlisted direct-terminal command slice; pipelines, explicit redirections, non-TTY execution, and unallowlisted/TTY-sensitive commands bypass capture.
+
 ### Proposed architecture
 
 ```text

@@ -16,23 +16,20 @@ Pond's `conf.d/pond.fish` records opt-in passive JSONL metadata at `fish_postexe
 
 This is honest about unavailable streams and does not alter command behavior.
 
-## Reliable stdout/stderr capture options
+## Verified first Fish patch
 
-A complete implementation must choose one of:
+`patches/fish-command-capture.patch` applies to Fish 4.8.1 and has been independently verified with 3 focused capture tests, the Fish library suite, and a Fish binary build. A PTY check confirmed separate stdout/stderr JSONL records and exit status.
 
-1. Patch Fish's job I/O construction to tee non-interactive stdout/stderr while preserving the original terminal/redirect semantics.
-2. Add an opt-in PTY wrapper mode that launches commands inside a managed pseudo-terminal and records the PTY stream.
-3. Require commands to run through an explicit `pond run -- ...` wrapper.
+## Current boundary
 
-A plain Fish plugin cannot provide transparent, reliable capture for arbitrary external commands without one of those mechanisms.
+The patch captures only eligible direct-terminal commands. Pipelines, explicit redirections, non-TTY execution, and unallowlisted/TTY-sensitive commands bypass capture by design. The 107-command policy is maintained at `patches/fish-command-capture-allowlist.txt` and embedded into the Fish patch at build time.
 
-## Required regression coverage before a Fish patch
+## Remaining regression coverage
 
-- ordinary stdout and stderr
-- pipelines
-- explicit redirections
+- pipelines remain unchanged
+- explicit redirections remain unchanged
 - binary output
 - interactive programs and job control
 - Ctrl+C and signal status
 - background jobs
-- capture disabled path has no measurable output behavior change
+- capture-disabled path has no output behavior change
