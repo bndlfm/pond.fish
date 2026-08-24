@@ -9,7 +9,7 @@ from urllib.parse import urlencode, urlparse, urlunparse
 
 from websockets.sync.client import connect
 
-from pond.render import render_tool_event
+from pond.render import render_markdown, render_tool_event
 
 from .errors import AcpProtocolError
 from .protocol import AgentRequest, AgentResult
@@ -90,6 +90,12 @@ def run_hermes_server_turn(request: AgentRequest, session_id: str | None = None)
 
             parts: list[str] = []
             stop_reason = "end_turn"
+
+            def flush_assistant_text() -> None:
+                if parts:
+                    render_markdown("".join(parts))
+                    parts.clear()
+
             while True:
                 frame = json.loads(ws.recv())
                 params = frame.get("params") or {}
@@ -100,20 +106,23 @@ def run_hermes_server_turn(request: AgentRequest, session_id: str | None = None)
                 if event == "message.delta":
                     parts.append(str(payload.get("text") or ""))
                 elif event in {"skill.activate", "skill.start", "skill.complete"}:
+                    flush_assistant_text()
                     render_tool_event(
                         "skill",
                         event.removeprefix("skill."),
                         skill=str(payload.get("name") or payload.get("skill") or "unknown"),
                         detail=str(payload.get("description") or ""),
                     )
-                elif event in {"tool.complete", "tool.error"}:
-                    render_tool_event(
-                        str(payload.get("title") or payload.get("name") or "Tool"),
-                        event.removeprefix("tool."),
-                        detail=json.dumps(payload.get("args") or {}, ensure_ascii=False),
-                        result=payload.get("result_text") or payload.get("summary") or payload.get("result") or "",
-                        duration_s=float(payload["duration_s"]) if payload.get("duration_s") is not None else None,
-                    )
+                elif event in {"tool.start", "tool.complete", "tool.error"}:
+                    flush_assistant_text()
+                    if event != "tool.start":
+                        render_tool_event(
+                            str(payload.get("title") or payload.get("name") or "Tool"),
+                            event.removeprefix("tool."),
+                            detail=json.dumps(payload.get("args") or {}, ensure_ascii=False),
+                            result=payload.get("result_text") or payload.get("summary") or payload.get("result") or "",
+                            duration_s=float(payload["duration_s"]) if payload.get("duration_s") is not None else None,
+                        )
                 elif event == "approval.request":
                     _rpc(ws, request_id + 1, "approval.respond", {"choice": "deny", "session_id": sid})
                     raise AcpProtocolError("Hermes server permission request denied by Pond fallback")
