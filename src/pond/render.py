@@ -152,10 +152,11 @@ def _render_framed_tool(
     body_suffix = " │"
     row_width = Text(body_prefix + (" " * inner_width) + body_suffix).cell_len
     header_text = _fit(f"{icon} {marker} {label} ", inner_width)
-    header = Text(f"  ╭─ {header_text}", style=label_style)
+    header = Text("  ╭─ ", style="white")
+    header.append(header_text, style="yellow")
     header_suffix = "─╮"
-    header.append("─" * max(0, row_width - header.cell_len - Text(header_suffix).cell_len))
-    header.append(header_suffix, style=label_style)
+    header.append("─" * max(0, row_width - header.cell_len - Text(header_suffix).cell_len), style="white")
+    header.append(header_suffix, style="white")
     target.print(header, overflow="crop", no_wrap=True)
     for line in content[1:]:
         padded = _fit(line, inner_width)
