@@ -1,9 +1,9 @@
 diff --git a/src/command_capture_allowlist.txt b/src/command_capture_allowlist.txt
 new file mode 100644
-index 0000000..8da7fb5
+index 0000000..8fcf06b
 --- /dev/null
 +++ b/src/command_capture_allowlist.txt
-@@ -0,0 +1,107 @@
+@@ -0,0 +1,111 @@
 +[
 +b2sum
 +base32
@@ -111,6 +111,10 @@ index 0000000..8da7fb5
 +pond
 +fish
 +fisher
++rg
++fd
++ag
++jq
 diff --git a/src/exec.rs b/src/exec.rs
 index 512147f..367a985 100644
 --- a/src/exec.rs

@@ -282,10 +282,9 @@ index d988a3b..89c43dc 100644
                      "Reaped external process '%s' (pid %d, status %d)",
 diff --git a/src/command_capture_allowlist.txt b/src/command_capture_allowlist.txt
 new file mode 100644
-index 0000000..0000000
 --- /dev/null
 +++ b/src/command_capture_allowlist.txt
-@@ -0,0 +1,107 @@
+@@ -0,0 +1,111 @@
 +[
 +b2sum
 +base32
@@ -393,3 +392,7 @@ index 0000000..0000000
 +pond
 +fish
 +fisher
++rg
++fd
++ag
++jq

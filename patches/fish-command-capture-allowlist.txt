@@ -111,3 +111,7 @@ eza
 pond
 fish
 fisher
+rg
+fd
+ag
+jq
