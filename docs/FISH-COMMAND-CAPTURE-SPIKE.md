@@ -8,10 +8,10 @@ External commands are launched through `src/exec.rs` with their stdout/stderr re
 
 ## Safe partial implementation
 
-Pond's `conf.d/pond.fish` records opt-in passive JSONL metadata at `fish_postexec`:
+The Fish capture patch records eligible commands as JSONL:
 
 ```json
-{"time":"...","command":"git status","stdout":null,"stderr":null,"exit_status":0,"capture":"fish_event_hook"}
+{"schema_version":1,"kind":"terminal_command","started_at_ms":0,"ended_at_ms":12,"duration_ms":12,"cwd":"/home/neko","command":"git status","exit":{"status":0},"streams":{"stdout":{"text":"...","bytes":4},"stderr":{"text":"","bytes":0}},"capture":{"mode":"fish_allowlisted_direct_terminal"}}
 ```
 
 This is honest about unavailable streams and does not alter command behavior.
