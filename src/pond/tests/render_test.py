@@ -5,7 +5,19 @@ from io import StringIO
 from rich.console import Console
 from rich.text import Text
 
-from pond.render import render_markdown, render_tool_event
+from pond.render import render_markdown, render_thinking, render_tool_event
+
+
+def test_thinking_ellipsis_splits_headline_from_body():
+    stream = StringIO()
+    console = Console(file=stream, force_terminal=False, width=80)
+
+    render_thinking("(°ロ°) reasoning...Planning codebase inspection\nNext step", console=console)
+
+    output = stream.getvalue()
+    assert "💭 (°ロ°) reasoning..." in output
+    assert "Planning codebase inspection" in output
+    assert "Next step" in output
 
 
 def test_rich_renderer_formats_markdown_through_a_supplied_console():

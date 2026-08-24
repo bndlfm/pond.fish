@@ -16,8 +16,16 @@ def render_thinking(text: str, *, console: Console | None = None) -> None:
         return
     target = console or Console(stderr=True)
     lines = text.strip().splitlines()
-    headline = lines[0].strip()
-    body = "\n".join(lines[1:]).strip()
+    first_line = lines[0].strip()
+    if "..." in first_line:
+        marker_end = first_line.index("...") + 3
+        headline = first_line[:marker_end].strip()
+        first_body = first_line[marker_end:].strip()
+    else:
+        headline = first_line
+        first_body = ""
+    body_parts = ([first_body] if first_body else []) + [line.strip() for line in lines[1:] if line.strip()]
+    body = "\n".join(body_parts).strip()
     target.print()
     target.print(Text(f"  💭 {headline}", style="dim yellow"))
     if body:
