@@ -19,6 +19,17 @@ Build a persistent, Fish-native Pond transcript renderer without modifying Fish 
   ```
 - Preserve Pond 2’s compact visual language and Rich rendering.
 
+### Nix override and non-Nix Fish patch for stdout/stderr capture
+
+Investigate an opt-in Fish runtime patch that writes complete command records as JSONL, including command text, timestamps, exit status, stdout, and stderr.
+
+- **Nix users:** provide a declarative Fish overlay/override applying `patches/fish-command-capture.patch`.
+- **Non-Nix users:** provide the same source patch plus standard Fish build instructions, and eventually a portable patched Fish release if the patch proves stable.
+- **Default behavior:** capture disabled unless `FISH_COMMAND_CAPTURE_PATH` is set.
+- **Compatibility requirements:** preserve pipelines, binary output, interactive programs, redirections, job control, TTY behavior, and normal performance when disabled.
+
+This would provide reliable stdout/stderr capture without forcing Pond to own the entire shell PTY.
+
 ### Proposed architecture
 
 ```text
