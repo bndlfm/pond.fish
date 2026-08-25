@@ -33,12 +33,16 @@ def _record_agent_action(action: str, cwd: str, prompt: str, session_id: str | N
     path = _agent_events_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     record = {
-        "time": datetime.now(timezone.utc).isoformat(),
+        "schema_version": 1,
         "kind": "agent_action",
-        "action": action,
+        "source": "pond",
+        "time": datetime.now(timezone.utc).isoformat(),
         "cwd": cwd,
         "session_id": session_id,
-        "prompt": prompt,
+        "data": {
+            "action": action,
+            "prompt": prompt,
+        },
     }
     with path.open("a", encoding="utf-8") as stream:
         stream.write(json.dumps(record, ensure_ascii=False) + "\n")

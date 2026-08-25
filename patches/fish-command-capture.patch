@@ -147,7 +147,7 @@ index 0000000..6506734
 +podman
 +kubectl
 diff --git a/src/exec.rs b/src/exec.rs
-index 512147f..31a51d9 100644
+index 512147f..4f0c56d 100644
 --- a/src/exec.rs
 +++ b/src/exec.rs
 @@ -42,7 +42,7 @@ use crate::signal::RawSignal;
@@ -200,7 +200,7 @@ index 512147f..31a51d9 100644
          let file = parser.current_filename.borrow();
          let count = FORK_COUNT.fetch_add(1, Ordering::Relaxed) + 1; // spawn counts as a fork+exec
  
-@@ -942,11 +947,236 @@ fn exec_external_command(
+@@ -942,11 +947,238 @@ fn exec_external_command(
          return Ok(());
      }
  
@@ -379,17 +379,19 @@ index 512147f..31a51d9 100644
 +        .unwrap_or(record.timestamp_ms);
 +    let stdout_len = stdout.len();
 +    let stderr_len = stderr.len();
-+    let mut line = String::from("{\"schema_version\":1,\"kind\":\"terminal_command\",\"started_at_ms\":");
++    let mut line = String::from("{\"schema_version\":1,\"kind\":\"terminal_command\",\"source\":\"fish\",\"time_ms\":");
++    line.push_str(&record.timestamp_ms.to_string());
++    line.push_str(",\"cwd\":\"");
++    line.push_str(&json_escape(record.cwd.as_bytes()));
++    line.push_str("\",\"session_id\":null,\"data\":{\"command\":\"");
++    line.push_str(&json_escape(record.command.as_bytes()));
++    line.push_str("\",\"timing\":{\"started_at_ms\":");
 +    line.push_str(&record.timestamp_ms.to_string());
 +    line.push_str(",\"ended_at_ms\":");
 +    line.push_str(&ended_at_ms.to_string());
 +    line.push_str(",\"duration_ms\":");
 +    line.push_str(&ended_at_ms.saturating_sub(record.timestamp_ms).to_string());
-+    line.push_str(",\"cwd\":\"");
-+    line.push_str(&json_escape(record.cwd.as_bytes()));
-+    line.push_str("\",\"command\":\"");
-+    line.push_str(&json_escape(record.command.as_bytes()));
-+    line.push_str("\",\"exit\":{\"status\":");
++    line.push_str("},\"exit\":{\"status\":");
 +    line.push_str(&exit_status.to_string());
 +    line.push_str("},\"streams\":{\"stdout\":{\"text\":\"");
 +    line.push_str(&json_escape(&stdout));
@@ -399,7 +401,7 @@ index 512147f..31a51d9 100644
 +    line.push_str(&json_escape(&stderr));
 +    line.push_str("\",\"bytes\":");
 +    line.push_str(&stderr_len.to_string());
-+    line.push_str("}},\"capture\":{\"mode\":\"fish_allowlisted_direct_terminal\"}}\n");
++    line.push_str("}},\"capture\":{\"mode\":\"fish_allowlisted_direct_terminal\"}}}\n");
 +    if let Ok(mut file) = OpenOptions::new()
 +        .create(true)
 +        .append(true)

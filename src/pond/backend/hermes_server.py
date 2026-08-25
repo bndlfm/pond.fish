@@ -24,15 +24,18 @@ def _agent_events_path() -> Path:
     return root / "pond" / "events.jsonl"
 
 
-def _record_agent_event(kind: str, session_id: str, **payload) -> None:
+def _record_agent_event(kind: str, session_id: str, *, cwd: str | None = None, **payload) -> None:
     path = _agent_events_path()
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         record = {
-            "time": datetime.now(timezone.utc).isoformat(),
+            "schema_version": 1,
             "kind": kind,
+            "source": "pond-hermes",
+            "time": datetime.now(timezone.utc).isoformat(),
+            "cwd": cwd,
             "session_id": session_id,
-            **payload,
+            "data": payload,
         }
         with path.open("a", encoding="utf-8") as stream:
             stream.write(json.dumps(record, ensure_ascii=False) + "\n")
@@ -121,6 +124,7 @@ def run_hermes_server_turn(
                     raise AcpProtocolError("Hermes server returned no session id")
             request_id += 1
             _rpc(ws, request_id, "prompt.submit", {"session_id": sid, "text": request.prompt})
+            _record_agent_event("agent_prompt", sid, cwd=request.cwd, action="agent", prompt=request.prompt)
 
             parts: list[str] = []
             thinking_parts: list[str] = []
@@ -143,10 +147,20 @@ def run_hermes_server_turn(
                 event = params.get("type")
                 payload = params.get("payload") or {}
                 if event in {"reasoning.delta", "thinking.delta"}:
-                    thinking_parts.append(str(payload.get("text") or ""))
+                    text = str(payload.get("text") or "")
+                    thinking_parts.append(text)
+                    _record_agent_event("thinking", sid, cwd=request.cwd, text=text)
                 elif event == "message.delta":
                     parts.append(str(payload.get("text") or ""))
                 elif event in {"skill.activate", "skill.start", "skill.complete"}:
+                    _record_agent_event(
+                        "skill",
+                        sid,
+                        cwd=request.cwd,
+                        status=event.removeprefix("skill."),
+                        name=str(payload.get("name") or payload.get("skill") or "unknown"),
+                        description=str(payload.get("description") or ""),
+                    )
                     flush_assistant_context()
                     if not suppress_activity:
                         render_tool_event(
@@ -156,6 +170,16 @@ def run_hermes_server_turn(
                             detail=str(payload.get("description") or ""),
                         )
                 elif event in {"tool.start", "tool.complete", "tool.error"}:
+                    _record_agent_event(
+                        "tool_call",
+                        sid,
+                        cwd=request.cwd,
+                        status=event.removeprefix("tool."),
+                        name=str(payload.get("title") or payload.get("name") or "Tool"),
+                        args=payload.get("args") or {},
+                        result=payload.get("result_text") or payload.get("summary") or payload.get("result") or "",
+                        duration_s=payload.get("duration_s"),
+                    )
                     flush_assistant_context()
                     if event != "tool.start" and not suppress_activity:
                         render_tool_event(
