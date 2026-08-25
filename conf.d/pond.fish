@@ -1,5 +1,8 @@
 # Pond 3 shell initialization and Fisher lifecycle.
 
+# Remove the pre-unified legacy writer if this shell was started before Pond was updated.
+functions --erase _pond_record_postexec 2>/dev/null
+
 if not set -q _pond_install_dir
     set -g _pond_install_dir (test -n "$XDG_DATA_HOME"; and echo "$XDG_DATA_HOME/pond"; or echo "$HOME/.local/share/pond")
 end
