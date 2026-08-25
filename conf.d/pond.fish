@@ -23,24 +23,6 @@ function _pond_bind --description "Register Pond bindings, with Fish-compatible 
     bind -M insert "$agent_key" _pond_agent
 end
 
-function _pond_record_postexec --on-event fish_postexec --description "Record passive terminal events as JSONL."
-    set -l exit_status $status
-    if test (count $argv) -eq 0; or not type -q jq
-        return
-    end
-    set -l capture_path (set -q POND_EVENTS_PATH; and echo "$POND_EVENTS_PATH"; or set -q FISH_COMMAND_CAPTURE_PATH; and echo "$FISH_COMMAND_CAPTURE_PATH"; or echo "$_pond_install_dir/events.jsonl")
-    mkdir -p (dirname "$capture_path")
-    set -l command_text (string join ' ' -- $argv)
-    set -l timestamp (date -u +%Y-%m-%dT%H:%M:%SZ)
-    jq -cn \
-        --arg time "$timestamp" \
-        --arg command "$command_text" \
-        --argjson status $exit_status \
-        '{time: $time, command: $command, stdout: null, stderr: null, exit_status: $status, capture: "fish_event_hook"}' \
-        >> "$capture_path"
-end
-
-
 function _pond_setup_python --description "Install or refresh Pond's private Python backend."
     set -l source (set -q POND_PYTHON_SOURCE; and echo "$POND_PYTHON_SOURCE"; or echo "git+https://github.com/bndlfm/pond.fish@feat/pond-3-acp-rewrite")
     mkdir -p "$_pond_install_dir"
