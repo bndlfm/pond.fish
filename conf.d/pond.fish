@@ -41,7 +41,7 @@ function _pond_record_postexec --on-event fish_postexec --description "Record pa
 end
 
 
-function _pond_install --on-event pond_install
+function _pond_setup_python --description "Install or refresh Pond's private Python backend."
     set -l source (set -q POND_PYTHON_SOURCE; and echo "$POND_PYTHON_SOURCE"; or echo "git+https://github.com/bndlfm/pond.fish@feat/pond-3-acp-rewrite")
     mkdir -p "$_pond_install_dir"
 
@@ -59,6 +59,14 @@ function _pond_install --on-event pond_install
     end
 
     fish_add_path --path "$_pond_install_dir/bin"
+end
+
+function _pond_install --on-event pond_install
+    _pond_setup_python
+end
+
+function _pond_update --on-event pond_update
+    _pond_setup_python
 end
 
 if test -d "$_pond_install_dir/bin"
