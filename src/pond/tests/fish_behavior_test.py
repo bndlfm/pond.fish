@@ -124,7 +124,7 @@ def test_pond_version_reports_the_project_version_without_stderr():
     result = run_fish("source functions/pond.fish; pond version")
 
     assert result.returncode == 0
-    assert "v3.0.0.dev1" in result.stdout
+    assert "v3.0.0.dev2" in result.stdout
     assert result.stderr == ""
 
 

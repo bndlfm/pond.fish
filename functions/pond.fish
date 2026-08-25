@@ -43,7 +43,7 @@ function pond --description "Stateful ACP shell interface for Pond."
         case compress
             $compress_command --cwd (pwd)
         case version -v --version
-            echo "pond v3.0.0.dev1"
+            echo "pond v3.0.0.dev2"
         case help -h --help ''
             echo "Pond — stateful ACP shell interface"
             echo ""
