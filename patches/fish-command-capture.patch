@@ -1,9 +1,9 @@
 diff --git a/src/command_capture_allowlist.txt b/src/command_capture_allowlist.txt
 new file mode 100644
-index 0000000..6506734
+index 0000000..663bf82
 --- /dev/null
 +++ b/src/command_capture_allowlist.txt
-@@ -0,0 +1,142 @@
+@@ -0,0 +1,137 @@
 +[
 +b2sum
 +base32
@@ -123,11 +123,6 @@ index 0000000..6506734
 +make
 +cmake
 +uv
-+nix
-+home-manager
-+nh
-+nixos-rebuild
-+nix-shell
 +curl
 +wget
 +gh
