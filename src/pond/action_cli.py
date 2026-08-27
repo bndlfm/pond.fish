@@ -100,10 +100,11 @@ def run_action(action: str, user_text: str, cwd: str, *, profile: str = "default
     )
     store = SessionStore(_state_path())
     session_id = store.get(profile, cwd)
-    if hermes_server_available() and (not session_id or session_id.startswith("hermes:")):
+    if hermes_server_available():
+        hermes_session_id = session_id if session_id and session_id.startswith("hermes:") else None
         result = run_hermes_server_turn(
             AgentRequest(prompt=build_action_request(action, user_text), cwd=cwd),
-            session_id=session_id,
+            session_id=hermes_session_id,
             suppress_activity=action == "command-draft",
         )
     else:
