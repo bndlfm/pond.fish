@@ -110,10 +110,10 @@ def test_pond_bind_defaults_match_fish_layout():
 
     assert result.returncode == 0, result.stderr
     assert result.stdout.splitlines() == [
-        "bind ctrl-x _pond_codify_or_explain",
-        "bind ctrl-a _pond_agent",
         "bind -M insert ctrl-x _pond_codify_or_explain",
+        "bind ctrl-x _pond_codify_or_explain",
         "bind -M insert ctrl-a _pond_agent",
+        "bind ctrl-a _pond_agent",
     ]
 
 
