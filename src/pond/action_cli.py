@@ -114,6 +114,8 @@ def run_action(action: str, user_text: str, cwd: str, *, profile: str = "default
             cwd,
             session_id=session_id,
         ))
+    if action == "agent" and not result.text.strip():
+        raise AcpProtocolError("agent returned no visible response; prompt was preserved")
     _record_agent_action(action, cwd, user_text, result.session_id)
     if action != "command-draft":
         store.set(profile, cwd, result.session_id)
