@@ -24,6 +24,11 @@ function _pond_bind --description "Register Pond bindings, with Fish-compatible 
     end
     bind -M insert "$ask_key" _pond_codify_or_explain
     bind -M insert "$agent_key" _pond_agent
+    # Bind raw control sequences in both maps; this avoids key-name fallthrough in vi mode.
+    bind -M insert \ca _pond_agent
+    bind -M default \ca _pond_agent
+    bind -M insert \cx _pond_codify_or_explain
+    bind -M default \cx _pond_codify_or_explain
 end
 
 function _pond_setup_python --description "Install or refresh Pond's private Python backend."
