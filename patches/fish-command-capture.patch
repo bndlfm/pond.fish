@@ -144,15 +144,9 @@ diff --git a/src/exec.rs b/src/exec.rs
 index 512147f..4f0c56d 100644
 --- a/src/exec.rs
 +++ b/src/exec.rs
-@@ -42,7 +42,7 @@ use crate::signal::RawSignal;
- use crate::threads::{ThreadPool, is_forked_child};
- use crate::trace::trace_if_enabled_with_args;
- use crate::tty_handoff::TtyHandoff;
--use crate::wutil::{fish_wcstol, perror_io};
-+use crate::wutil::{fish_wcstol, perror_io, wbasename};
- use errno::{errno, set_errno};
- use fish_common::{ScopeGuard, exit_without_destructors, truncate_at_nul, write_loop};
- use fish_widestring::{ToWString as _, bytes2wcstring, wcs2bytes, wcs2zstring};
+@@ -45,1 +45,1 @@
+-use crate::wutil::{fish_wcstol, perror_nix};
++use crate::wutil::{fish_wcstol, perror_nix, wbasename};
 @@ -57,16 +57,20 @@ use nix::{
  };
  use std::sync::LazyLock;
